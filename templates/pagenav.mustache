@@ -1,0 +1,80 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_interactivevideo/pagenav
+
+    TODO describe template pagenav
+
+    Example context (json):
+    {
+    }
+}}
+
+<div class="modal-header d-flex align-items-center {{^darkmode}}bg-white shadow-sm{{/darkmode}} sticky-top pl-1 rounded-0 {{#darkmode}}bg-dark text-white border-0{{/darkmode}}" style="height:70px;">
+    <div class="d-flex align-items-center">
+        <a href="{{{returnurl}}}" class="rotatex-360 btn btn-sm mr-2 border-0"
+            title="{{#str}}backtocourse,mod_interactivevideo{{/str}}" data-toggle="tooltip"><i
+                class="{{#darkmode}}text-white{{/darkmode}} bi bi-chevron-left fs-25px"></i></a>
+        {{#manualcompletion}}
+        {{{completion}}}
+        {{/manualcompletion}}
+        {{^manualcompletion}}
+        {{#completion}}
+        <div class="dropdown" title="{{#str}}todo,mod_interactivevideo{{/str}}" data-toggle="tooltip">
+            <button class="btn btn-sm border-0" type="button" id="completionDropdown" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+                <i class="fs-25px bi bi-check-circle{{#completed}}-fill{{/completed}} {{#darkmode}}{{^completed}}text-white{{/completed}}{{/darkmode}} {{#completedpass}}text-success{{/completedpass}}{{#completedfail}}text-danger{{/completedfail}}"
+                   ></i>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right px-2" aria-labelledby="completionDropdown">
+                {{{completion}}}
+            </div>
+        </div>
+        {{/completion}}
+        {{/manualcompletion}}
+        <div class="metadata d-none d-md-block ml-3 {{#darkmode}}text-white{{/darkmode}}"></div>
+    </div>
+    <div class="navigation d-flex align-items-center">
+        {{#viewurl}}
+        <a href="{{{viewurl}}}" title="{{#str}}play,mod_interactivevideo{{/str}}" data-toggle="tooltip"
+            class=" btn btn-sm mr-2 border-0"><i class="bi bi-play-circle fs-25px {{#darkmode}}text-white{{/darkmode}} "></i></a>
+        {{/viewurl}}
+        {{#interactionsurl}}
+        <a href="{{{interactionsurl}}}" title="{{#str}}interactions,mod_interactivevideo{{/str}}" data-toggle="tooltip"
+            class=" btn btn-sm mr-2 border-0"><i class="bi bi-bullseye fs-25px {{#darkmode}}text-white{{/darkmode}} "></i></a>
+        {{/interactionsurl}}
+        {{#reporturl}}
+        <a href="{{{reporturl}}}" title="{{#str}}report,mod_interactivevideo{{/str}}" data-toggle="tooltip"
+            class=" btn btn-sm mr-2 border-0"><i class="bi bi-table fs-25px {{#darkmode}}text-white{{/darkmode}} "></i></a>
+        {{/reporturl}}
+        {{#settingurl}}
+        <a href="{{{settingurl}}}" title="{{#str}}settings{{/str}}" data-toggle="tooltip"
+            class=" btn btn-sm mr-2 border-0"><i class="bi bi-gear fs-25px {{#darkmode}}text-white{{/darkmode}} "></i></a>
+        {{/settingurl}}
+        {{#backupurl}}
+        <a href="{{{backupurl}}}" title="{{#str}}backup{{/str}}" data-toggle="tooltip"
+            class=" btn btn-sm mr-2 border-0"><i class="bi bi-cloud-arrow-up fs-25px {{#darkmode}}text-white{{/darkmode}} "></i></a>
+        {{/backupurl}}
+        {{#restoreurl}}
+        <a href="{{{restoreurl}}}" title="{{#str}}restore{{/str}}" data-toggle="tooltip"
+            class=" btn btn-sm mr-2 border-0"><i class="bi bi-cloud-arrow-down fs-25px {{#darkmode}}text-white{{/darkmode}} "></i></a>
+        {{/restoreurl}}
+        <span class="ml-2">
+            {{{useravatar}}}
+        </span>
+    </div>
+</div>

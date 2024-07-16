@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="mod/interactivevideo/db" VERSION="20240716" COMMENT="XMLDB file for Moodle mod/interactivevideo"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="interactivevideo" COMMENT="Stores the interactivevideo activity module instances.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="ID of the course this activity is part of."/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The name of the activity module instance"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp of when the instance was added to the course."/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp of when the instance was last modified."/>
+        <FIELD NAME="intro" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Activity description."/>
+        <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The format of the intro field."/>
+        <FIELD NAME="source" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="video source: url or file"/>
+        <FIELD NAME="videourl" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The video url"/>
+        <FIELD NAME="type" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The video url type"/>
+        <FIELD NAME="video" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The video file"/>
+        <FIELD NAME="endscreentext" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="End screen description."/>
+        <FIELD NAME="displayasstartscreen" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="start" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="end" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="completionpercentage" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="grade" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="displayoptions" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="display options object"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_course" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="annotationitems" COMMENT="Store interactive items on the video">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="20" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="cmid" TYPE="int" LENGTH="20" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="annotationid" TYPE="int" LENGTH="20" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timestamp" TYPE="int" LENGTH="20" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="title" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="null" SEQUENCE="false"/>
+        <FIELD NAME="iframeurl" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="content" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="xp" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="XP"/>
+        <FIELD NAME="displayoptions" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="popup" SEQUENCE="false"/>
+        <FIELD NAME="type" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="richtext" SEQUENCE="false"/>
+        <FIELD NAME="contentid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="hascompletion" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="completiontracking" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="manual" SEQUENCE="false"/>
+        <FIELD NAME="advanced" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Store advanced settings as stringified json."/>
+        <FIELD NAME="char1" TYPE="char" LENGTH="255" NOTNULL="false" DEFAULT="null" SEQUENCE="false"/>
+        <FIELD NAME="char2" TYPE="char" LENGTH="255" NOTNULL="false" DEFAULT="null" SEQUENCE="false"/>
+        <FIELD NAME="char3" TYPE="char" LENGTH="255" NOTNULL="false" DEFAULT="null" SEQUENCE="false"/>
+        <FIELD NAME="text1" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text2" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="text3" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+        <KEY NAME="cmid" TYPE="foreign" FIELDS="cmid" REFTABLE="course_modules" REFFIELDS="id"/>
+        <KEY NAME="annotationid" TYPE="foreign" FIELDS="annotationid" REFTABLE="interactivevideo" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="annotation_completion" COMMENT="Store user progress per cmid">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timecompleted" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="cmid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="course module"/>
+        <FIELD NAME="xp" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="XP"/>
+        <FIELD NAME="completeditems" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="array of completed annotation ids"/>
+        <FIELD NAME="completionpercentage" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="cmid" TYPE="foreign" FIELDS="cmid" REFTABLE="course_modules" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="annotation_log" COMMENT="Store user data per interaction item">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="cmid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="course module"/>
+        <FIELD NAME="annotationid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="attachments" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="For filemanager named attachments"/>
+        <FIELD NAME="int1" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Custom - general int"/>
+        <FIELD NAME="int2" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Custom - general int"/>
+        <FIELD NAME="int3" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Custom - general int"/>
+        <FIELD NAME="char1" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Custom - general short name"/>
+        <FIELD NAME="char2" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Custom - general short name"/>
+        <FIELD NAME="char3" TYPE="char" LENGTH="1333" NOTNULL="false" SEQUENCE="false" COMMENT="Custom - general short name"/>
+        <FIELD NAME="text1" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Custom - general text"/>
+        <FIELD NAME="text2" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Custom - general text"/>
+        <FIELD NAME="text3" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Custom - general text"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="cmid" TYPE="foreign" FIELDS="cmid" REFTABLE="course_modules" REFFIELDS="id"/>
+        <KEY NAME="annotationid" TYPE="foreign" FIELDS="annotationid" REFTABLE="annotationitems" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>

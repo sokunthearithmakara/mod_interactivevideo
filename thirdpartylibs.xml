@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<libraries>
+    <library>
+        <location>libraries/Datatables/datatables.min.css</location>
+        <name>Datatables stylesheet</name>
+        <version>1.13.5</version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+    <library>
+        <location>amd/src/libraries/buttons.bootstrap4.js</location>
+        <name>Datatables Buttons Extension - Bootstrap 4</name>
+        <version>2.4.1</version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+    <library>
+        <location>amd/src/libraries/buttons.html5.js</location>
+        <name>Datatables HTML5 Export Extension</name>
+        <version>2.4.1</version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+    <library>
+        <location>amd/src/libraries/dataTables.bootstrap4.js</location>
+        <name>Datatables Bootstrap 4 Styling Framework</name>
+        <version>4.6.0</version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+    <library>
+        <location>amd/src/libraries/dataTables.buttons.js</location>
+        <name>Datatables Buttons Extension</name>
+        <version>2.4.1</version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+    <library>
+        <location>amd/src/libraries/jquery.dataTables.js</location>
+        <name>Datatables Library</name>
+        <version>1.13.5</version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+    <library>
+        <location>amd/src/libraries/jszip.js</location>
+        <name>JSZip Library</name>
+        <version>3.10.1</version>
+        <license>MIT</license>
+        <licenseversion></licenseversion>
+    </library>
+</libraries>
