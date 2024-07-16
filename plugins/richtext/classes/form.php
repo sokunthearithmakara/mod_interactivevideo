@@ -114,6 +114,6 @@ class form extends \mod_interactivevideo\form\base_form {
         $this->xp_form_field();
         $this->display_options_field();
         $this->advanced_form_fields(true, true, true, true);
-        $this->set_display_vertical();
+        $this->close_form();
     }
 }

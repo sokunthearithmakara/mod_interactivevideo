@@ -355,6 +355,18 @@ class base_form extends \core_form\dynamic_form {
     }
 
     /**
+     * Standard close form element
+     *
+     * @return void
+     */
+    public function close_form() {
+        $mform = &$this->_form;
+        $mform->addElement('static', 'buttonar', '');
+        $mform->closeHeaderBefore('buttonar');
+        $this->set_display_vertical();
+    }
+
+    /**
      * Validation
      *
      * @param mixed $data

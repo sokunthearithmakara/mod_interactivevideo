@@ -56,6 +56,6 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->addElement('advcheckbox', 'char1', '', get_string('allowskip', 'ivplugin_decision'), array("group" => 1), array(0, 1));
         $this->advanced_form_fields(false, true, true, true);
 
-        $this->set_display_vertical();
+        $this->close_form();
     }
 }

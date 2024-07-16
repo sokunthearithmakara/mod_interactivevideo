@@ -66,7 +66,7 @@ class form extends \mod_interactivevideo\form\base_form {
         );
         $this->advanced_form_fields(false, true, true, true);
 
-        $this->set_display_vertical();
+        $this->close_form();
     }
 
     /**

@@ -79,6 +79,6 @@ class form extends \ivplugin_pdfviewer\form {
         $this->completion_tracking_field();
         $this->display_options_field();
         $this->advanced_form_fields(true, true, true, true);
-        $this->set_display_vertical();
+        $this->close_form();
     }
 }
