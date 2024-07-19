@@ -54,7 +54,7 @@ class form extends \ivplugin_pdfviewer\form {
 
         $this->standard_elements();
 
-        $mform->addElement('text', 'title', '<i class="bi bi-quote mx-2"></i>' . get_string('title', 'mod_interactivevideo'));
+        $mform->addElement('text', 'title', '<i class="bi bi-quote mr-2"></i>' . get_string('title', 'mod_interactivevideo'));
         $mform->setType('title', PARAM_TEXT);
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
@@ -70,7 +70,7 @@ class form extends \ivplugin_pdfviewer\form {
         $mform->addElement(
             'filemanager',
             'content',
-            '<i class="bi bi-file-zip mx-2"></i>' . get_string('h5ppackage', 'ivplugin_h5pupload'),
+            '<i class="bi bi-file-zip mr-2"></i>' . get_string('h5ppackage', 'ivplugin_h5pupload'),
             null,
             $filemanageroptions
         );

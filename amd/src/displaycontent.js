@@ -166,7 +166,7 @@ const defaultDisplayContent = async (annotation, player) => {
             // Cover the video with a message on a white background div
             $('#video-wrapper').append(`<div id="message" style="z-index:5;top:100%" data-placement="inline"
          data-id="${annotation.id}">
-        <div id="title" class="shadow-sm">${messageTitle}</div><div class="modal-body" id="content">
+        <div id="title" class="modal-header shadow-sm pr-0">${messageTitle}</div><div class="modal-body" id="content">
         </div></div>`);
             $(`#message[data-id='${annotation.id}']`).animate({
                 top: '0',
@@ -178,7 +178,8 @@ const defaultDisplayContent = async (annotation, player) => {
             $('#annotation-content').empty();
             // Display the content below the video
             $('#annotation-content').append(`<div id="message" class="fade show" data-placement="bottom" data-id="${annotation.id}">
-        <div id="title" class="shadow-sm">${messageTitle}</div><div class="modal-body" id="content"></div></div>`);
+        <div id="title" class="modal-header shadow-sm pr-0">${messageTitle}</div>
+        <div class="modal-body" id="content"></div></div>`);
             // Scroll to annotation-content
             $('html, body, #page.drawers, .modal-body').animate({
                 scrollTop: $("#annotation-content").offset().top

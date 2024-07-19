@@ -15,22 +15,17 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * English language pack for Decision
+ * Cache definitions for Interactive Video
  *
- * @package    ivplugin_decision
- * @category   string
+ * Documentation: {@link https://docs.moodle.org/dev/Cache_API}
+ *
+ * @package    mod_interactivevideo
+ * @category   cache
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'Decision';
-$string['privacy:metadata'] = 'The Decision plugin doesn\'t store any personal data.';
-$string['skip'] = 'Skip';
-$string['destination'] = 'Destination';
-$string['destquestion'] = 'Question';
-$string['allowskip'] = 'Allow skipping';
-$string['decisioncontent'] = 'Decision';
-$string['decisiondescription'] = 'Add a crossroad to the video.';
-$string['requireresponsebeforeviewingothers'] = 'Require response before viewing others';
+$definitions = [
+];

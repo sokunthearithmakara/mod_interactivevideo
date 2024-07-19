@@ -141,9 +141,9 @@ class hotspot extends \core_form\dynamic_form {
         $mform->addElement('text', 'opacity', get_string('opacity', 'ivplugin_inlineannotation'), ['size' => 100]);
         $mform->setType('opacity', PARAM_INT);
         $mform->addRule('opacity', get_string('required'), 'required', null, 'client');
-        $mform->addRule('opacity', get_string('numeric'), 'numeric', null, 'client');
-        $mform->addRule('opacity', get_string('maximum', 'ivplugin_inlineannotation', 100), 'maxlength', 100, 'client');
-        $mform->addRule('opacity', get_string('minimum', 'ivplugin_inlineannotation', 0), 'minlength', 0, 'client');
+        $mform->addRule('opacity', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client');
+        $mform->addRule('opacity', get_string('maximum', 'mod_interactivevideo', 100), 'maxlength', 100, 'client');
+        $mform->addRule('opacity', get_string('minimum', 'mod_interactivevideo', 0), 'minlength', 0, 'client');
         $mform->setDefault('opacity', 100);
 
         $mform->addElement('hidden', 'resizable', 0);

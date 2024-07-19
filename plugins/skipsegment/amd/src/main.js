@@ -66,7 +66,7 @@ export default class SkipSegment extends Base {
             var parts = $(this).val().split(':');
             var timestamp = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
             if (!self.isBetweenStartAndEnd(timestamp)) {
-                var message = M.util.get_string('interactioncanonlybeaddedbetweenstartandendtime', 'ivplugin_skipsegment', {
+                var message = M.util.get_string('interactioncanonlybeaddedbetweenstartandendtime', 'mod_interactivevideo', {
                     "start": self.convertSecondsToHMS(self.start),
                     "end": self.convertSecondsToHMS(self.end),
                 });
@@ -77,7 +77,7 @@ export default class SkipSegment extends Base {
 
             // Make sure the title assist is not the same as the timestamp assist or less than the timestamp assist
             if (timestamp <= parseInt($('[name=timestamp]').val())) {
-                self.addNotification(M.util.get_string('segmentendmustbegreaterthantimestamp', 'ivplugin_skipsegment'));
+                self.addNotification(M.util.get_string('segmentendmustbegreaterthantimestamp', 'mod_interactivevideo'));
                 $(this).val($('[name=timestampassist]').val());
                 return;
             }

@@ -23,7 +23,7 @@
 import $ from 'jquery';
 import Base from 'mod_interactivevideo/type/base';
 
-export default class Main extends Base {
+export default class Chapter extends Base {
     /**
      * Initialize the interaction type
      * @returns {void}

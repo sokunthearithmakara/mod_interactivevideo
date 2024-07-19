@@ -37,6 +37,7 @@ class main extends \ivplugin_richtext\main {
             'form' => 'ivplugin_htmlviewer\\form',
             'hascompletion' => true,
             'hastimestamp' => true,
+            'hasreport' => true,
             'description' => get_string('htmlviewerdescription', 'ivplugin_htmlviewer'),
         ];
     }

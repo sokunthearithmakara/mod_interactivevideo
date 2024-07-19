@@ -235,7 +235,7 @@ const init = (cmid, groupid) => {
                     if (completeditems) {
                         if (completeditems.indexOf(itemid) > -1) {
                             return `<i class="fa fa-check text-success" data-id="${itemid}" data-userid="${row.id}"
-                             data-type="${ctype}"></i><span class="d-none">${annotation.xp ?? 0}</span>`;
+                             data-type="${ctype}"></i><br>${annotation.xp ?? 0}`;
                         } else {
                             return '<i class="fa fa-times"></i><span class="d-none">-</span>';
                         }

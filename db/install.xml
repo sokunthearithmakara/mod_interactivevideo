@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/interactivevideo/db" VERSION="20240716" COMMENT="XMLDB file for Moodle mod/interactivevideo"
+<XMLDB PATH="mod/interactivevideo/db" VERSION="20240718" COMMENT="XMLDB file for Moodle mod/interactivevideo"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -30,7 +30,7 @@
         <KEY NAME="fk_course" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="annotationitems" COMMENT="Store interactive items on the video">
+    <TABLE NAME="interactivevideo_items" COMMENT="Store interactive items on the video">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
@@ -63,7 +63,7 @@
         <KEY NAME="annotationid" TYPE="foreign" FIELDS="annotationid" REFTABLE="interactivevideo" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="annotation_completion" COMMENT="Store user progress per cmid">
+    <TABLE NAME="interactivevideo_completion" COMMENT="Store user progress per cmid">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
@@ -73,6 +73,7 @@
         <FIELD NAME="xp" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="XP"/>
         <FIELD NAME="completeditems" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="array of completed annotation ids"/>
         <FIELD NAME="completionpercentage" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="completiondetails" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON formatted completion details"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
@@ -80,7 +81,7 @@
         <KEY NAME="cmid" TYPE="foreign" FIELDS="cmid" REFTABLE="course_modules" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="annotation_log" COMMENT="Store user data per interaction item">
+    <TABLE NAME="interactivevideo_log" COMMENT="Store user data per interaction item">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
@@ -103,7 +104,7 @@
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
         <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
         <KEY NAME="cmid" TYPE="foreign" FIELDS="cmid" REFTABLE="course_modules" REFFIELDS="id"/>
-        <KEY NAME="annotationid" TYPE="foreign" FIELDS="annotationid" REFTABLE="annotationitems" REFFIELDS="id"/>
+        <KEY NAME="annotationid" TYPE="foreign" FIELDS="annotationid" REFTABLE="interactivevideo_items" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
   </TABLES>

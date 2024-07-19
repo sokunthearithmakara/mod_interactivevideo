@@ -48,9 +48,14 @@ export default class Iframe extends Base {
                 preview(`<iframe src="${url}" frameborder="0" allowfullscreen></iframe>`, '56.25%');
             };
             $.ajax({
-                url: M.cfg.wwwroot + '/mod/interactivevideo/libraries/oembed/providers.json',
+                url: M.cfg.wwwroot + '/mod/interactivevideo/plugins/iframe/ajax.php',
                 type: 'GET',
+                data: {
+                    action: 'getproviders',
+                    sesskey: M.cfg.sesskey,
+                },
                 success: function (data) {
+                    window.console.log(data);
                     var providers = data;
                     var url = $('[name="iframeurl"]').val();
                     // Format the url to match the provider_url
@@ -80,7 +85,7 @@ export default class Iframe extends Base {
                             urlendpoint = urlendpoint + '&format=json';
                         }
                         $.ajax({
-                            url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                            url: M.cfg.wwwroot + '/mod/interactivevideo/plugins/iframe/ajax.php',
                             data: {
                                 url: urlendpoint,
                                 sesskey: M.cfg.sesskey,

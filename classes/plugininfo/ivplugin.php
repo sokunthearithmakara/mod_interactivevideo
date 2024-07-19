@@ -14,15 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace mod_interactivevideo\plugininfo;
+
 /**
- * English language pack for Forum
+ * Class ivplugin
  *
- * @package    ivplugin_forum
- * @category   string
+ * @package    mod_interactivevideo
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class ivplugin extends \core\plugininfo\base {
 
-defined('MOODLE_INTERNAL') || die();
-
-$string['pluginname'] = 'Forum';
+    /**
+     * Allow uninstall
+     *
+     * @return bool
+     */
+    public function is_uninstall_allowed() {
+        return true;
+    }
+}

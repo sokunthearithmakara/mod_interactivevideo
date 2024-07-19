@@ -63,12 +63,12 @@ class form extends \mod_interactivevideo\form\base_form {
         if ($fromform->id > 0) {
             $fromform->timemodified = time();
             $fromform->content = $fromform->content["text"];
-            $DB->update_record('annotationitems', $fromform);
+            $DB->update_record('interactivevideo_items', $fromform);
         } else {
             $fromform->timecreated = time();
             $fromform->timemodified = $fromform->timecreated;
             $fromform->content = $fromform->content["text"];
-            $fromform->id = $DB->insert_record('annotationitems', $fromform);
+            $fromform->id = $DB->insert_record('interactivevideo_items', $fromform);
         }
 
         $draftitemid = file_get_submitted_draft_itemid('content');
@@ -81,7 +81,7 @@ class form extends \mod_interactivevideo\form\base_form {
             $this->editor_options(),
             $fromform->content
         );
-        $DB->update_record('annotationitems', $fromform);
+        $DB->update_record('interactivevideo_items', $fromform);
 
         return $fromform;
     }
@@ -96,7 +96,7 @@ class form extends \mod_interactivevideo\form\base_form {
 
         $this->standard_elements();
 
-        $mform->addElement('text', 'title', '<i class="bi bi-quote mx-2"></i>' . get_string('title', 'mod_interactivevideo'));
+        $mform->addElement('text', 'title', '<i class="bi bi-quote mr-2"></i>' . get_string('title', 'mod_interactivevideo'));
         $mform->setType('title', PARAM_TEXT);
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
@@ -104,7 +104,7 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->addElement(
             'editor',
             'content',
-            '<i class="bi bi-file-earmark-richtext mx-2"></i>' . get_string('content', 'ivplugin_richtext'),
+            '<i class="bi bi-file-earmark-richtext mr-2"></i>' . get_string('content', 'ivplugin_richtext'),
             null,
             $this->editor_options()
         );

@@ -22,7 +22,7 @@
  */
 
 define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchEvent}, Toast) {
-    let ctRenderer = new Object();
+    let ctRenderer = {};
     let annotations, // Array of annotations.
         totaltime, // Video total time.
         activityType, // Current activityType.
@@ -213,7 +213,6 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                 });
 
                 $.when(annnoitems, userprogress, getContentTypes).done(function(annos, progress, ct) {
-                    window.console.log(annos, progress, ct);
                     annotations = JSON.parse(annos[0]);
                     progress = JSON.parse(progress[0]);
                     contentTypes = JSON.parse(ct[0]);
@@ -224,8 +223,8 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                     annotations = annotations.filter(x => {
                         const inContentType = contentTypes.some(y => y.name === x.type);
                         if (!inContentType) {
- return false;
-}
+                            return false;
+                        }
 
                         if (x.type === 'skipsegment') {
                             return !(x.timestamp > end || x.title < start);
@@ -270,17 +269,13 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
 
                     releventAnnotations = [];
                     annotations.forEach(x => {
-                        if (JSON.parse(x.prop).hascompletion) {
-                            let shouldAdd = true;
-                            skipsegments.forEach(y => {
-                                if (Number(x.timestamp) > Number(y.timestamp) && Number(x.timestamp) < Number(y.title)) {
-                                    shouldAdd = false;
-                                }
-                            });
-                            if (shouldAdd) {
-                                releventAnnotations.push(x);
+                        let shouldAdd = true;
+                        skipsegments.forEach(y => {
+                            if (Number(x.timestamp) > Number(y.timestamp) && Number(x.timestamp) < Number(y.title)) {
+                                shouldAdd = false;
                             }
-                        } else {
+                        });
+                        if (shouldAdd) {
                             releventAnnotations.push(x);
                         }
                     });
@@ -317,7 +312,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                         }
                         var count = 0;
                         contentTypes.forEach(x => {
-                            require(['' + x.amdmodule], function(Type) {
+                            require([x.amdmodule], function(Type) {
                                 ctRenderer[x.name] = new Type(player, releventAnnotations, interaction, course, userid,
                                     completionpercentage, gradeiteminstance, grademax, vtype, preventskip, totaltime, start,
                                     end, x);
@@ -457,7 +452,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             };
 
             let interval;
-            const onPlaying = () => { // Use with player timeupdate event.
+            const onPlaying = async() => { // Use with player timeupdate event.
                 // Reset the annotation content.
                 if (!playerReady) {
                     return;
@@ -477,47 +472,45 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                         return;
                     }
 
-                    player.getCurrentTime().then((time) => {
-                        const t = time;
-                        if (t > end || isEnded) {
-                            clearInterval(interval);
-                            onEnded(end);
-                            return;
+                    const t = await player.getCurrentTime();
+                    if (t > end || isEnded) {
+                        clearInterval(interval);
+                        onEnded(end);
+                        return;
+                    }
+
+                    dispatchEvent('timeupdate', {'time': t});
+
+                    const time = Math.round(t);
+
+                    // If it is the same annotation we just run, then we don't need to run it again.
+                    if (lastanno && time == lastanno.timestamp) {
+                        return;
+                    } else {
+                        if (lastanno && time > lastanno.timestamp) {
+                            lastanno = null;
                         }
+                        let percentagePlayed = (t - start) / totaltime;
+                        $('#currenttime').text(convertSecondsToHMS(t - start));
+                        percentagePlayed = percentagePlayed > 1 ? 1 : percentagePlayed;
+                        $('#video-nav #progress').css('width', percentagePlayed * 100 + '%');
 
-                        dispatchEvent('timeupdate', {'time': t});
-
-                        time = Math.round(time);
-
-                        // If it is the same annotation we just run, then we don't need to run it again.
-                        if (lastanno && time == lastanno.timestamp) {
-                            return;
-                        } else {
-                            if (lastanno && time > lastanno.timestamp) {
-                                lastanno = null;
-                            }
-                            let percentagePlayed = (t - start) / totaltime;
-                            $('#currenttime').text(convertSecondsToHMS(t - start));
-                            percentagePlayed = percentagePlayed > 1 ? 1 : percentagePlayed;
-                            $('#video-nav #progress').css('width', percentagePlayed * 100 + '%');
-
-                            const theAnnotation = releventAnnotations.find(x => (t - player.frequency) <= x.timestamp
-                                && (t + player.frequency) >= x.timestamp && x.id != 0);
-                            if (theAnnotation) {
-                                if (theAnnotation.completed && !theAnnotation.rerunnable) {
-                                    $('#video-nav .annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('show');
-                                    setTimeout(function() {
-                                        $('#video-nav .annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('hide');
-                                    }, 2000);
-                                } else {
-                                    player.pause();
-                                    $('#video-nav #progress')
-                                        .css('width', (theAnnotation.timestamp - start) / totaltime * 100 + '%');
-                                    runInteraction(theAnnotation);
-                                }
+                        const theAnnotation = releventAnnotations.find(x => (((t - player.frequency) <= x.timestamp
+                            && (t + player.frequency) >= x.timestamp) || time == x.timestamp) && x.id != 0);
+                        if (theAnnotation) {
+                            if (theAnnotation.completed && !theAnnotation.rerunnable) {
+                                $('#video-nav .annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('show');
+                                setTimeout(function() {
+                                    $('#video-nav .annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('hide');
+                                }, 2000);
+                            } else {
+                                player.pause();
+                                $('#video-nav #progress')
+                                    .css('width', (theAnnotation.timestamp - start) / totaltime * 100 + '%');
+                                runInteraction(theAnnotation);
                             }
                         }
-                    });
+                    }
 
                     // Pause video on spacebar pressed
                     $(document).on('keydown', function(e) {

@@ -124,7 +124,7 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
                 }
             }
         }
-        $newitemid = $DB->insert_record('annotationitems', $data);
+        $newitemid = $DB->insert_record('interactivevideo_items', $data);
         $this->set_mapping('annotationitems', $oldid, $newitemid, true);
     }
 
@@ -150,7 +150,7 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
             }
         }
         $data->completeditems = json_encode($newcompletionitems);
-        $newitemid = $DB->insert_record('annotation_completion', $data);
+        $newitemid = $DB->insert_record('interactivevideo_completion', $data);
         $this->set_mapping('completiondata', $oldid, $newitemid);
     }
 

@@ -33,7 +33,7 @@ class interactivevideo_util {
     public static function get_items($interactivevideo, $contextid) {
         global $DB, $PAGE;
         $PAGE->set_context(context::instance_by_id($contextid));
-        $records = $DB->get_records('annotationitems', array('annotationid' => $interactivevideo));
+        $records = $DB->get_records('interactivevideo_items', ['annotationid' => $interactivevideo]);
         foreach ($records as $key => $record) {
             $records[$key]->formattedtitle = format_string($records[$key]->title);
         }
@@ -50,7 +50,7 @@ class interactivevideo_util {
     public static function get_item($id, $contextid) {
         global $DB, $PAGE;
         $PAGE->set_context(context::instance_by_id($contextid));
-        $record = $DB->get_record('annotationitems', array('id' => $id));
+        $record = $DB->get_record('interactivevideo_items', ['id' => $id]);
         $record->formattedtitle = format_string($record->title);
         return $record;
     }
@@ -64,9 +64,9 @@ class interactivevideo_util {
      */
     public static function copy_item($id, $contextid) {
         global $DB, $CFG;
-        $record = $DB->get_record('annotationitems', array('id' => $id));
+        $record = $DB->get_record('interactivevideo_items', ['id' => $id]);
         $record->title = $record->title . ' (copy)';
-        $record->id = $DB->insert_record('annotationitems', $record);
+        $record->id = $DB->insert_record('interactivevideo_items', $record);
         // Handle related files "content" field.
         require_once($CFG->libdir . '/filelib.php');
         $fs = get_file_storage();
@@ -120,7 +120,7 @@ class interactivevideo_util {
             return $SESSION->ivprogress[$interactivevideo];
         }
 
-        $record = $DB->get_record('annotation_completion', array('cmid' => $interactivevideo, 'userid' => $userid));
+        $record = $DB->get_record('interactivevideo_completion', ['cmid' => $interactivevideo, 'userid' => $userid]);
         if (!$record) {
             $record = new stdClass();
             $record->cmid = $interactivevideo;
@@ -129,7 +129,7 @@ class interactivevideo_util {
             $record->timecompleted = 0;
             $record->completeditems = '[]';
             $record->completionpercentage = 0;
-            $record->id = $DB->insert_record('annotation_completion', $record);
+            $record->id = $DB->insert_record('interactivevideo_completion', $record);
         }
         return $record;
     }
@@ -169,18 +169,18 @@ class interactivevideo_util {
             ];
             return $SESSION->ivprogress[$interactivevideo];
         }
-        $record = $DB->get_record('annotation_completion', array('cmid' => $interactivevideo, 'userid' => $userid));
+        $record = $DB->get_record('interactivevideo_completion', ['cmid' => $interactivevideo, 'userid' => $userid]);
         $record->completeditems = $completeditems;
         $record->timecompleted = $completed > 0 ? time() : 0;
         $record->completionpercentage = $percentage;
         $record->xp = $xp;
-        $DB->update_record('annotation_completion', $record);
+        $DB->update_record('interactivevideo_completion', $record);
 
         // Update completion state.
         $cm = get_coursemodule_from_instance('interactivevideo', $interactivevideo);
         if ($cm->completion == 2) {
             require_once($CFG->libdir . '/completionlib.php');
-            $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
+            $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
             $completion = new completion_info($course);
             if ($completed) {
                 $completion->update_state($cm, COMPLETION_COMPLETE, $userid);
@@ -220,7 +220,7 @@ class interactivevideo_util {
             $sql = "SELECT u.id, u.email, u.firstname, u.lastname, u.picture, ac.timecompleted, ac.timecreated,
              ac.completionpercentage, ac.completeditems, ac.xp
                     FROM {user} u
-                    LEFT JOIN {annotation_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
+                    LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
                     WHERE u.id IN (SELECT userid FROM {role_assignments} WHERE contextid = :contextid AND roleid = 5)
                     ORDER BY u.lastname, u.firstname";
             $records = $DB->get_records_sql($sql, ['cmid' => $interactivevideo, 'contextid' => $contextid]);
@@ -229,7 +229,7 @@ class interactivevideo_util {
             $sql = "SELECT u.id, u.email, u.firstname, u.lastname, u.picture, ac.timecompleted, ac.timecreated,
              ac.completionpercentage, ac.completeditems, ac.xp
                     FROM {user} u
-                    LEFT JOIN {annotation_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
+                    LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
                     WHERE u.id IN (SELECT userid FROM {groups_members} WHERE groupid = :groupid)
                     ORDER BY u.lastname, u.firstname";
             $records = $DB->get_records_sql($sql, ['cmid' => $interactivevideo, 'groupid' => $group]);
@@ -250,7 +250,8 @@ class interactivevideo_util {
      * @return array
      */
     public static function get_all_activitytypes() {
-        $subplugins = array_keys(core_component::get_plugin_list('ivplugin'));
+        $subplugins = get_config('mod_interactivevideo', 'enablecontenttypes');
+        $subplugins = explode(',', $subplugins);
         $contentoptions = [];
         foreach ($subplugins as $subplugin) {
             $class = "ivplugin_" . $subplugin . "\\main";
@@ -261,7 +262,34 @@ class interactivevideo_util {
 
             $contenttype = new $class();
             if ($contenttype && $contenttype->can_used() && $contenttype->get_property()) {
-                $contentoptions[] = $contenttype->get_property();
+                if ($contenttype->can_used()) {
+                    $properties = $contenttype->get_property();
+                    if (
+                        !isset($properties['name']) || !isset($properties['class'])
+                        || !isset($properties['amdmodule']) || !isset($properties['form'])
+                    ) {
+                        return;
+                    }
+                    if (!isset($properties['hascompletion'])) {
+                        $properties['hascompletion'] = false;
+                    }
+                    if (!isset($properties['hastimestamp'])) {
+                        $properties['hastimestamp'] = true;
+                    }
+                    if (!isset($properties['allowmultiple'])) {
+                        $properties['allowmultiple'] = true;
+                    }
+                    if (!isset($properties['icon'])) {
+                        $properties['icon'] = 'bi bi-cursor';
+                    }
+                    if (!isset($properties['title'])) {
+                        $properties['title'] = get_string('unknowncontenttype', 'mod_interactivevideo');
+                    }
+                    if (!isset($properties['description'])) {
+                        $properties['description'] = '';
+                    }
+                    $contentoptions[] = $properties;
+                }
             }
         }
         return $contentoptions;
@@ -308,8 +336,8 @@ class interactivevideo_util {
             // Replace < and > with &lt; and &gt; to prevent XSS.
             $value = $postvalue;
         }
-        $DB->set_field('annotationitems', $field, $value, ['id' => $id]);
-        $record = $DB->get_record('annotationitems', ['id' => $id]);
+        $DB->set_field('interactivevideo_items', $field, $value, ['id' => $id]);
+        $record = $DB->get_record('interactivevideo_items', ['id' => $id]);
         $record->formattedtitle = format_string($record->title);
         return $record;
     }
@@ -372,7 +400,7 @@ class interactivevideo_util {
         $record->cmid = $activityid;
         $record->text1 = $log;
         $record->timecreated = time();
-        $id = $DB->insert_record('annotation_log', $record);
+        $id = $DB->insert_record('interactivevideo_log', $record);
         return $id;
     }
 
@@ -389,7 +417,7 @@ class interactivevideo_util {
         global $DB, $CFG;
         require_once($CFG->libdir . '/filelib.php');
 
-        $record = $DB->get_record('annotation_log', ['userid' => $userid, 'cmid' => $cmid, 'annotationid' => $annotationid]);
+        $record = $DB->get_record('interactivevideo_log', ['userid' => $userid, 'cmid' => $cmid, 'annotationid' => $annotationid]);
         if ($record) {
             $record->text1 = file_rewrite_pluginfile_urls(
                 str_replace('\\/', '/', $record->text1),
@@ -432,7 +460,7 @@ class interactivevideo_util {
         require_once($CFG->libdir . '/filelib.php');
         $inparams = $DB->get_in_or_equal($userids)[1];
         $inparams = implode(',', $inparams);
-        $sql = "SELECT * FROM {annotation_log} WHERE annotationid = ? AND userid IN ($inparams) ORDER BY
+        $sql = "SELECT * FROM {interactivevideo_log} WHERE annotationid = ? AND userid IN ($inparams) ORDER BY
         timecreated DESC";
         $records = $DB->get_records_sql($sql, [$annotationid]);
         foreach ($records as $record) {

@@ -221,7 +221,7 @@ class submitform_form extends \core_form\dynamic_form {
 
         foreach ($fields as $field) {
             $field->fieldid = 'field-' . $field->id;
-            $fieldactions = '<div class="px-2 py-1 bg-white field-actions ">
+            $fieldactions = '<div class="px-2 py-1 field-actions ">
             <i class="bi bi-pencil-square cursor-pointer mr-3" id="edit" data-id="' . $field->id . '" title="'
                 . get_string('edit', 'mod_interactivevideo') . '"></i>
             <i class="bi bi-copy cursor-pointer mr-3" id="copy" data-id="' . $field->id . '" title="'
@@ -631,7 +631,7 @@ class submitform_form extends \core_form\dynamic_form {
         $data['annotationid'] = (int)$data['id'];
         $submissionid = $data['submissionid'];
         if (!$submissionid) {
-            $data['id'] = $DB->insert_record('annotation_log', $data);
+            $data['id'] = $DB->insert_record('interactivevideo_log', $data);
         } else {
             $data['id'] = $submissionid;
         }
@@ -734,7 +734,7 @@ class submitform_form extends \core_form\dynamic_form {
         $data = (object)$data;
         $data->text1 = $text1;
 
-        $DB->update_record('annotation_log', $data);
+        $DB->update_record('interactivevideo_log', $data);
 
         return $data;
     }
@@ -809,8 +809,17 @@ class submitform_form extends \core_form\dynamic_form {
         ]);
     }
 
+    /**
+     * Render custom duration element
+     *
+     * @return void
+     */
     public function render_duration_element() {
         global $CFG;
-        MoodleQuickForm::registerElementType('ivduration', $CFG->dirroot . '/mod/interactivevideo/plugins/form/classes/form_fields/ivduration.php', 'MoodleQuickForm_ivduration');
+        MoodleQuickForm::registerElementType(
+            'ivduration',
+            $CFG->dirroot . '/mod/interactivevideo/plugins/form/classes/form_fields/ivduration.php',
+            'MoodleQuickForm_ivduration'
+        );
     }
 }

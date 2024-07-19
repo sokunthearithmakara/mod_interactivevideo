@@ -44,13 +44,13 @@ class form extends \mod_interactivevideo\form\base_form {
 
         $this->standard_elements();
 
-        $mform->addElement('text', 'title', '<i class="bi bi-question mx-2"></i>' . get_string('destquestion', 'ivplugin_decision'));
+        $mform->addElement('text', 'title', '<i class="bi bi-question mr-2"></i>' . get_string('destquestion', 'ivplugin_decision'));
         $mform->setType('title', PARAM_TEXT);
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
 
         $mform->addElement('hidden', 'content', $this->optional_param('content', '', PARAM_RAW));
-        $mform->addElement('html', '<label class="col-form-label"><i class="bi bi-signpost-split-fill mx-2"></i>'
+        $mform->addElement('html', '<label class="col-form-label pl-0"><i class="bi bi-signpost-split-fill mr-2"></i>'
             . get_string('destination', 'ivplugin_decision') . '</label><div id="destination-list" class="w-100 mb-3"></div>');
 
         $mform->addElement('advcheckbox', 'char1', '', get_string('allowskip', 'ivplugin_decision'), array("group" => 1), array(0, 1));

@@ -63,6 +63,7 @@ class main {
             'hascompletion' => true,
             'hastimestamp' => true,
             'allowmultiple' => true,
+            'hasreport' => true,
             'description' => get_string('richtextdescription', 'ivplugin_richtext'),
         ];
     }

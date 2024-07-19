@@ -85,6 +85,8 @@ class media extends \core_form\dynamic_form {
         $data->autoplay = $this->optional_param('autoplay', 0, PARAM_INT);
         $data->shadow = $this->optional_param('shadow', 0, PARAM_INT);
         $data->label = $this->optional_param('label', null, PARAM_TEXT);
+        $data->gotourl = $this->optional_param('gotourl', null, PARAM_URL);
+        $data->timestamp = $this->optional_param('timestamp', '00:00:00', PARAM_TEXT);
         $this->set_data($data);
     }
 
@@ -99,7 +101,7 @@ class media extends \core_form\dynamic_form {
 
         $fromform = $this->get_data();
         $fromform->usercontextid = $usercontextid;
-        // Get the draft file
+        // Get the draft file.
         if (!empty($fromform->media)) {
             $fs = get_file_storage();
             $files = $fs->get_area_files(
@@ -143,11 +145,11 @@ class media extends \core_form\dynamic_form {
 
         $type = $this->optional_param('type', null, PARAM_TEXT);
         // HTML upload.
-        $filemanageroptions = array(
+        $filemanageroptions = [
             'maxbytes'       => $PAGE->course->maxbytes,
             'subdirs'        => 0,
             'maxfiles'       => 1,
-        );
+        ];
 
         if ($type == 'audio') {
             $filemanageroptions['accepted_types'] = ['html_audio'];
@@ -194,14 +196,14 @@ class media extends \core_form\dynamic_form {
         $mform->setDefault('style', 'btn-primary');
         $mform->hideIf('style', 'type', 'in', ['video', 'image']);
 
-        $elementarray = array();
+        $elementarray = [];
         $elementarray[] = $mform->createElement(
             'advcheckbox',
             'rounded',
             '',
             get_string('rounded', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $elementarray[] = $mform->createElement(
@@ -209,8 +211,8 @@ class media extends \core_form\dynamic_form {
             'shadow',
             '',
             get_string('shadow', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $elementarray[] = $mform->createElement(
@@ -218,8 +220,8 @@ class media extends \core_form\dynamic_form {
             'resizable',
             '',
             get_string('resizable', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
         $mform->hideIf('resizable', 'type', 'eq', 'audio');
         $mform->hideIf('resizable', 'type', 'eq', 'file');
@@ -229,8 +231,8 @@ class media extends \core_form\dynamic_form {
             'autoplay',
             '',
             get_string('autoplay', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
         $mform->hideIf('autoplay', 'type', 'eq', 'image');
         $mform->hideIf('autoplay', 'type', 'eq', 'file');
@@ -240,6 +242,37 @@ class media extends \core_form\dynamic_form {
         $mform->addElement('text', 'alttext', get_string('alttext', 'ivplugin_inlineannotation'), ['size' => 100]);
         $mform->setType('alttext', PARAM_TEXT);
         $mform->hideIf('alttext', 'type', 'neq', 'image');
+
+        $mform->addElement('text', 'gotourl', get_string('gotourl', 'ivplugin_inlineannotation'), ['size' => 100]);
+        $mform->setType('gotourl', PARAM_URL);
+        $mform->addRule(
+            'url',
+            get_string('invalidurlformat', 'ivplugin_inlineannotation'),
+            'regex',
+            "/\b(?:(?:https?|ftp):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*\.[a-z]{2,}[-a-z0-9+&@#\/%=~_|]*/i",
+            'client'
+        );
+        $mform->hideIf('gotourl', 'type', 'neq', 'image');
+
+        $mform->addElement(
+            'text',
+            'timestamp',
+            get_string('gototimestamp', 'ivplugin_inlineannotation'),
+            [
+                'size' => 100,
+                'placeholder' => '00:00:00',
+            ]
+        );
+        $mform->setType('timestamp', PARAM_TEXT);
+        $mform->setDefault('timestamp', '00:00:00');
+        $mform->addRule(
+            'timestamp',
+            get_string('invalidtimestamp', 'mod_interactivevideo'),
+            'regex',
+            '/^([0-9]{1,2}:)?[0-5]?[0-9]:[0-5][0-9]$/',
+            'client'
+        );
+        $mform->hideIf('timestamp', 'type', 'neq', 'image');
         $this->set_display_vertical();
     }
 

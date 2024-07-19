@@ -66,11 +66,11 @@ class textarea extends base {
 
         $mform->addElement('text', 'minlength', get_string('minlength', 'ivplugin_form'));
         $mform->setType('minlength', PARAM_INT);
-        $mform->addRule('minlength', get_string('numeric', 'ivplugin_form'), 'numeric', null, 'client', true);
+        $mform->addRule('minlength', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client', true);
 
         $mform->addElement('text', 'maxlength', get_string('maxlength', 'ivplugin_form'));
         $mform->setType('maxlength', PARAM_INT);
-        $mform->addRule('maxlength', get_string('numeric', 'ivplugin_form'), 'numeric', null, 'client', true);
+        $mform->addRule('maxlength', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client', true);
 
         $this->set_display_vertical();
     }

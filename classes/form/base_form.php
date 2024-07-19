@@ -112,11 +112,11 @@ class base_form extends \core_form\dynamic_form {
         $fromform->advanced = $this->process_advanced_settings($fromform);
         if ($fromform->id > 0) {
             $fromform->timemodified = time();
-            $DB->update_record('annotationitems', $fromform);
+            $DB->update_record('interactivevideo_items', $fromform);
         } else {
             $fromform->timecreated = time();
             $fromform->timemodified = $fromform->timecreated;
-            $fromform->id = $DB->insert_record('annotationitems', $fromform);
+            $fromform->id = $DB->insert_record('interactivevideo_items', $fromform);
         }
 
         return $fromform;
@@ -181,10 +181,12 @@ class base_form extends \core_form\dynamic_form {
         $mform->addRule('timestamp', get_string('required'), 'required', null, 'client');
         $mform->setDefault('timestamp', 0);
 
+        $mform->addElement('header', 'general', get_string('general', 'form'));
+
         $mform->addElement(
             'text',
             'timestampassist',
-            '<i class="bi bi-stopwatch mx-2"></i>' . get_string('timestamp', 'mod_interactivevideo') . ' ['
+            '<i class="bi bi-stopwatch mr-2"></i>' . get_string('timestamp', 'mod_interactivevideo') . ' ['
                 . $this->optional_param('start', '00:00:00', PARAM_TEXT) . ' - '
                 . $this->optional_param(
                     'end',
@@ -219,7 +221,7 @@ class base_form extends \core_form\dynamic_form {
         $mform->addElement(
             'select',
             'completiontracking',
-            '<i class="bi bi-check2-square mx-2"></i>' . get_string('completiontracking', 'mod_interactivevideo'),
+            '<i class="bi bi-check2-square mr-2"></i>' . get_string('completiontracking', 'mod_interactivevideo'),
             [
                 'manual' => get_string('completionmanual', 'mod_interactivevideo'),
                 'complete' => get_string('completiononcomplete', 'mod_interactivevideo'),
@@ -243,7 +245,7 @@ class base_form extends \core_form\dynamic_form {
         $mform->addElement(
             'select',
             'displayoptions',
-            '<i class="bi bi-aspect-ratio mx-2"></i>' . get_string('displayoptions', 'mod_interactivevideo'),
+            '<i class="bi bi-aspect-ratio mr-2"></i>' . get_string('displayoptions', 'mod_interactivevideo'),
             [
                 'inline' => get_string('displayoptionsinline', 'mod_interactivevideo'),
                 'popup' => get_string('displayoptionspopup', 'mod_interactivevideo'),
@@ -262,7 +264,7 @@ class base_form extends \core_form\dynamic_form {
      */
     public function xp_form_field($xp = 0) {
         $mform = &$this->_form;
-        $mform->addElement('text', 'xp', '<i class="bi bi-star mx-2"></i>' . get_string('xp', 'mod_interactivevideo'));
+        $mform->addElement('text', 'xp', '<i class="bi bi-star mr-2"></i>' . get_string('xp', 'mod_interactivevideo'));
         $mform->setType('xp', PARAM_INT);
         $mform->addRule('xp', get_string('required'), 'required', null, 'client');
         $mform->addRule('xp', null, 'numeric', null, 'client');
@@ -306,7 +308,7 @@ class base_form extends \core_form\dynamic_form {
                 );
             }
 
-            $mform->addGroup($elementarray, '', get_string('visibilityonvideonav', 'mod_interactivevideo'));
+            $mform->addGroup($elementarray, '', '<i class="bi-eye bi mr-2"></i>' . get_string('visibilityonvideonav', 'mod_interactivevideo'));
 
             $mform->setDefault('visiblebeforecompleted', 1);
             $mform->setDefault('visibleaftercompleted', 1);
@@ -334,7 +336,7 @@ class base_form extends \core_form\dynamic_form {
                 );
             }
 
-            $mform->addGroup($elementarray, '', get_string('clickability', 'mod_interactivevideo'));
+            $mform->addGroup($elementarray, '', '<i class="bi-cursor bi mr-2"></i>' . get_string('clickability', 'mod_interactivevideo'));
             $mform->setDefault('clickablebeforecompleted', 1);
             $mform->setDefault('clickableaftercompleted', 1);
         }
@@ -343,7 +345,7 @@ class base_form extends \core_form\dynamic_form {
             $mform->addElement(
                 'advcheckbox',
                 'replaybehavior',
-                get_string('replaybehavior', 'mod_interactivevideo'),
+                '<i class="bi-arrow-clockwise bi mr-2"></i>' . get_string('replaybehavior', 'mod_interactivevideo'),
                 get_string('replayaftercompletion', 'mod_interactivevideo'),
                 ["group" => 1],
                 [0, 1]

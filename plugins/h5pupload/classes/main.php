@@ -37,6 +37,7 @@ class main extends \ivplugin_richtext\main {
             'form' => 'ivplugin_h5pupload\\form',
             'hascompletion' => true,
             'hastimestamp' => true,
+            'hasreport' => true,
             'description' => get_string('h5puploaddescription', 'ivplugin_h5pupload'),
         ];
     }

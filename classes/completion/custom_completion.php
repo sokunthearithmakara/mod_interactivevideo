@@ -47,7 +47,7 @@ class custom_completion extends activity_custom_completion {
         $end = $startendtimes[1];
         $select = "annotationid = ? AND timestamp >= ? AND timestamp <= ? AND (hascompletion = 1 OR type = 'skipsegment')";
 
-        $relevantitems = $DB->get_records_select('annotationitems', $select, [$cm->instance, $start, $end]);
+        $relevantitems = $DB->get_records_select('interactivevideo_items', $select, [$cm->instance, $start, $end]);
         $skipsegment = array_filter($relevantitems, function($item) {
             return $item->type === 'skipsegment';
         });
@@ -68,7 +68,7 @@ class custom_completion extends activity_custom_completion {
             return $item->id;
         }, $relevantitems);
 
-        $usercompletion = $DB->get_field('annotation_completion', 'completeditems', ['userid' => $userid, 'cmid' => $cm->instance]);
+        $usercompletion = $DB->get_field('interactivevideo_completion', 'completeditems', ['userid' => $userid, 'cmid' => $cm->instance]);
         if (!$usercompletion) {
             return COMPLETION_INCOMPLETE;
         }

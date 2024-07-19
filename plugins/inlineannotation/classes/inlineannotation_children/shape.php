@@ -67,6 +67,8 @@ class shape extends \core_form\dynamic_form {
         $data->opacity = $this->optional_param('opacity', null, PARAM_INT);
         $data->rounded = $this->optional_param('rounded', null, PARAM_INT);
         $data->shadow = $this->optional_param('shadow', 0, PARAM_INT);
+        $data->gotourl = $this->optional_param('gotourl', null, PARAM_URL);
+        $data->timestamp = $this->optional_param('timestamp', null, PARAM_TEXT);
         $this->set_data($data);
     }
 
@@ -104,11 +106,40 @@ class shape extends \core_form\dynamic_form {
             'shadow',
             '',
             get_string('shadow', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ["group" => 1],
+            [0, 1]
         );
 
         $mform->addGroup($elementarray, '', '');
+
+        $mform->addElement('text', 'gotourl', get_string('gotourl', 'ivplugin_inlineannotation'), ['size' => 100]);
+        $mform->setType('gotourl', PARAM_URL);
+        $mform->addRule(
+            'url',
+            get_string('invalidurlformat', 'ivplugin_inlineannotation'),
+            'regex',
+            "/\b(?:(?:https?|ftp):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*\.[a-z]{2,}[-a-z0-9+&@#\/%=~_|]*/i",
+            'client'
+        );
+
+        $mform->addElement(
+            'text',
+            'timestamp',
+            get_string('gototimestamp', 'ivplugin_inlineannotation'),
+            [
+                'size' => 100,
+                'placeholder' => '00:00:00',
+            ]
+        );
+        $mform->setType('timestamp', PARAM_TEXT);
+        $mform->setDefault('timestamp', '00:00:00');
+        $mform->addRule(
+            'timestamp',
+            get_string('invalidtimestamp', 'mod_interactivevideo'),
+            'regex',
+            '/^([0-9]{1,2}:)?[0-5]?[0-9]:[0-5][0-9]$/',
+            'client'
+        );
 
         $mform->addElement(
             'text',
@@ -139,17 +170,17 @@ class shape extends \core_form\dynamic_form {
         $mform->addElement('text', 'borderwidth', get_string('borderwidth', 'ivplugin_inlineannotation'), ['size' => 100]);
         $mform->setType('borderwidth', PARAM_INT);
         $mform->addRule('borderwidth', get_string('required'), 'required', null, 'client');
-        $mform->addRule('borderwidth', get_string('numeric'), 'numeric', null, 'client');
-        $mform->addRule('borderwidth', get_string('maximum', 'ivplugin_inlineannotation', 5), 'maxlength', 5, 'client');
-        $mform->addRule('borderwidth', get_string('minimum', 'ivplugin_inlineannotation', 0), 'minlength', 0, 'client');
+        $mform->addRule('borderwidth', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client');
+        $mform->addRule('borderwidth', get_string('maximum', 'mod_interactivevideo', 5), 'maxlength', 5, 'client');
+        $mform->addRule('borderwidth', get_string('minimum', 'mod_interactivevideo', 0), 'minlength', 0, 'client');
         $mform->setDefault('borderwidth', 1);
 
         $mform->addElement('text', 'opacity', get_string('opacity', 'ivplugin_inlineannotation'), ['size' => 100]);
         $mform->setType('opacity', PARAM_INT);
         $mform->addRule('opacity', get_string('required'), 'required', null, 'client');
-        $mform->addRule('opacity', get_string('numeric'), 'numeric', null, 'client');
-        $mform->addRule('opacity', get_string('maximum', 'ivplugin_inlineannotation', 100), 'maxlength', 100, 'client');
-        $mform->addRule('opacity', get_string('minimum', 'ivplugin_inlineannotation', 0), 'minlength', 0, 'client');
+        $mform->addRule('opacity', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client');
+        $mform->addRule('opacity', get_string('maximum', 'mod_interactivevideo', 100), 'maxlength', 100, 'client');
+        $mform->addRule('opacity', get_string('minimum', 'mod_interactivevideo', 0), 'minlength', 0, 'client');
         $mform->setDefault('opacity', 100);
 
         $mform->addElement('hidden', 'resizable', 0);

@@ -15,22 +15,23 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * English language pack for Decision
+ * Mobile app areas for Interactive Video
  *
- * @package    ivplugin_decision
- * @category   string
+ * Documentation: {@link https://moodledev.io/general/app/development/plugins-development-guide}
+ *
+ * @package    mod_interactivevideo
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'Decision';
-$string['privacy:metadata'] = 'The Decision plugin doesn\'t store any personal data.';
-$string['skip'] = 'Skip';
-$string['destination'] = 'Destination';
-$string['destquestion'] = 'Question';
-$string['allowskip'] = 'Allow skipping';
-$string['decisioncontent'] = 'Decision';
-$string['decisiondescription'] = 'Add a crossroad to the video.';
-$string['requireresponsebeforeviewingothers'] = 'Require response before viewing others';
+$addons = [
+    'mod_interactivevideo' => [
+        'handlers' => [
+        ],
+        'lang' => [
+            ['pluginname', 'mod_interactivevideo'],
+        ],
+    ],
+  ];

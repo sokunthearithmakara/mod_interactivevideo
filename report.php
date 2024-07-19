@@ -48,9 +48,6 @@ require_login($course, true, $cm);
 
 // External css.
 $PAGE->requires->css(new moodle_url($CFG->wwwroot . '/mod/interactivevideo/libraries/DataTables/datatables.min.css'));
-$stringman = get_string_manager();
-$strings = $stringman->load_component_strings('mod_interactivevideo', current_language());
-$PAGE->requires->strings_for_js(array_keys($strings), 'mod_interactivevideo');
 
 $PAGE->set_url('/mod/interactivevideo/report.php', array('id' => $cm->id, 'group' => $group));
 $PAGE->set_title(format_string($moduleinstance->name));
@@ -59,31 +56,63 @@ $PAGE->set_context($context);
 $PAGE->set_pagelayout('embedded');
 $PAGE->activityheader->disable();
 
+$subplugins = get_config('mod_interactivevideo', 'enablecontenttypes');
+$subplugins = explode(',', $subplugins);
+$stringman = get_string_manager();
+foreach ($subplugins as $subplugin) {
+    $strings = $stringman->load_component_strings('ivplugin_' . $subplugin, current_language());
+    $PAGE->requires->strings_for_js(array_keys($strings), 'ivplugin_' . $subplugin);
+}
+$stringman = get_string_manager();
+$strings = $stringman->load_component_strings('mod_interactivevideo', current_language());
+$PAGE->requires->strings_for_js(array_keys($strings), 'mod_interactivevideo');
 
 // Get all interactions for moduleid.
 $items = interactivevideo_util::get_items($moduleinstance->id, $context->id);
 
-// Get all content types.
+// Get all enabled content types.
 $contenttypes = interactivevideo_util::get_all_activitytypes();
 // Order the items by timestamp.
 usort($items, function ($a, $b) {
     return $a->timestamp - $b->timestamp;
 });
 
+// Get skip segments.
 $skip = array_filter($items, function ($item) {
     return $item->type === 'skipsegment';
 });
 
+// Get content types that hasreport = true.
+$reportables = array_filter($contenttypes, function ($contenttype) {
+    return $contenttype["hasreport"];
+});
+
+$reportables = array_map(function ($reportable) {
+    return $reportable["name"];
+}, $reportables);
+
 // Filter items that are within the time limit start and end (if end time is set).
-$items = array_filter($items, function ($item) use ($moduleinstance, $skip) {
-    if ($item->timestamp < $moduleinstance->start || $item->timestamp > $moduleinstance->end || !$item->hascompletion) {
+$items = array_filter($items, function ($item) use ($moduleinstance, $skip, $subplugins, $reportables) {
+    // Remove items that has no completion or hasreport = false.
+    if (!$item->hascompletion && !in_array($item->type, $reportables)) {
         return false;
     }
 
+    // Remove items that are not within the time limit.
+    if ($item->timestamp < $moduleinstance->start || $item->timestamp > $moduleinstance->end) {
+        return false;
+    }
+
+    // Remove items that are within the skip segment.
     foreach ($skip as $ss) {
         if ($item->timestamp > $ss->timestamp && $item->timestamp < $ss->title) {
             return false;
         }
+    }
+
+    // Remove items that are not in the enabled content types.
+    if (!in_array($item->type, $subplugins)) {
+        return false;
     }
 
     return true;
@@ -93,11 +122,9 @@ $items = array_map(function ($item) use ($contenttypes) {
     $relatedcontenttype = array_filter($contenttypes, function ($contenttype) use ($item) {
         return $contenttype["name"] == $item->type;
     });
-
     $relatedcontenttype = array_values($relatedcontenttype)[0];
 
     $item->prop = json_encode($relatedcontenttype);
-
     $item->typetitle = $relatedcontenttype["title"];
     $item->icon = $relatedcontenttype["icon"];
 
@@ -141,7 +168,10 @@ $totalxp = array_reduce($items, function ($carry, $item) {
 }, 0);
 
 echo '<div id="reporttable" class="p-3">';
-echo html_writer::start_tag('table', array('id' => 'completiontable', 'class' => 'table table-sm table-bordered table-striped w-100'));
+echo html_writer::start_tag('table', [
+    'id' => 'completiontable',
+    'class' => 'table table-sm table-bordered table-striped w-100',
+]);
 echo html_writer::start_tag('thead');
 echo '<tr>';
 echo '<th id="id">' . get_string('id', 'mod_interactivevideo') . '</th>';
@@ -169,12 +199,12 @@ echo html_writer::end_tag('tbody');
 echo html_writer::end_tag('table');
 echo '</div>';
 
-$PAGE->requires->js_call_amd('mod_interactivevideo/report', "init", array(
+$PAGE->requires->js_call_amd('mod_interactivevideo/report', "init", [
     $cm->instance,
     $group,
     $moduleinstance->grade,
     $itemids,
     $moduleinstance->completionpercentage,
-));
+]);
 
 echo $OUTPUT->footer();

@@ -25,38 +25,16 @@ defined('MOODLE_INTERNAL') || die;
 
 if ($ADMIN->fulltree) {
     // Checkboxes for enabling the content types.
+    $subplugins = array_keys(core_component::get_plugin_list('ivplugin'));
+    $contenttypes = [];
+    foreach ($subplugins as $subplugin) {
+        $contenttypes[$subplugin] = get_string('pluginname', 'ivplugin_' . $subplugin);
+    }
     $settings->add(new admin_setting_configmulticheckbox(
         'mod_interactivevideo/enablecontenttypes',
         get_string('enablecontenttypes', 'mod_interactivevideo'),
         get_string('enablecontenttypes_desc', 'mod_interactivevideo'),
-        [
-            'chapter' => get_string('chaptercontent', 'mod_interactivevideo'),
-            'contentbank' => get_string('contentbankcontent', 'mod_interactivevideo'),
-            'decision' => get_string('decisioncontent', 'mod_interactivevideo'),
-            'form' => get_string('formcontent', 'mod_interactivevideo'),
-            'h5pupload' => get_string('h5puploadcontent', 'mod_interactivevideo'),
-            'htmlviewer' => get_string('htmlviewercontent', 'mod_interactivevideo'),
-            'iframe' => get_string('iframecontent', 'mod_interactivevideo'),
-            'inlineannotation' => get_string('inlineannotationcontent', 'mod_interactivevideo'),
-            'pdfviewer' => get_string('pdfviewercontent', 'mod_interactivevideo'),
-            'richtext' => get_string('richtextcontent', 'mod_interactivevideo'),
-            'skipsegment' => get_string('skipsegmentcontent', 'mod_interactivevideo'),
-            'xpreward' => get_string('xprewardcontent', 'mod_interactivevideo'),
-        ],
-        [
-            'chapter' => get_string('chaptercontent', 'mod_interactivevideo'),
-            'contentbank' => get_string('contentbankcontent', 'mod_interactivevideo'),
-            'decision' => get_string('decisioncontent', 'mod_interactivevideo'),
-            'form' => get_string('formcontent', 'mod_interactivevideo'),
-            'h5pupload' => get_string('h5puploadcontent', 'mod_interactivevideo'),
-            'htmlviewer' => get_string('htmlviewercontent', 'mod_interactivevideo'),
-            'iframe' => get_string('iframecontent', 'mod_interactivevideo'),
-            'inlineannotation' => get_string('inlineannotationcontent', 'mod_interactivevideo'),
-            'pdfviewer' => get_string('pdfviewercontent', 'mod_interactivevideo'),
-            'richtext' => get_string('richtextcontent', 'mod_interactivevideo'),
-            'skipsegment' => get_string('skipsegmentcontent', 'mod_interactivevideo'),
-            'xpreward' => get_string('xprewardcontent', 'mod_interactivevideo'),
-        ],
-    )
-    );
+        $contenttypes,
+        $contenttypes,
+    ));
 }

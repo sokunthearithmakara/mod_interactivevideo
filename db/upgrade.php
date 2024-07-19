@@ -34,6 +34,23 @@
 function xmldb_interactivevideo_upgrade($oldversion) {
     global $DB;
     $dbman = $DB->get_manager();
+    if ($oldversion < 2024071403) {
+        // Define table interactivevideo_items to be renamed to NEWNAMEGOESHERE.
+        $table = new xmldb_table('annotationitems');
 
+        // Launch rename table for interactivevideo_items.
+        $dbman->rename_table($table, 'interactivevideo_items');
+
+        $table = new xmldb_table('annotation_log');
+        // Launch rename table for interactivevideo_items.
+        $dbman->rename_table($table, 'interactivevideo_log');
+
+        $table = new xmldb_table('annotation_completion');
+        // Launch rename table for interactivevideo_items.
+        $dbman->rename_table($table, 'interactivevideo_completion');
+
+        // Interactivevideo savepoint reached.
+        upgrade_mod_savepoint(true, 2024071403, 'interactivevideo');
+    }
     return true;
 }

@@ -55,7 +55,8 @@ if (!has_capability('mod/interactivevideo:edit', $modulecontext)) {
     );
 }
 // Prepare strings for js files using string manager.
-$subplugins = array_keys(core_component::get_plugin_list('ivplugins'));
+$subplugins = get_config('mod_interactivevideo', 'enablecontenttypes');
+$subplugins = explode(',', $subplugins);
 $stringman = get_string_manager();
 foreach ($subplugins as $subplugin) {
     $strings = $stringman->load_component_strings('ivplugin_' . $subplugin, current_language());
@@ -84,7 +85,7 @@ usort($contentoptions, function ($a, $b) {
 $coursecontext = context_course::instance($course->id);
 
 // Check if the interactivevideo is attempted by users.
-$attempted = $DB->record_exists_select('annotation_completion', 'cmid = ? AND completionpercentage > 0 ', [$cm->instance]);
+$attempted = $DB->record_exists_select('interactivevideo_completion', 'cmid = ? AND completionpercentage > 0 ', [$cm->instance]);
 
 // Use Bootstrap icons instead of fontawesome icons to avoid issues fontawesome icons support in Moodle 4.1.
 $PAGE->requires->css(new moodle_url('/mod/interactivevideo/libraries/bootstrap-icons/bootstrap-icons.min.css'));

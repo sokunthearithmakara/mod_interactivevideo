@@ -39,6 +39,7 @@ class main extends \ivplugin_richtext\main {
             'form' => 'ivplugin_form\\form',
             'hascompletion' => true,
             'hastimestamp' => true,
+            'hasreport' => true,
             'description' => get_string('formdescription', 'ivplugin_form'),
         ];
     }

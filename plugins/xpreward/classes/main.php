@@ -37,6 +37,7 @@ class main extends \ivplugin_richtext\main {
             'form' => 'ivplugin_xpreward\\form',
             'hascompletion' => true,
             'hastimestamp' => true,
+            'hasreport' => true,
             'description' => get_string('xprewarddescription', 'ivplugin_xpreward'),
         ];
     }

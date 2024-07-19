@@ -56,13 +56,18 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform = &$this->_form;
         $this->standard_elements();
 
-        $mform->addElement('text', 'title', '<i class="bi bi-quote mx-2"></i>' . get_string('title', 'mod_interactivevideo'));
+        $mform->addElement('text', 'title', '<i class="bi bi-quote mr-2"></i>' . get_string('title', 'mod_interactivevideo'));
         $mform->setType('title', PARAM_TEXT);
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
 
         // Due date&time.
-        $mform->addElement('date_time_selector', 'text1', '<i class="bi bi-calendar-check mx-2"></i>' . get_string('duedate', 'ivplugin_form'), array('optional' => true));
+        $mform->addElement(
+            'date_time_selector',
+            'text1',
+            '<i class="bi bi-calendar-check mr-2"></i>' . get_string('duedate', 'ivplugin_form'),
+            array('optional' => true)
+        );
 
         // Set default to next week.
         $mform->setDefault('text1', time() + 7 * 24 * 3600);
@@ -83,10 +88,16 @@ class form extends \mod_interactivevideo\form\base_form {
 
         $this->xp_form_field();
 
-        $mform->addElement('select', 'completiontracking', '<i class="bi bi-check2-square mx-2"></i>' . get_string('completiontracking', 'ivplugin_form'), [
-            'manual' => get_string('completionmanual', 'ivplugin_form'),
-            'complete' => get_string('completiononformsubmit', 'ivplugin_form'),
-        ]);
+        $mform->addElement(
+            'select',
+            'completiontracking',
+            '<i class="bi bi-check2-square mr-2"></i>'
+                . get_string('completiontracking', 'mod_interactivevideo'),
+            [
+                'manual' => get_string('completionmanual', 'mod_interactivevideo'),
+                'complete' => get_string('completiononformsubmit', 'ivplugin_form'),
+            ]
+        );
         $mform->setType('completiontracking', PARAM_TEXT);
 
         $this->display_options_field();

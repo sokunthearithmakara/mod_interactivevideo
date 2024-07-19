@@ -107,10 +107,15 @@ function interactivevideo_add_instance($moduleinstance, $mform = null) {
     $moduleinstance->id = $DB->insert_record('interactivevideo', $moduleinstance);
 
     if (!empty($moduleinstance->completionexpected)) {
-        \core_completion\api::update_completion_date_event($moduleinstance->coursemodule, 'interactivevideo', $moduleinstance->id, $moduleinstance->completionexpected);
+        \core_completion\api::update_completion_date_event(
+            $moduleinstance->coursemodule,
+            'interactivevideo',
+            $moduleinstance->id,
+            $moduleinstance->completionexpected
+        );
     }
 
-    $DB->set_field('course_modules', 'instance', $moduleinstance->id, array('id' => $cmid));
+    $DB->set_field('course_modules', 'instance', $moduleinstance->id, ['id' => $cmid]);
     $context = context_module::instance($cmid);
 
     if ($mform && !empty($moduleinstance->text['itemid'])) {
@@ -127,7 +132,7 @@ function interactivevideo_add_instance($moduleinstance, $mform = null) {
         $DB->update_record('interactivevideo', $moduleinstance);
     }
 
-    // Handle the file upload for video
+    // Handle the file upload for video.
     if ($moduleinstance->source == 'url') {
         // Delete the draft area files.
         $fs = get_file_storage();
@@ -136,7 +141,7 @@ function interactivevideo_add_instance($moduleinstance, $mform = null) {
             $usercontext = context_user::instance($USER->id);
             $fs->delete_area_files($usercontext->id, 'user', 'draft', $moduleinstance->video);
         }
-        $DB->set_field('interactivevideo', 'video', '', array('id' => $moduleinstance->id));
+        $DB->set_field('interactivevideo', 'video', '', ['id' => $moduleinstance->id]);
     } else {
         $draftitemid = $moduleinstance->video;
         file_save_draft_area_files(
@@ -149,7 +154,7 @@ function interactivevideo_add_instance($moduleinstance, $mform = null) {
         $usercontext = context_user::instance($USER->id);
         $fs = get_file_storage();
         $fs->delete_area_files($usercontext->id, 'user', 'draft', $draftitemid);
-        $DB->set_field('interactivevideo', 'videourl', '', array('id' => $moduleinstance->id));
+        $DB->set_field('interactivevideo', 'videourl', '', ['id' => $moduleinstance->id]);
     }
 
     interactivevideo_grade_item_update($moduleinstance);
@@ -170,7 +175,7 @@ function interactivevideo_add_instance($moduleinstance, $mform = null) {
 function interactivevideo_update_instance($moduleinstance, $mform = null) {
     global $DB, $USER;
     $moduleinstance->id = $moduleinstance->instance;
-    $oldvideo = $DB->get_field('interactivevideo', 'video', array('id' => $moduleinstance->id));
+    $oldvideo = $DB->get_field('interactivevideo', 'video', ['id' => $moduleinstance->id]);
     $moduleinstance->timemodified = time();
     $cmid = $moduleinstance->coursemodule;
     $draftitemid = $moduleinstance->endscreentext['itemid'];
@@ -181,17 +186,30 @@ function interactivevideo_update_instance($moduleinstance, $mform = null) {
     $moduleinstance->endscreentext = json_encode($moduleinstance->endscreentext);
     $moduleinstance->displayoptions = json_encode(interactivevideo_display_options($moduleinstance));
     $completiontimeexpected = !empty($moduleinstance->completionexpected) ? $moduleinstance->completionexpected : null;
-    \core_completion\api::update_completion_date_event($moduleinstance->coursemodule, 'interactivevideo', $moduleinstance->id, $completiontimeexpected);
+    \core_completion\api::update_completion_date_event(
+        $moduleinstance->coursemodule,
+        'interactivevideo',
+        $moduleinstance->id,
+        $completiontimeexpected
+    );
 
     $DB->update_record('interactivevideo', $moduleinstance);
 
     $context = context_module::instance($cmid);
     if ($draftitemid) {
-        $moduleinstance->endscreentext = file_save_draft_area_files($draftitemid, $context->id, 'mod_interactivevideo', 'endscreentext', 0, array('subdirs' => 0), $text);
+        $moduleinstance->endscreentext = file_save_draft_area_files(
+            $draftitemid,
+            $context->id,
+            'mod_interactivevideo',
+            'endscreentext',
+            0,
+            ['subdirs' => 0],
+            $text
+        );
         $DB->update_record('interactivevideo', $moduleinstance);
     }
 
-    // Handle the file upload for video
+    // Handle the file upload for video.
     if ($moduleinstance->source == 'url') {
         if ($oldvideo) {
             // Delete the draft area files.
@@ -201,7 +219,7 @@ function interactivevideo_update_instance($moduleinstance, $mform = null) {
                 $usercontext = context_user::instance($USER->id);
                 $fs->delete_area_files($usercontext->id, 'user', 'draft', $moduleinstance->video);
             }
-            $DB->set_field('interactivevideo', 'video', '', array('id' => $moduleinstance->id));
+            $DB->set_field('interactivevideo', 'video', '', ['id' => $moduleinstance->id]);
         }
     } else {
         if ($oldvideo != $moduleinstance->video) {
@@ -227,7 +245,7 @@ function interactivevideo_update_instance($moduleinstance, $mform = null) {
             );
         }
 
-        $DB->set_field('interactivevideo', 'videourl', '', array('id' => $moduleinstance->id));
+        $DB->set_field('interactivevideo', 'videourl', '', ['id' => $moduleinstance->id]);
     }
 
     interactivevideo_grade_item_update($moduleinstance);
@@ -245,7 +263,7 @@ function interactivevideo_update_instance($moduleinstance, $mform = null) {
 function interactivevideo_delete_instance($id) {
     global $DB;
 
-    $exists = $DB->get_record('interactivevideo', array('id' => $id));
+    $exists = $DB->get_record('interactivevideo', ['id' => $id]);
     if (!$exists) {
         return false;
     }
@@ -255,13 +273,13 @@ function interactivevideo_delete_instance($id) {
 
     interactivevideo_grade_item_delete($exists);
 
-    $DB->delete_records('interactivevideo', array('id' => $id));
+    $DB->delete_records('interactivevideo', ['id' => $id]);
 
     // Delete all the annotations and their items.
-    $DB->delete_records('annotationitems', array('annotationid' => $id));
+    $DB->delete_records('interactivevideo_items', ['annotationid' => $id]);
 
     // Delete all the completion records.
-    $DB->delete_records('annotation_completion', array('cmid' => $id));
+    $DB->delete_records('interactivevideo_completion', ['cmid' => $id]);
 
     return true;
 }
@@ -281,10 +299,10 @@ function interactivevideo_delete_instance($id) {
  * @return string[].
  */
 function interactivevideo_get_file_areas($course, $cm, $context) {
-    return array(
+    return [
         'content',
         'endscreentext',
-    );
+    ];
 }
 
 /**
@@ -322,15 +340,15 @@ function interactivevideo_get_file_info($browser, $areas, $course, $cm, $context
  * @param bool $forcedownload Whether or not force download.
  * @param array $options Additional options affecting the file serving.
  */
-function interactivevideo_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = array()) {
+function interactivevideo_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = []) {
     require_login($course, true, $cm);
 
     $itemid = array_shift($args);
     $filename = array_pop($args);
     if (!$args) {
-        $filepath = '/'; // $args is empty => the path is '/'
+        $filepath = '/';
     } else {
-        $filepath = '/' . implode('/', $args) . '/'; // $args contains elements of the filepath
+        $filepath = '/' . implode('/', $args) . '/';
     }
     // Retrieve the file from the Files API.
     $fs = get_file_storage();
@@ -357,7 +375,7 @@ function interactivevideo_extend_settings_navigation($settingsnav, $interactivev
     if (has_capability('mod/interactivevideo:edit', $page->context)) {
         $interactivevideonode->add(
             get_string('interactions', 'mod_interactivevideo'),
-            new moodle_url('/mod/interactivevideo/interactions.php', array('id' => $page->cm->id)),
+            new moodle_url('/mod/interactivevideo/interactions.php', ['id' => $page->cm->id]),
             $interactivevideonode::TYPE_SETTING,
             null,
             null,
@@ -368,7 +386,7 @@ function interactivevideo_extend_settings_navigation($settingsnav, $interactivev
     if (has_capability('mod/interactivevideo:viewreport', $page->context)) {
         $interactivevideonode->add(
             get_string('report', 'mod_interactivevideo'),
-            new moodle_url('/mod/interactivevideo/report.php', array('id' => $page->cm->id, 'group' => 0)),
+            new moodle_url('/mod/interactivevideo/report.php', ['id' => $page->cm->id, 'group' => 0]),
             $interactivevideonode::TYPE_SETTING,
             null,
             null,
@@ -390,7 +408,7 @@ function interactivevideo_extend_settings_navigation($settingsnav, $interactivev
  */
 function interactivevideo_get_coursemodule_info($coursemodule) {
     global $DB;
-    $dbparams = array('id' => $coursemodule->instance);
+    $dbparams = ['id' => $coursemodule->instance];
     $interactive = $DB->get_record('interactivevideo', $dbparams, '*');
     if (!$interactive) {
         return false;
@@ -405,7 +423,8 @@ function interactivevideo_get_coursemodule_info($coursemodule) {
 
     if ($coursemodule->completion == COMPLETION_TRACKING_AUTOMATIC) {
         $result->customdata['customcompletionrules']['completionpercentage'] = $interactive->completionpercentage;
-        $result->customdata['startendtime'] = $interactive->start . "-" . $interactive->end; // Pass this to be used in the completion tracking.
+        // Pass startendtime to be used in the completion tracking.
+        $result->customdata['startendtime'] = $interactive->start . "-" . $interactive->end;
     }
     return $result;
 }
@@ -443,7 +462,16 @@ function interactivevideo_grade_item_update($moduleinstance, $grades = null) {
         $grades = null;
     }
 
-    grade_update('/mod/interactivevideo', $moduleinstance->course, 'mod', 'interactivevideo', $moduleinstance->id, 0, $grades, $item);
+    grade_update(
+        '/mod/interactivevideo',
+        $moduleinstance->course,
+        'mod',
+        'interactivevideo',
+        $moduleinstance->id,
+        0,
+        $grades,
+        $item
+    );
 }
 
 /**
@@ -459,7 +487,16 @@ function interactivevideo_grade_item_delete($moduleinstance) {
         $moduleinstance->courseid = $moduleinstance->course;
     }
 
-    return grade_update('/mod/interactivevideo', $moduleinstance->courseid, 'mod', 'interactivevideo', $moduleinstance->id, 0, null, array('deleted' => 1));
+    return grade_update(
+        '/mod/interactivevideo',
+        $moduleinstance->courseid,
+        'mod',
+        'interactivevideo',
+        $moduleinstance->id,
+        0,
+        null,
+        ['deleted' => 1]
+    );
 }
 
 /**
@@ -499,14 +536,14 @@ function interactivevideo_get_user_grades($moduleinstance, $userid = 0) {
                 FROM {grade_grades} g
                 LEFT JOIN {grade_items} gi ON g.itemid = gi.id
                 WHERE gi.iteminstance = :iteminstance AND gi.itemmodule = :itemmodule AND g.userid = :userid";
-        $params = array('iteminstance' => $moduleinstance->id, 'itemmodule' => 'interactivevideo', 'userid' => $userid);
+        $params = ['iteminstance' => $moduleinstance->id, 'itemmodule' => 'interactivevideo', 'userid' => $userid];
         $grades = $DB->get_records_sql($sql, $params);
     } else {
         $sql = "SELECT g.userid AS userid, g.rawgrade AS rawgrade, g.usermodified AS usermodified
                 FROM {grade_grades} g
                 LEFT JOIN {grade_items} gi ON g.itemid = gi.id
                 WHERE gi.iteminstance = :iteminstance AND gi.itemmodule = :itemmodule";
-        $params = array('iteminstance' => $moduleinstance->id, 'itemmodule' => 'interactivevideo');
+        $params = ['iteminstance' => $moduleinstance->id, 'itemmodule' => 'interactivevideo'];
         $grades = $DB->get_records_sql($sql, $params);
     }
     return $grades;
@@ -522,16 +559,20 @@ function interactivevideo_reset_userdata($data) {
     $resetcompletion = $data->reset_completion;
     $courseid = $data->courseid;
     if ($resetcompletion) { // Reset completion and grade since they are related.
-        $DB->delete_records_select('annotation_completion', 'cmid IN (SELECT id FROM {interactivevideo}  WHERE course = :courseid)', array('courseid' => $courseid));
+        $DB->delete_records_select(
+            'interactivevideo_completion',
+            'cmid IN (SELECT id FROM {interactivevideo}  WHERE course = :courseid)',
+            ['courseid' => $courseid]
+        );
         // Get all related modules and reset their grades.
-        $interactivevideos = $DB->get_records('interactivevideo', array('course' => $courseid));
+        $interactivevideos = $DB->get_records('interactivevideo', ['course' => $courseid]);
         foreach ($interactivevideos as $interactivevideo) {
             interactivevideo_grade_item_update($interactivevideo, 'reset');
         }
     }
 
     if ($data->reset_gradebook_grades) {
-        $interactivevideos = $DB->get_records('interactivevideo', array('course' => $courseid));
+        $interactivevideos = $DB->get_records('interactivevideo', ['course' => $courseid]);
         foreach ($interactivevideos as $interactivevideo) {
             interactivevideo_grade_item_update($interactivevideo, 'reset');
         }

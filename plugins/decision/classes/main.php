@@ -37,6 +37,7 @@ class main extends \ivplugin_richtext\main {
             'form' => 'ivplugin_decision\\form',
             'hascompletion' => false,
             'hastimestamp' => true,
+            'hasreport' => false,
             'description' => get_string('decisiondescription', 'ivplugin_decision'),
         ];
     }

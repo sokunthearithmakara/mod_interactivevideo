@@ -105,8 +105,8 @@ class stopwatch extends \core_form\dynamic_form {
         $mform->addElement('text', 'duration', get_string('durationinminute', 'ivplugin_inlineannotation'), ['size' => 100]);
         $mform->setType('duration', PARAM_INT);
         $mform->addRule('duration', get_string('required'), 'required', null, 'client');
-        $mform->addRule('duration', get_string('numeric'), 'numeric', null, 'client');
-        $mform->addRule('duration', get_string('nonzero'), 'nonzero', null, 'client');
+        $mform->addRule('duration', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client');
+        $mform->addRule('duration', get_string('nonzero', 'mod_interactivevideo'), 'nonzero', null, 'client');
         $mform->setDefault('duration', 1);
         $mform->addElement(
             'advcheckbox',
@@ -136,14 +136,14 @@ class stopwatch extends \core_form\dynamic_form {
             'btn-transparent' => get_string('transparent', 'ivplugin_inlineannotation'),
         ]);
 
-        $elementarray = array();
+        $elementarray = [];
         $elementarray[] = $mform->createElement(
             'advcheckbox',
             'rounded',
             '',
             get_string('rounded', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $elementarray[] = $mform->createElement(
@@ -151,13 +151,13 @@ class stopwatch extends \core_form\dynamic_form {
             'shadow',
             '',
             get_string('shadow', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $mform->addGroup($elementarray, '', '');
 
-        $intervalelem = array();
+        $intervalelem = [];
         $intervalelem[] = $mform->createElement(
             'advcheckbox',
             'playsoundatend',
@@ -195,8 +195,8 @@ class stopwatch extends \core_form\dynamic_form {
         $mform->addGroupRule(
             'playalarmsound',
             ['intervaltime' => [
-                [get_string('numeric', 'ivplugin_inlineannotation'), 'numeric', null, 'client'],
-                [get_string('nonzero', 'ivplugin_inlineannotation'), 'nonzero', null, 'client'],
+                [get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client'],
+                [get_string('nonzero', 'mod_interactivevideo'), 'nonzero', null, 'client'],
             ]]
         );
         $this->set_display_vertical();

@@ -27,7 +27,6 @@ import { dispatchEvent } from 'core/event_dispatcher';
 import ModalForm from 'core_form/modalform';
 import Templates from 'core/templates';
 import { notifyFilterContentUpdated as notifyFilter } from 'core_filters/events';
-
 export default class InlineAnnotation extends Base {
     postEditCallback() {
         // Do nothing
@@ -177,10 +176,21 @@ export default class InlineAnnotation extends Base {
                 }
                 switch (type) {
                     case 'image':
-                        wrapper.append(`<img src="${prop.url}" id="${id}"
-                             class="annotation-content
-                              ${prop.rounded == 1 ? 'rounded' : 'rounded-0'} w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
-                               alt="${prop.formattedalttext}"/>`);
+                        var parts = prop.timestamp.split(':');
+                        var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+                        if (prop.gotourl != '') {
+                            wrapper.append(`<a href="${prop.gotourl}" target="_blank"><img src="${prop.url}" id="${id}"
+                             class="annotation-content ${prop.rounded == 1 ? 'rounded' : 'rounded-0'} w-100
+                              ${prop.shadow == '1' ? 'shadow' : ''}" alt="${prop.formattedalttext}"/></a>`);
+                        } else {
+                            wrapper.append(`<img src="${prop.url}" id="${id}"
+                                 ${timestamp > 0 ? 'data-timestamp="' + timestamp + '"' : ''} class="annotation-content
+                                 ${prop.rounded == 1 ? 'rounded' : 'rounded-0'} w-100 ${prop.shadow == '1' ? 'shadow' : ''}
+                                  ${timestamp > 0 ? 'cursor-pointer' : ''}" alt="${prop.formattedalttext}"/>`);
+                        }
+                        if ((prop.gototurl != '' || timestamp > 0) && !self.isEditMode()) {
+                            wrapper.removeClass('resizable');
+                        }
                         wrapper.css(position);
                         wrapper.css('height', 'auto');
                         $videoWrapper.find(`#message`).append(wrapper);
@@ -403,8 +413,18 @@ export default class InlineAnnotation extends Base {
                         break;
 
                     case 'shape':
-                        wrapper.append(`<div id="${id}" class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}"
+                        var parts = prop.timestamp.split(':');
+                        var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+                        if (prop.gotourl != '') {
+                            wrapper.append(`<a href="${prop.gotourl}" target="_blank"><div id="${id}"
+                             class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}"
+                              style="width: 100%; height: 100%;"></div></a>`);
+                        } else {
+                            wrapper.append(`<div id="${id}" class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}
+                                 ${timestamp > 0 ? 'cursor-pointer' : ''}"
+                             ${timestamp > 0 ? 'data-timestamp="' + timestamp + '"' : ''}
                              style="width: 100%; height: 100%;"></div>`);
+                        }
                         wrapper.css(position);
                         var style = {
                             'background': prop.bgcolor,
@@ -568,8 +588,10 @@ export default class InlineAnnotation extends Base {
                             }
                             break;
                         case 'navigation':
+                        case 'image':
+                        case 'shape':
                             var navigation = wrapper.find('.annotation-content');
-                            if (self.isBetweenStartAndEnd(navigation.data('timestamp'))) {
+                            if (navigation.data('timestamp') && self.isBetweenStartAndEnd(navigation.data('timestamp'))) {
                                 self.player.seek(navigation.data('timestamp'));
                                 self.player.play();
                             }
@@ -850,7 +872,7 @@ export default class InlineAnnotation extends Base {
                 },
                 modalConfig: {
                     title: M.util.get_string('addinlineannotation', 'ivplugin_inlineannotation',
-                         M.util.get_string(type, 'ivplugin_inlineannotation')),
+                        M.util.get_string(type, 'ivplugin_inlineannotation')),
                 }
             });
 
@@ -861,7 +883,7 @@ export default class InlineAnnotation extends Base {
                 iaform.modal.modal.draggable({
                     handle: ".modal-header",
                 });
-                if (type == 'navigation') {
+                if (type == 'navigation' || type == 'image' || type == 'shape') {
                     $(document).on('change', '[name="timestamp"]', function (e) {
                         e.preventDefault();
                         let parts = $(this).val().split(':');
@@ -878,7 +900,8 @@ export default class InlineAnnotation extends Base {
 
                         // Make sure the timestamp is not in the skip segment.
                         if (self.isInSkipSegment(timestamp)) {
-                            self.addNotification(M.util.get_string('interactionisbetweentheskipsegment', 'ivplugin_inlineannotation'));
+                            self.addNotification(M.util.get_string('interactionisbetweentheskipsegment',
+                                'ivplugin_inlineannotation'));
                             $(this).val($(this).attr('data-initial-value'));
                             return;
                         }
@@ -921,7 +944,7 @@ export default class InlineAnnotation extends Base {
             formdata.type = type;
             let editform = new ModalForm({
                 formClass: "ivplugin_inlineannotation\\inlineannotation_children\\" +
-                 (type == 'image' || type == 'video' || type == 'audio' || type == 'file' ? 'media' : type),
+                    (type == 'image' || type == 'video' || type == 'audio' || type == 'file' ? 'media' : type),
                 args: item.properties,
                 modalConfig: {
                     title: M.util.get_string('editinlineannotation', 'ivplugin_inlineannotation',
@@ -935,7 +958,7 @@ export default class InlineAnnotation extends Base {
                 editform.modal.modal.draggable({
                     handle: ".modal-header",
                 });
-                if (type == 'navigation') {
+                if (type == 'navigation' || type == 'image') {
                     $(document).on('change', '[name="timestamp"]', function (e) {
                         e.preventDefault();
                         let parts = $(this).val().split(':');

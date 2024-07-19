@@ -76,7 +76,7 @@ class form extends \mod_interactivevideo\form\base_form {
 
         $this->standard_elements();
 
-        $mform->addElement('text', 'title', '<i class="bi bi-quote mx-2"></i>' . get_string('title', 'mod_interactivevideo'));
+        $mform->addElement('text', 'title', '<i class="bi bi-quote mr-2"></i>' . get_string('title', 'mod_interactivevideo'));
         $mform->setType('title', PARAM_TEXT);
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
@@ -92,7 +92,7 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->addElement(
             'filemanager',
             'content',
-            '<i class="bi bi-file-pdf mx-2"></i>' . get_string('pdffile', 'ivplugin_pdfviewer'),
+            '<i class="bi bi-file-pdf mr-2"></i>' . get_string('pdffile', 'ivplugin_pdfviewer'),
             null,
             $filemanageroptions
         );
@@ -108,7 +108,7 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->addElement(
             'select',
             'completiontracking',
-            '<i class="bi bi-check2-square mx-2"></i>' . get_string('completiontracking', 'mod_interactivevideo'),
+            '<i class="bi bi-check2-square mr-2"></i>' . get_string('completiontracking', 'mod_interactivevideo'),
             [
                 'manual' => get_string('completionmanual', 'mod_interactivevideo'),
                 'scrolltolastpage' => get_string('completiononscrolltolastpage', 'ivplugin_pdfviewer'),

@@ -91,14 +91,14 @@ class text extends \core_form\dynamic_form {
         $mform->setType('label', PARAM_TEXT);
         $mform->addRule('label', get_string('required'), 'required', null, 'client');
 
-        $elementarray = array();
+        $elementarray = [];
         $elementarray[] = $mform->createElement(
             'advcheckbox',
             'bold',
             '',
             get_string('textbold', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $elementarray[] = $mform->createElement(
@@ -106,8 +106,8 @@ class text extends \core_form\dynamic_form {
             'italic',
             '',
             get_string('textitalic', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $elementarray[] = $mform->createElement(
@@ -115,8 +115,8 @@ class text extends \core_form\dynamic_form {
             'underline',
             '',
             get_string('textunderline', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $elementarray[] = $mform->createElement(
@@ -124,8 +124,8 @@ class text extends \core_form\dynamic_form {
             'shadow',
             '',
             get_string('shadow', 'ivplugin_inlineannotation'),
-            array("group" => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $mform->addGroup($elementarray, '', '');
@@ -140,15 +140,12 @@ class text extends \core_form\dynamic_form {
             'client'
         );
 
-        $mform->addElement('header', 'advanced', get_string('advanced', 'ivplugin_inlineannotation'));
-        // Collapse the advanced fields by default.
-        $mform->setExpanded('advanced', false);
-
         $mform->addElement(
             'text',
             'textcolor',
             get_string('textcolor', 'ivplugin_inlineannotation') .
-                '<span class="color-picker ml-2" style="background-color: ' . $this->optional_param('textcolor', '#fff', PARAM_TEXT) .
+                '<span class="color-picker ml-2" style="background-color: '
+                . $this->optional_param('textcolor', '#fff', PARAM_TEXT) .
                 '"><input type="color"></span>',
             ['size' => 100]
         );
@@ -179,9 +176,9 @@ class text extends \core_form\dynamic_form {
 
         $mform->addElement('text', 'borderwidth', get_string('borderwidth', 'ivplugin_inlineannotation'), ['size' => 100]);
         $mform->setType('borderwidth', PARAM_INT);
-        $mform->addRule('borderwidth', get_string('numeric'), 'numeric', null, 'client');
-        $mform->addRule('borderwidth', get_string('maximum', 'ivplugin_inlineannotation', 5), 'maxlength', 5, 'client');
-        $mform->addRule('borderwidth', get_string('minimum', 'ivplugin_inlineannotation', 0), 'minlength', 0, 'client');
+        $mform->addRule('borderwidth', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client');
+        $mform->addRule('borderwidth', get_string('maximum', 'mod_interactivevideo', 5), 'maxlength', 5, 'client');
+        $mform->addRule('borderwidth', get_string('minimum', 'mod_interactivevideo', 0), 'minlength', 0, 'client');
         $mform->setDefault('borderwidth', 1);
 
         $mform->addElement('hidden', 'resizable', 0);

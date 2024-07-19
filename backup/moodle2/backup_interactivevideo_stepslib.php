@@ -99,7 +99,7 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
             cc.contenttype as cbcontenttype, cc.instanceid as cbinstanceid, cc.configdata as cbconfigdata,
             cc.usercreated as cbusercreated, cc.usermodified as cbusermodified, cc.timecreated as cbtimecreated,
             cc.timemodified as cbtimemodified, f.contenthash as cbfilecontenthash
-            FROM {annotationitems} ai
+            FROM {interactivevideo_items} ai
             LEFT JOIN {contentbank_content} cc ON ai.contentid = cc.id
             LEFT JOIN {files} f ON ai.contentid = f.itemid  AND f.component = "contentbank" AND f.filearea = "public"
             AND f.mimetype IS NOT NULL
@@ -120,11 +120,12 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
                 "userid",
                 "completeditems",
                 "xp",
+                "completiondetails",
             ]);
 
             $interactivevideo->add_child($completiondata);
             $completiondata->add_child($completion);
-            $completion->set_source_table('annotation_completion', ['cmid' => backup::VAR_ACTIVITYID], 'id ASC');
+            $completion->set_source_table('interactivevideo_completion', ['cmid' => backup::VAR_ACTIVITYID], 'id ASC');
 
             // Define id annotations.
             $completion->annotate_ids('user', 'userid');

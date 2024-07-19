@@ -15,21 +15,15 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for Forum
+ * Defines message providers (types of messages being sent) for Interactive Video
  *
- * @package    ivplugin_forum
+ * @package    mod_interactivevideo
+ * @category   message
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component    = 'ivplugin_forum';
-$plugin->release      = '1.0';
-$plugin->version      = 2024071500;
-$plugin->requires     = 2022112800;
-$plugin->supported    = [401, 404];
-$plugin->maturity     = MATURITY_STABLE;
-$plugin->dependencies = [
-    'interactivevideo' => 2024042720,
+$messageproviders = [
 ];

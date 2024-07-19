@@ -36,11 +36,11 @@ $iframe = optional_param('iframe', 0, PARAM_INT);
 
 if ($id) {
     $cm = get_coursemodule_from_id('interactivevideo', $id, 0, false, MUST_EXIST);
-    $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
-    $moduleinstance = $DB->get_record('interactivevideo', array('id' => $cm->instance), '*', MUST_EXIST);
+    $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
+    $moduleinstance = $DB->get_record('interactivevideo', ['id' => $cm->instance], '*', MUST_EXIST);
 } else {
-    $moduleinstance = $DB->get_record('interactivevideo', array('id' => $i), '*', MUST_EXIST);
-    $course = $DB->get_record('course', array('id' => $moduleinstance->course), '*', MUST_EXIST);
+    $moduleinstance = $DB->get_record('interactivevideo', ['id' => $i], '*', MUST_EXIST);
+    $course = $DB->get_record('course', ['id' => $moduleinstance->course], '*', MUST_EXIST);
     $cm = get_coursemodule_from_instance('interactivevideo', $moduleinstance->id, $course->id, false, MUST_EXIST);
 }
 
@@ -53,13 +53,14 @@ if ($moduleinstance->displayoptions) {
 }
 
 // Prepare strings for js files using string manager.
-$subplugins = array_keys(core_component::get_plugin_list('ivplugin'));
+$subplugins = get_config('mod_interactivevideo', 'enablecontenttypes');
+$subplugins = explode(',', $subplugins);
 $stringman = get_string_manager();
 foreach ($subplugins as $subplugin) {
     $strings = $stringman->load_component_strings('ivplugin_' . $subplugin, current_language());
     $PAGE->requires->strings_for_js(array_keys($strings), 'ivplugin_' . $subplugin);
 }
-
+$stringman = get_string_manager();
 $strings = $stringman->load_component_strings('mod_interactivevideo', current_language());
 $PAGE->requires->strings_for_js(array_keys($strings), 'mod_interactivevideo');
 
@@ -101,7 +102,7 @@ $activitydates = \core\activity_dates::get_dates_for_module($PAGE->cm, $USER->id
 $completion = $OUTPUT->activity_information($PAGE->cm, $completiondetails, $activitydates);
 
 $PAGE->activityheader->disable();
-$PAGE->set_url('/mod/interactivevideo/view.php', array('id' => $cm->id));
+$PAGE->set_url('/mod/interactivevideo/view.php', ['id' => $cm->id]);
 $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($moduleinstance->name));
 $PAGE->set_context($modulecontext);
@@ -116,20 +117,20 @@ $endcontent = file_rewrite_pluginfile_urls(
     0
 );
 
-$endcontent = format_text($endcontent, FORMAT_HTML, array(
+$endcontent = format_text($endcontent, FORMAT_HTML, [
     'context' => $modulecontext,
     'noclean' => true,
     'overflowdiv' => true,
     'para' => false,
-));
+]);
 
 // Fetch grade item.
-$gradeitem = grade_item::fetch(array(
+$gradeitem = grade_item::fetch([
     'iteminstance' => $moduleinstance->id,
     'itemtype' => 'mod',
     'itemmodule' => 'interactivevideo',
     'itemnumber' => 0,
-));
+]);
 
 // Use Bootstrap icons instead of fontawesome icons to avoid issues fontawesome icons support in Moodle 4.1.
 $PAGE->requires->css(new moodle_url('/mod/interactivevideo/libraries/bootstrap-icons/bootstrap-icons.min.css'));
@@ -188,14 +189,14 @@ if (!$iframe) {
         "completedpass" => $completionstate == COMPLETION_COMPLETE_PASS || $completionstate == COMPLETION_COMPLETE,
         "completedfail" => $completionstate == COMPLETION_COMPLETE_FAIL,
         "viewurl" => '',
-        // "backupurl" => has_capability('moodle/backup:backupactivity', $modulecontext) ? new moodle_url(
-        //     '/backup/backup.php',
-        //     ['cm' => $cm->id, 'id' => $course->id]
-        // ) : '',
-        // "restoreurl" => has_capability('moodle/restore:restoreactivity', $modulecontext) ? new moodle_url(
-        //     '/backup/restorefile.php',
-        //     ['contextid' => $modulecontext->id]
-        // ) : '',
+        "backupurl" => has_capability('moodle/backup:backupactivity', $modulecontext) ? new moodle_url(
+            '/backup/backup.php',
+            ['cm' => $cm->id, 'id' => $course->id]
+        ) : '',
+        "restoreurl" => has_capability('moodle/restore:restoreactivity', $modulecontext) ? new moodle_url(
+            '/backup/restorefile.php',
+            ['contextid' => $modulecontext->id]
+        ) : '',
     ];
     echo $OUTPUT->render_from_template('mod_interactivevideo/pagenav', $datafortemplate);
 }
@@ -213,7 +214,7 @@ $datafortemplate = [
     "displayoptions" => $moduleinstance->displayoptions,
 ];
 
-echo $OUTPUT->render_from_template('mod_interactivevideo/playeralt', $datafortemplate);
+echo $OUTPUT->render_from_template('mod_interactivevideo/player', $datafortemplate);
 
 $PAGE->requires->js_call_amd('mod_interactivevideo/viewannotation', 'init', [
     $url, // Video URL.

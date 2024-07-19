@@ -78,13 +78,13 @@ class filemanager extends base {
         // Min number of files.
         $mform->addElement('text', 'minfiles', get_string('minfiles', 'ivplugin_form'));
         $mform->setType('minfiles', PARAM_INT);
-        $mform->addRule('minfiles', get_string('numeric', 'ivplugin_form'), 'numeric', null, 'client', true);
+        $mform->addRule('minfiles', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client', true);
         $mform->setDefault('minfiles', 0);
 
         // Max number of files.
         $mform->addElement('text', 'maxfiles', get_string('maxfiles', 'ivplugin_form'));
         $mform->setType('maxfiles', PARAM_INT);
-        $mform->addRule('maxfiles', get_string('numeric', 'ivplugin_form'), 'numeric', null, 'client', true);
+        $mform->addRule('maxfiles', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client', true);
         $mform->setDefault('maxfiles', 1);
 
         $this->set_display_vertical();

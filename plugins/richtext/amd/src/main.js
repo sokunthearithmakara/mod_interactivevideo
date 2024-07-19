@@ -27,12 +27,12 @@ export default class RichText extends Base {
     postContentRender(annotation) {
         let $body = $(`#message[data-id='${annotation.id}'] .modal-body`);
         notifyFilter($body);
-        $body.addClass('p-0');
+        $body.addClass('bg-white p-0');
     }
     postContentRenderEditor() {
         let $body = $(`.modal .modal-body`);
         notifyFilter($body);
-        $body.addClass('p-0');
+        $body.addClass('bg-white p-0');
     }
 
 }

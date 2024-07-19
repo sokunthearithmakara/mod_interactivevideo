@@ -55,13 +55,13 @@ class duration extends base {
 
         // Duration units.
         $durationunits = $mform->addElement('select', 'units', get_string('durationunits', 'ivplugin_form'), [
-            'years' => get_string('years'),
+            'years' => get_string('years', 'ivplugin_form'),
             'months' => get_string('months', 'ivplugin_form'),
-            'weeks' => get_string('weeks'),
-            'days' => get_string('days'),
-            'hours' => get_string('hours'),
-            'minutes' => get_string('minutes'),
-            'seconds' => get_string('seconds'),
+            'weeks' => get_string('weeks', 'ivplugin_form'),
+            'days' => get_string('days', 'ivplugin_form'),
+            'hours' => get_string('hours', 'ivplugin_form'),
+            'minutes' => get_string('minutes', 'ivplugin_form'),
+            'seconds' => get_string('seconds', 'ivplugin_form'),
         ]);
         $durationunits->setMultiple(true);
 

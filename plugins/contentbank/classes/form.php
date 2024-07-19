@@ -47,7 +47,7 @@ class form extends \mod_interactivevideo\form\base_form {
 
         $this->standard_elements();
 
-        $mform->addElement('text', 'title', '<i class="bi bi-quote mx-2"></i>' . get_string('title', 'mod_interactivevideo'));
+        $mform->addElement('text', 'title', '<i class="bi bi-quote mr-2"></i>' . get_string('title', 'mod_interactivevideo'));
         $mform->setType('title', PARAM_TEXT);
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
@@ -58,7 +58,7 @@ class form extends \mod_interactivevideo\form\base_form {
         $coursecontext = \context_course::instance($COURSE->id);
         $cb = new contentbank();
         // Prepare the toolbar.
-        $toolbar = '<div class="contentbank-toolbar bg-gray p-2 d-flex align-items-center justify-content-between rounded-top">
+        $toolbar = '<div class="contentbank-toolbar bg-white p-2 d-flex align-items-center justify-content-between rounded-top">
             <span class="font-weight-bold text-truncate mx-2">'
             . get_string('selectoruploadcontent', 'ivplugin_contentbank') . '</span>';
 
@@ -145,7 +145,7 @@ class form extends \mod_interactivevideo\form\base_form {
             return strcmp($a['name'], $b['name']);
         });
 
-        $html = '<div class="contentbank-container rounded-bottom">';
+        $html = '<div class="contentbank-container rounded-bottom bg-white">';
 
         foreach ($contents as $content) {
             $editurl = new moodle_url(

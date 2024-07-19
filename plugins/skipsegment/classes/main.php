@@ -37,6 +37,7 @@ class main extends \ivplugin_richtext\main {
             'form' => 'ivplugin_skipsegment\\form',
             'hascompletion' => false,
             'hastimestamp' => true,
+            'hasreport' => false,
             'description' => get_string('skipsegmentdescription', 'ivplugin_skipsegment'),
         ];
     }

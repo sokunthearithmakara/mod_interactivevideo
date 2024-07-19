@@ -452,7 +452,7 @@ class Base {
         annotation.contextid = M.cfg.contextid;
 
         const title = annotation.type === 'skipsegment'
-            ? M.util.get_string('skipsegmentcontent', 'mod_interactivevideo').toLowerCase()
+            ? M.util.get_string('skipsegmentcontent', 'ivplugin_skipsegment').toLowerCase()
             : annotation.formattedtitle;
 
         const form = new ModalForm({
@@ -494,7 +494,7 @@ class Base {
                     sesskey: M.cfg.sesskey,
                     contextid: M.cfg.courseContextId,
                 },
-            }).done(function(data) {
+            }).done(function (data) {
                 var updated = JSON.parse(data);
                 dispatchEvent('annotationupdated', {
                     annotation: updated,
@@ -741,13 +741,11 @@ class Base {
         // Gradable items (hascompletion and not in the skipsegment)
         const gradableitems = this.annotations.filter(x => x.hascompletion == '1');
 
-        window.console.log(gradableitems);
-
-        var totalXp = gradableitems.map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
-        var completedItems = gradableitems.filter(x => x.completed);
-        var earnedXp = completedItems.map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
+        const totalXp = gradableitems.map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
+        let completedItems = gradableitems.filter(x => x.completed);
+        let earnedXp = completedItems.map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
         completedItems = completedItems.map(x => x.id);
-        var thisItem = gradableitems.find(x => x.id == id);
+        let thisItem = gradableitems.find(x => x.id == id);
         if (action == 'mark-done') {
             completedItems.push(id.toString());
             earnedXp += Number(thisItem.xp);
@@ -786,6 +784,7 @@ class Base {
                         }
                         return x;
                     });
+
                     renderAnnotationItems(annotations, this.start, this.totaltime);
 
                     this.completionCallback(annotations, thisItem, action, type);
@@ -857,6 +856,12 @@ class Base {
 
     }
 
+    /**
+     * Data to show when the report viewer clicks on the completion checkmark
+     * @param {Object} annotation the current annotation
+     * @param {Number} userid the user id
+     * @returns {Promise}
+     */
     getCompletionData(annotation, userid) {
         return Promise.resolve({
             annotation: annotation,
@@ -864,6 +869,11 @@ class Base {
         });
     }
 
+    /**
+     * View when the report viewer clicks on the title of the interaction item on the report page
+     * @param {Object} annotation the annotation
+     * @returns {void}
+     */
     displayReportView(annotation) {
         this.render(annotation, 'html').then((data) => {
             let $message = $(`#message[data-id='${annotation.id}']`);
@@ -902,6 +912,8 @@ class Base {
             });
         });
     }
+
+
 }
 
 export default Base;

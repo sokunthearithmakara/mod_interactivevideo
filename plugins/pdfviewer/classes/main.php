@@ -37,6 +37,7 @@ class main extends \ivplugin_richtext\main {
             'form' => 'ivplugin_pdfviewer\\form',
             'hascompletion' => true,
             'hastimestamp' => true,
+            'hasreport' => true,
             'description' => get_string('pdfviewerdescription', 'ivplugin_pdfviewer'),
         ];
     }
@@ -65,8 +66,8 @@ class main extends \ivplugin_richtext\main {
             // Encode URL for PDF.js.
             $url = urlencode($url);
             return '<iframe id="iframe" src="' . $CFG->wwwroot . '/mod/interactivevideo/libraries/pdfjs/web/viewer.html?file=' .
-            $url . '#locale=' . $lang .
-            '" style="width: 100%; height: 100%" frameborder="0" allow="autoplay" class="rounded-0"></iframe>';
+                $url . '#locale=' . $lang .
+                '" style="width: 100%; height: 100%" frameborder="0" allow="autoplay" class="rounded-0"></iframe>';
         }
         return $arg;
     }

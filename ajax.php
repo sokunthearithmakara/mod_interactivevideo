@@ -65,7 +65,7 @@ switch ($action) {
         $id = required_param('id', PARAM_INT);
         $contextid = required_param('contextid', PARAM_INT);
         $item = interactivevideo_util::get_item($id, $contextid);
-        $DB->delete_records('annotationitems', ['id' => $id]);
+        $DB->delete_records('interactivevideo_items', ['id' => $id]);
         $fs = get_file_storage();
         $fs->delete_area_files($contextid, 'mod_interactivevideo', 'content', $id);
         echo $id;
@@ -106,19 +106,6 @@ switch ($action) {
     case 'getallcontenttypes':
         echo json_encode(interactivevideo_util::get_all_activitytypes());
         break;
-    case 'getoembedinfo':
-        $url = required_param('url', PARAM_URL);
-        // Send get request to the URL.
-        $response = file_get_contents($url);
-        if (!$response) {
-            require_once($CFG->libdir . '/filelib.php');
-            $curl = new curl(['ignoresecurity' => true]);
-            $curl->setHeader('Content-Type: application/json');
-
-            $response = $curl->get($url);
-        }
-        echo $response;
-        break;
     case 'get_log':
         $userid = required_param('userid', PARAM_INT);
         $cmid = required_param('cmid', PARAM_INT);
@@ -141,4 +128,5 @@ switch ($action) {
         break;
     default:
         throw new moodle_exception('invalid', 'error', '', $action);
+        break;
 }

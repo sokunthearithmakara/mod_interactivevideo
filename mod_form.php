@@ -70,7 +70,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         $mform->addElement('header', 'general', get_string('general', 'form'));
 
         // Adding the standard "name" field.
-        $mform->addElement('text', 'name', get_string('interactivevideoname', 'mod_interactivevideo'), array('size' => '100'));
+        $mform->addElement('text', 'name', get_string('interactivevideoname', 'mod_interactivevideo'), ['size' => '100']);
 
         if (!empty($CFG->formatstringstriptags)) {
             $mform->setType('name', PARAM_TEXT);
@@ -101,13 +101,13 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'text',
             'videourl',
             get_string('videourl', 'mod_interactivevideo'),
-            array(
+            [
                 'size' => '100',
                 'onkeydown' => 'return (event.ctrlKey && event.key === \'v\') ' .
                     '|| (event.ctrlKey && event.key === \'c\') || (event.ctrlKey && event.key === \'x\') ' .
                     '|| (event.ctrlKey && event.key === \'a\') || event.key === \'Backspace\' ? true : false;',
                 'placeholder' => get_string('videourlplaceholder', 'mod_interactivevideo'),
-            )
+            ]
         );
         $mform->setType('videourl', PARAM_TEXT);
         $mform->hideIf('videourl', 'source', 'eq', 'file');
@@ -129,7 +129,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'text',
             'startassist',
             get_string('start', 'mod_interactivevideo'),
-            array('size' => '100', 'placeholder' => '00:00:00')
+            ['size' => '100', 'placeholder' => '00:00:00']
         );
         $mform->setType('startassist', PARAM_TEXT);
         $mform->setDefault('startassist', "00:00:00");
@@ -139,7 +139,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'text',
             'endassist',
             get_string('end', 'mod_interactivevideo') . '<br><span class="text-muted small" id="videototaltime"></span>',
-            array('size' => '100', 'placeholder' => '00:00:00')
+            ['size' => '100', 'placeholder' => '00:00:00']
         );
         $mform->setType('endassist', PARAM_TEXT);
         $mform->setDefault('startassist', "00:00:00");
@@ -163,8 +163,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'displayasstartscreen',
             '',
             get_string('displayasstartscreen', 'mod_interactivevideo'),
-            array('group' => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         // End screen text.
@@ -173,7 +173,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'endscreentext',
             get_string('endscreentext', 'mod_interactivevideo'),
             null,
-            array('maxfiles' => EDITOR_UNLIMITED_FILES, 'noclean' => true)
+            ['maxfiles' => EDITOR_UNLIMITED_FILES, 'noclean' => true]
         );
         $mform->setType('endscreentext', PARAM_RAW);
 
@@ -185,8 +185,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'darkmode',
             '',
             get_string('darkmode', 'mod_interactivevideo'),
-            array('group' => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
         $mform->setDefault('darkmode', 1);
 
@@ -196,8 +196,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'disablechapternavigation',
             '',
             get_string('disablechapternavigation', 'mod_interactivevideo'),
-            array('group' => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         // Prevent skipping.
@@ -206,8 +206,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'preventskipping',
             '',
             get_string('preventskipping', 'mod_interactivevideo'),
-            array('group' => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         // Use orginal video controls.
@@ -216,8 +216,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'useoriginalvideocontrols',
             '',
             get_string('useoriginalvideocontrols', 'mod_interactivevideo'),
-            array('group' => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         // Hide main video controls.
@@ -226,8 +226,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'hidemainvideocontrols',
             '',
             get_string('hidemainvideocontrols', 'mod_interactivevideo'),
-            array('group' => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         // Prevent seeking.
@@ -236,8 +236,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'preventseeking',
             '',
             get_string('preventseeking', 'mod_interactivevideo'),
-            array('group' => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $mform->hideIf('preventseeking', 'hidemainvideocontrols', 'eq', 1);
@@ -248,8 +248,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'hideinteractions',
             '',
             get_string('hideinteractions', 'mod_interactivevideo'),
-            array('group' => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $mform->hideIf('hideinteractions', 'hidemainvideocontrols', 'eq', 1);
@@ -260,8 +260,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'disableinteractionclick',
             '',
             get_string('disableinteractionclick', 'mod_interactivevideo'),
-            array('group' => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $mform->hideIf('disableinteractionclick', 'preventseeking', 'eq', 1);
@@ -274,8 +274,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'disableinteractionclickuntilcompleted',
             '',
             get_string('disableinteractionclickuntilcompleted', 'mod_interactivevideo'),
-            array('group' => 1),
-            array(0, 1)
+            ['group' => 1],
+            [0, 1]
         );
 
         $mform->hideIf('disableinteractionclickuntilcompleted', 'preventseeking', 'eq', 1);
@@ -368,7 +368,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                 'mod_interactivevideo',
                 'endscreentext',
                 0,
-                array('subdirs' => 0),
+                ['subdirs' => 0],
                 $text
             );
         }
