@@ -52,5 +52,30 @@ function xmldb_interactivevideo_upgrade($oldversion) {
         // Interactivevideo savepoint reached.
         upgrade_mod_savepoint(true, 2024071403, 'interactivevideo');
     }
+
+    if ($oldversion < 2024071410) {
+
+        // Define table interactivevideo_accesstoken to be created.
+        $table = new xmldb_table('interactivevideo_accesstoken');
+
+        // Adding fields to table interactivevideo_accesstoken.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('usermodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('token', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, '0');
+
+        // Adding keys to table interactivevideo_accesstoken.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('usermodified', XMLDB_KEY_FOREIGN, ['usermodified'], 'user', ['id']);
+
+        // Conditionally launch create table for interactivevideo_accesstoken.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Interactivevideo savepoint reached.
+        upgrade_mod_savepoint(true, 2024071410, 'interactivevideo');
+    }
     return true;
 }

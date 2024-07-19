@@ -14,32 +14,43 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace mod_interactivevideo\output;
+
+use context_module;
+use moodle_url;
+
 /**
- * Mobile app areas for Interactive Video
- *
- * Documentation: {@link https://moodledev.io/general/app/development/plugins-development-guide}
+ * Class mobile
  *
  * @package    mod_interactivevideo
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class mobile {
+    public static function mobile_module_view($args) {
+        global $OUTPUT, $DB, $CFG;
+        $args = (object)$args;
+        $cm = get_coursemodule_from_id('interactivevideo', $args->cmid);
 
-defined('MOODLE_INTERNAL') || die();
+        require_login($args->courseid, false, $cm, true, true);
 
-$addons = [
-    'mod_interactivevideo' => [
-        'handlers' => [
-            'view' => [
-                'delegate' => 'CoreCourseModuleDelegate',
-                'method' => 'mobile_module_view',
-                'displaydata' => [
-                    'title' => 'hello',
-                    'icon' => 'earth',
+        $context = context_module::instance($cm->id);
+
+        require_capability('mod/interactivevideo:view', $context);
+
+        $url = new moodle_url('/mod/interactivevideo/view.php', [
+            'id' => $cm->id,
+            'iframe' => 1,
+            'token' => 'abc',
+        ]);
+
+        return [
+            'templates' => [
+                [
+                    'id' => 'main',
+                    'html' => '<iframe src="' . $url . '" width="100%" height="100%"></iframe>',
                 ],
             ],
-        ],
-        'lang' => [
-            ['pluginname', 'mod_interactivevideo'],
-        ],
-    ],
-  ];
+        ];
+    }
+}

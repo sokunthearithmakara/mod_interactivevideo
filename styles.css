@@ -2,6 +2,17 @@
     --iv-animate-duration: 1s;
     --iv-animate-delay: 1s;
     --iv-animate-repeat: 1;
+    --ivwhite: #fff;
+    --ivgray: #6a737b;
+    --ivgray-dark: #343a40;
+    --ivprimary: #0f6cbf;
+    --ivsecondary: #ced4da;
+    --ivsuccess: #357a32;
+    --ivinfo: #008196;
+    --ivwarning: #f0ad4e;
+    --ivdanger: #ca3120;
+    --ivlight: #f8f9fa;
+    --ivdark: #343a40;
 }
 
 html:has(.path-mod-interactivevideo) {
@@ -12,65 +23,40 @@ html:has(.path-mod-interactivevideo) {
     opacity: 0 !important;
 }
 
-
-.path-mod-interactivevideo :root {
-    --blue: #0f6cbf;
-    --indigo: #6610f2;
-    --purple: #613d7c;
-    --pink: #e83e8c;
-    --red: #ca3120;
-    --orange: #f0ad4e;
-    --yellow: #ff7518;
-    --green: #357a32;
-    --teal: #20c997;
-    --cyan: #008196;
-    --white: #fff;
-    --gray: #6a737b;
-    --gray-dark: #343a40;
-    --primary: #0f6cbf;
-    --secondary: #ced4da;
-    --success: #357a32;
-    --info: #008196;
-    --warning: #f0ad4e;
-    --danger: #ca3120;
-    --light: #f8f9fa;
-    --dark: #343a40;
-}
-
 .path-mod-interactivevideo .bg-dark {
-    background-color: var(--dark) !important;
+    background-color: var(--ivdark) !important;
 }
 
 .path-mod-interactivevideo .bg-danger {
-    background-color: var(--danger) !important;
+    background-color: var(--ivdanger) !important;
 }
 
 .path-mod-interactivevideo .bg-warning {
-    background-color: var(--warning) !important;
+    background-color: var(--ivwarning) !important;
 }
 
 .path-mod-interactivevideo .bg-info {
-    background-color: var(--info) !important;
+    background-color: var(--ivinfo) !important;
 }
 
 .path-mod-interactivevideo .bg-success {
-    background-color: var(--success) !important;
+    background-color: var(--ivsuccess) !important;
 }
 
 .path-mod-interactivevideo .bg-primary {
-    background-color: var(--primary) !important;
+    background-color: var(--ivprimary) !important;
 }
 
 .path-mod-interactivevideo .bg-secondary {
-    background-color: var(--secondary) !important;
+    background-color: var(--ivsecondary) !important;
 }
 
 .path-mod-interactivevideo .bg-light {
-    background-color: var(--light) !important;
+    background-color: var(--ivlight) !important;
 }
 
 .path-mod-interactivevideo .bg-white {
-    background-color: var(--white) !important;
+    background-color: var(--ivwhite) !important;
 }
 
 .path-mod-interactivevideo .line-height-100 {
@@ -366,7 +352,7 @@ html:has(.path-mod-interactivevideo) {
     left: 0;
     height: 4px;
     border-radius: 2px;
-    background-color: var(--dark);
+    background-color: var(--ivdark);
     display: flex;
     transition: width linear 100ms;
 }
@@ -524,7 +510,7 @@ html:has(.path-mod-interactivevideo) {
     height: 30px;
     margin: 1rem 0;
     border-radius: 1rem;
-    background: var(--info);
+    background: var(--ivinfo);
 }
 
 .path-mod-interactivevideo #wrapper.fullscreen #video-wrapper,
@@ -585,7 +571,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo .contentbank-item.selected {
-    background-color: var(--primary);
+    background-color: var(--ivprimary);
     color: #fff;
 }
 
@@ -723,14 +709,14 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo #id_upload,
 .path-mod-interactivevideo #id_delete {
-    background-color: var(--primary);
+    background-color: var(--ivprimary);
     color: #fff;
     border: none;
     width: 100%;
 }
 
 .path-mod-interactivevideo #id_delete {
-    background-color: var(--danger);
+    background-color: var(--ivdanger);
 }
 
 .path-mod-interactivevideo #video-wrapper {
@@ -798,7 +784,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 #page-mod-interactivevideo-interactions tr.annotation.chapter {
-    background-color: var(--secondary);
+    background-color: var(--ivsecondary);
     border-top: 4px double #fff;
 
     .type-icon,
@@ -807,7 +793,7 @@ html:has(.path-mod-interactivevideo) {
     }
 
     .timestamp {
-        background: var(--primary) !important;
+        background: var(--ivprimary) !important;
         color: #fff;
         padding: 0.1rem 0.3rem !important;
         font-weight: 600;
@@ -842,7 +828,7 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo [data-region=chapterlists] .chapter.active-chapter>div {
     color: #fff;
-    background: var(--primary);
+    background: var(--ivprimary);
 }
 
 .path-mod-interactivevideo #interactivevideo-container #chapter-container-left {
@@ -950,7 +936,7 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo #chaptertoggle button {
     height: 30px;
     width: 30px;
-    background: var(--info);
+    background: var(--ivinfo);
 }
 
 .path-mod-interactivevideo.no-original-controls {
@@ -1044,7 +1030,7 @@ html:has(.path-mod-interactivevideo) {
     color: #fff;
 
     span {
-        border-left: 5px solid var(--warning);
+        border-left: 5px solid var(--ivwarning);
         padding-left: 0.75rem;
         top: -40px;
         position: absolute;
@@ -1055,7 +1041,7 @@ html:has(.path-mod-interactivevideo) {
         height: 5px;
         bottom: 0;
         left: 0;
-        background-color: var(--dark);
+        background-color: var(--ivdark);
     }
 
     #chapterprogress .progress-bar {
@@ -1102,12 +1088,12 @@ html:has(.path-mod-interactivevideo) {
 }
 
 #page-mod-interactivevideo-interactions #message .annotation-wrapper.active {
-    outline: 2px dotted var(--danger);
+    outline: 2px dotted var(--ivdanger);
 }
 
 #page-mod-interactivevideo-interactions #message .annotation-wrapper.active:focus-visible,
 #page-mod-interactivevideo-interactions #message .annotation-wrapper.active:focus {
-    outline: 2px dotted var(--danger);
+    outline: 2px dotted var(--ivdanger);
 }
 
 .path-mod-interactivevideo #message .annotation-wrapper {
@@ -1129,7 +1115,7 @@ html:has(.path-mod-interactivevideo) {
     width: 100%;
     text-align: right;
     padding: 0 0.5rem;
-    background: var(--secondary);
+    background: var(--ivsecondary);
     height: 40px;
     left: 0;
     border-radius: 0.5rem;
@@ -1165,16 +1151,16 @@ html:has(.path-mod-interactivevideo) {
 
 #page-mod-interactivevideo-interactions #inlineannotation-btns .btn.active,
 #page-mod-interactivevideo-interactions #form-btns .btn.active {
-    border-bottom: 3px solid var(--primary);
+    border-bottom: 3px solid var(--ivprimary);
     padding-bottom: 0.5rem;
-    color: var(--primary);
+    color: var(--ivprimary);
 }
 
 #page-mod-interactivevideo-interactions #inlineannotation-btns .btn:hover,
 #page-mod-interactivevideo-interactions #form-btns .btn:hover {
-    border-bottom: 3px solid var(--dark);
+    border-bottom: 3px solid var(--ivdark);
     padding-bottom: 0.5rem;
-    color: var(--primary);
+    color: var(--ivprimary);
 }
 
 .path-mod-interactivevideo .ui-icon-gripsmall-diagonal-se {
@@ -1241,42 +1227,6 @@ html:has(.path-mod-interactivevideo) {
     transition: transform ease-in-out 1s;
 }
 
-.path-mod-interactivevideo #message .discussion-topic.collapsed {
-    max-height: 100px;
-    overflow: hidden;
-
-    #collapsetoggle {
-        bottom: 0;
-        z-index: 1;
-        height: 40px;
-        background: linear-gradient(0deg, #fff, #fafafabd);
-        transition: all ease-in-out 300ms;
-    }
-
-    #collapsetoggle:hover i {
-        transform: translateY(5px);
-        transition: transform ease-in-out 300ms;
-    }
-}
-
-.path-mod-interactivevideo #message .discussion-topic.expanded {
-    max-height: unset;
-    overflow: visible;
-
-    #collapsetoggle {
-        bottom: 0;
-        z-index: 1;
-        height: 20px;
-        background: transparent;
-        transition: all ease-in-out 300ms;
-    }
-
-    #collapsetoggle:hover i {
-        transform: translateY(-5px);
-        transition: transform ease-in-out 300ms;
-    }
-}
-
 .path-mod-interactivevideo .inlineannotation-popover {
     color: #000;
     max-width: 500px;
@@ -1340,7 +1290,7 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:not([data-groupname="buttonar"]) {
     padding: 0.5rem 1rem 1rem;
-    border: 1px solid var(--secondary);
+    border: 1px solid var(--ivsecondary);
     border-radius: 0.75rem;
     background-color: #fff;
 }
@@ -1362,7 +1312,7 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row.field-highlight,
 .path-mod-interactivevideo #form-preview .field-highlight {
-    border-left: 3px solid var(--primary);
+    border-left: 3px solid var(--ivprimary);
     padding-left: 1rem;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
@@ -1378,7 +1328,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo #form-field-list .list-group-item.field-highlight {
-    background: var(--primary);
+    background: var(--ivprimary);
     color: #fff;
 }
 
@@ -1424,7 +1374,7 @@ html:has(.path-mod-interactivevideo) {
 
     select:-internal-list-box:disabled option:checked {
         color: #fff;
-        background-color: var(--primary);
+        background-color: var(--ivprimary);
     }
 }
 
@@ -1432,7 +1382,7 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo [data-name="interaction-form"] fieldset.collapsible {
     border-radius: 0.5rem;
     padding: 1rem 1rem 0.5rem 1rem;
-    background-color: var(--light);
+    background-color: var(--ivlight);
 }
 
 .path-mod-interactivevideo #form-preview .col-form-label label {
@@ -1497,7 +1447,7 @@ html:has(.path-mod-interactivevideo) {
 
     #playercontrol {
         margin-top: 0 !important;
-        background-color: var(--info);
+        background-color: var(--ivinfo);
     }
 
 }
@@ -1534,7 +1484,7 @@ html:has(.path-mod-interactivevideo) {
     }
 
     #video-nav #progress {
-        background-color: var(--danger);
+        background-color: var(--ivdanger);
     }
 }
 
@@ -1543,7 +1493,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo #discussion-main .nav-link.active {
-    background-color: var(--secondary);
+    background-color: var(--ivsecondary);
     font-weight: 600;
     transition: all ease-in-out 300ms;
 }
@@ -1608,4 +1558,12 @@ html:has(.path-mod-interactivevideo) {
     .form-inline .form-check-input {
         margin-right: 0.5rem;
     }
+}
+
+.path-mod-interactivevideo .inlineannotation [data-timestamp]:hover {
+    transform: scale(1.05);
+}
+
+.path-mod-interactivevideo .inlineannotation [data-timestamp] {
+    transition: all ease-in-out 300ms;
 }

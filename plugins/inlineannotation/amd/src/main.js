@@ -958,7 +958,7 @@ export default class InlineAnnotation extends Base {
                 editform.modal.modal.draggable({
                     handle: ".modal-header",
                 });
-                if (type == 'navigation' || type == 'image') {
+                if (type == 'navigation' || type == 'image' || type == 'shape') {
                     $(document).on('change', '[name="timestamp"]', function (e) {
                         e.preventDefault();
                         let parts = $(this).val().split(':');
