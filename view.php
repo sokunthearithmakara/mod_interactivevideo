@@ -33,7 +33,6 @@ $moment = optional_param('t', 0, PARAM_INT);
 // Activity instance id.
 $i = optional_param('i', 0, PARAM_INT);
 $iframe = optional_param('iframe', 0, PARAM_INT);
-
 if ($id) {
     $cm = get_coursemodule_from_id('interactivevideo', $id, 0, false, MUST_EXIST);
     $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
@@ -44,12 +43,25 @@ if ($id) {
     $cm = get_coursemodule_from_instance('interactivevideo', $moduleinstance->id, $course->id, false, MUST_EXIST);
 }
 
+$modulecontext = context_module::instance($cm->id);
+if ($iframe) {
+    $token = required_param('token', PARAM_TEXT);
+    $validated = \mod_interactivevideo\output\mobile::login_after_validate_token($token, $cm->id);
+    if (!$validated) {
+        throw new moodle_exception('invalidtoken', 'mod_interactivevideo');
+    }
+}
+
 require_login($course, true, $cm);
 
 if ($moduleinstance->displayoptions) {
     $moduleinstance->displayoptions = json_decode($moduleinstance->displayoptions, true);
 } else {
     $moduleinstance->displayoptions = [];
+}
+
+if ($iframe) {
+    $moduleinstance->displayoptions['darkmode'] = 0;
 }
 
 // Prepare strings for js files using string manager.
@@ -66,8 +78,6 @@ $PAGE->requires->strings_for_js(array_keys($strings), 'mod_interactivevideo');
 
 // Enable jQuery UI.
 $PAGE->requires->jquery_plugin('ui-css');
-
-$modulecontext = context_module::instance($cm->id);
 
 // Log view.
 $event = \mod_interactivevideo\event\course_module_viewed::create(array(
@@ -102,7 +112,14 @@ $activitydates = \core\activity_dates::get_dates_for_module($PAGE->cm, $USER->id
 $completion = $OUTPUT->activity_information($PAGE->cm, $completiondetails, $activitydates);
 
 $PAGE->activityheader->disable();
-$PAGE->set_url('/mod/interactivevideo/view.php', ['id' => $cm->id]);
+$PAGE->set_url('/mod/interactivevideo/view.php', [
+    'id' => $cm->id,
+    't' => $moment,
+    'i' => $moduleinstance->id,
+    'iframe' => $iframe,
+    'token' => $token ?? '',
+]);
+
 $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($moduleinstance->name));
 $PAGE->set_context($modulecontext);
@@ -232,6 +249,6 @@ $PAGE->requires->js_call_amd('mod_interactivevideo/viewannotation', 'init', [
         ? true : false, // Prevent skipping, applicable to student only.
     $moment, // Current time in seconds.
     $moduleinstance->displayoptions, // Display options array set in mod_form.
+    $token ?? '', // Token for mobile app.
 ]);
-
 echo $OUTPUT->footer();

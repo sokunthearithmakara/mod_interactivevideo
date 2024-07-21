@@ -106,6 +106,7 @@ $string['interactivevideo:view'] = 'View interactive video module';
 $string['interactivevideo:viewreport'] = 'View interactive video report';
 $string['interactivevideoname'] = 'Name';
 $string['invalidtimestampformat'] = 'Invalid timestamp format.';
+$string['invalidtoken'] = 'Invalid token';
 $string['invalidurlformat'] = 'Invalid URL';
 $string['invalidvideourl'] = 'Video URL provided is invalid.';
 $string['last'] = 'Last';

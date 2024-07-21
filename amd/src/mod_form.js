@@ -169,9 +169,6 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     return;
                 }
 
-                // Check if the video is from panopto https://panopto.com/Panopto/Pages/Embed.aspx?id=1234567890
-
-
                 // Check if the link is a direct video link and video is "canplay"
                 const checkVideo = new Promise((resolve) => {
                     // Remove video element if it exists
@@ -312,6 +309,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
                     form.addEventListener(form.events.FORM_SUBMITTED, async (e) => {
                         var url = e.detail.url;
+                        window.console.log(url);
                         videowrapper.html('<video id="player" class="w-100"></video>');
                         require(['mod_interactivevideo/player/html5video'], function (VP) {
                             player = new VP(url, 0, null, true);

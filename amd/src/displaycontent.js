@@ -137,8 +137,8 @@ const defaultDisplayContent = async (annotation, player) => {
 
     switch (displayoptions) {
         case 'popup':
-            var modal = `<div class="modal fade" id="annotation-modal" role="dialog"
-            aria-labelledby="annotation-modal"
+            var modal = `<div class="modal fade ${$('body').hasClass('iframe') ? 'modal-fullscreen' : ''}"
+             id="annotation-modal" role="dialog" aria-labelledby="annotation-modal"
          aria-hidden="true" data-backdrop="static" data-keyboard="false">
          <div id="message" data-id="${annotation.id}" data-placement="popup"
           class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">

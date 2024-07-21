@@ -41,7 +41,7 @@ export default class H5pUpload extends Base {
         }
     }
     postContentRender(annotation, callback) {
-        $(`#message[data-id='${annotation.id}'] iframe`).addClass('d-flex').css('height', '100%');
+        // $(`#message[data-id='${annotation.id}'] iframe`);
         if (annotation.completiontracking
             && (annotation.completiontracking == 'complete'
                 || annotation.completiontracking == 'completepass'

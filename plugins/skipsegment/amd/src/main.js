@@ -40,6 +40,7 @@ export default class SkipSegment extends Base {
     renderEditItem(annotations, listItem, item) {
         listItem = super.renderEditItem(annotations, listItem, item);
         listItem.find('[data-editable]').removeAttr('data-editable');
+        listItem.find('.btn.copy').remove();
         listItem.find('.title').replaceWith(`<span class="skipend timestamp
                             bg-gray px-2 py-1 rounded-sm text-truncate"
                             data-timestamp="${item.title}">${this.convertSecondsToHMS(item.title)}</span>`);

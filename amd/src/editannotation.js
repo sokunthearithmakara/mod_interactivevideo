@@ -24,6 +24,7 @@ define(['jquery',
     'core/toast',
     'core/notification',
     'core/event_dispatcher',
+    'mod_interactivevideo/libraries/jquery-ui',
 ], function ($, addToast, Notification, { dispatchEvent }) {
     var ctRenderer = new Object();
     var player;
@@ -72,9 +73,7 @@ define(['jquery',
 
     };
 
-    $(document).on('annotationitemsrendered', function () {
-        $('#wrapper [data-toggle="tooltip"]').tooltip();
-    });
+
 
     return {
         init: function (url, coursemodule, interaction, course, start, end, coursecontextid, type = 'yt') {
@@ -169,7 +168,7 @@ define(['jquery',
                         contentTypes.forEach(x => {
                             require(['' + x.amdmodule], function (Type) {
                                 ctRenderer[x.name] = new Type(player, annotations, interaction,
-                                    course, 0, 0, 0, 0, type, 0, totaltime, start, end, x);
+                                    course, 0, 0, 0, 0, type, 0, totaltime, start, end, x, coursemodule);
                                 count++;
                                 if (count == contentTypes.length) {
                                     resolve(ctRenderer);
@@ -626,19 +625,6 @@ define(['jquery',
                 $(`tr.annotation[data-id="${id}"] .edit`).trigger('click');
             });
 
-            $(document).on('click', '#video-nav .annotation', function (e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                var timestamp = $(this).data('timestamp');
-                player.play();
-                player.seek(timestamp);
-                player.pause();
-                $('tr.annotation[data-timestamp="' + timestamp + '"]').addClass('active');
-                var id = $(this).data('id');
-                var theAnnotation = annotations.find(x => x.id == id);
-                runInteraction(theAnnotation);
-            });
-
             // Quick edit
             $(document).on('contextmenu', '[data-editable]', function (e) {
                 e.preventDefault();
@@ -825,6 +811,200 @@ define(['jquery',
                     $('[role="main"]').append($wrapper);
                     $('#distractfreemodal').remove();
                 });
+            });
+
+            $(document).on('annotationitemsrendered', function () {
+                let secondLength = $('#video-nav').width() / totaltime;
+                $('#wrapper [data-toggle="tooltip"]').tooltip();
+                let targetAnnotation = null;
+                $('#video-nav .annotation.li-draggable').draggable({
+                    'containment': '#video-nav',
+                    'axis': 'x',
+                    'grid': [secondLength, 0],
+                    'start': function () {
+                        // Remove the tooltip
+                        $('.tooltip').remove();
+                        $('#seek').addClass('no-pointer-events');
+                        $(this).addClass('dragging');
+                        $(this).append('<i class="bi bi-grip-vertical"></i>');
+                    },
+                    'drag': function (event, ui) {
+                        let timestamp = ((ui.position.left + 5) / $('#video-nav').width()) * totaltime + start;
+                        player.seek(Math.round(timestamp));
+                        $('.tooltip').remove();
+                    },
+                    'stop': async function (event, ui) {
+                        $(this).removeClass('dragging');
+                        $('#seek').removeClass('no-pointer-events');
+                        $(this).find('i').remove();
+                        let timestamp = ((ui.position.left + 5) / $('#video-nav').width()) * totaltime + start;
+                        player.play();
+                        player.seek(Math.round(timestamp));
+                        player.pause();
+                        $('.tooltip').remove();
+                        const id = $(this).data('id');
+                        targetAnnotation = annotations.find(x => x.id == id);
+                        let playerTime = await player.getCurrentTime();
+                        const existingAnnotation = annotations.find(x => x.timestamp == Math.round(playerTime) && x.id != id);
+                        if (existingAnnotation) {
+                            addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
+                            renderAnnotationItems(annotations);
+                            return;
+                        }
+                        if (targetAnnotation.timestamp == Math.round(playerTime)) {
+                            return;
+                        }
+                        targetAnnotation.timestamp = Math.round(playerTime);
+                        dispatchEvent('annotationupdated', {
+                            annotation: targetAnnotation,
+                            action: 'edit'
+                        });
+                        // $.ajax({
+                        //     url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                        //     method: "POST",
+                        //     dataType: "text",
+                        //     data: {
+                        //         action: 'quickeditfield',
+                        //         sesskey: M.cfg.sesskey,
+                        //         id: id,
+                        //         field: 'timestamp',
+                        //         contextid: M.cfg.contextid,
+                        //         value: Math.round(playerTime),
+                        //     },
+                        //     success: function (data) {
+                        //         var updated = JSON.parse(data);
+                        //         dispatchEvent('annotationupdated', {
+                        //             annotation: updated,
+                        //             action: 'edit'
+                        //         });
+                        //     }
+                        // });
+                    }
+                });
+
+
+                $('#video-nav .annotation.skipsegment').draggable({
+                    'containment': '#video-nav',
+                    'axis': 'x',
+                    'grid': [secondLength, 0],
+                    'start': function () {
+                        $('.tooltip').remove();
+                        $('#seek').addClass('no-pointer-events');
+                    },
+                    'drag': function (event, ui) {
+                        let timestamp = ((ui.position.left) / $('#video-nav').width()) * totaltime + start;
+                        player.seek(Math.round(timestamp));
+                        $('.tooltip').remove();
+                    },
+                    'stop': async function (event, ui) {
+                        $('#seek').removeClass('no-pointer-events');
+                        $('.tooltip').remove();
+                        let timestamp = ((ui.position.left) / $('#video-nav').width()) * totaltime + start;
+                        player.play();
+                        player.seek(Math.round(timestamp));
+                        player.pause();
+                        const id = $(this).data('id');
+                        targetAnnotation = annotations.find(x => x.id == id);
+                        let playerTime = await player.getCurrentTime();
+                        const existingAnnotation = annotations.find(x => x.timestamp == Math.round(playerTime) && x.id != id);
+                        if (existingAnnotation) {
+                            addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
+                            renderAnnotationItems(annotations);
+                            return;
+                        }
+                        if (targetAnnotation.timestamp == Math.round(playerTime)) {
+                            return;
+                        }
+                        const skipduration = Number(targetAnnotation.title) - Number(targetAnnotation.timestamp);
+                        targetAnnotation.timestamp = Math.floor(playerTime);
+                        targetAnnotation.title = Math.floor(playerTime) + skipduration;
+                        dispatchEvent('annotationupdated', {
+                            annotation: targetAnnotation,
+                            action: 'edit'
+                        });
+                    }
+                });
+
+                $('#video-nav .annotation.skipsegment').resizable({
+                    'containment': '#video-nav',
+                    'grid': [secondLength, 0],
+                    'handles': 'e, w',
+                    'start': function () {
+                        $('.tooltip').remove();
+                    },
+                    'resize': function (event, ui) {
+                        $('.tooltip').remove();
+                        $(this).css({
+                            'height': '10px',
+                            'top': 'unset',
+                            'opacity': '1',
+                            'background-image': 'none',
+                        });
+                        window.console.log(ui.size.width);
+                        let timestamp;
+                        if (ui.originalPosition.left != ui.position.left) {
+                            timestamp = ((ui.position.left + 5) / $('#video-nav').width()) * totaltime + start;
+                        } else {
+                            timestamp = ((ui.position.left + 5 + ui.size.width) / $('#video-nav').width()) * totaltime + start;
+                        }
+                        player.seek(Math.floor(timestamp));
+                    },
+                    'stop': async function (event, ui) {
+                        $('.tooltip').remove();
+                        const id = $(this).data('id');
+                        targetAnnotation = annotations.find(x => x.id == id);
+                        let timestamp, direction;
+                        if (ui.originalPosition.left != ui.position.left) {
+                            timestamp = ((ui.position.left + 5) / $('#video-nav').width()) * totaltime + start;
+                            direction = "left";
+
+                        } else {
+                            timestamp = ((ui.position.left + 5 + ui.size.width) / $('#video-nav').width()) * totaltime + start;
+                            direction = "right";
+                        }
+                        player.play();
+                        player.seek(Math.round(timestamp));
+                        player.pause();
+                        let playerTime = await player.getCurrentTime();
+                        const existingAnnotation = annotations.find(x => x.timestamp == Math.floor(playerTime) && x.id != id);
+                        if (existingAnnotation) {
+                            addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
+                            renderAnnotationItems(annotations);
+                            return;
+                        }
+                        if (targetAnnotation.timestamp == Math.floor(playerTime)) {
+                            return;
+                        }
+                        window.console.log(targetAnnotation.title);
+                        if (direction == "left") {
+                            targetAnnotation.timestamp = Math.floor(playerTime);
+                        } else {
+                            targetAnnotation.title = Math.floor(playerTime);
+                        }
+                        dispatchEvent('annotationupdated', {
+                            annotation: targetAnnotation,
+                            action: 'edit'
+                        });
+                    }
+
+                });
+            });
+
+            $(document).on('click', '#video-nav .annotation', function (e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                // Check if ctrl key or command key is pressed
+                if (!e.ctrlKey && !e.metaKey) {
+                    return;
+                }
+                var timestamp = $(this).data('timestamp');
+                player.play();
+                player.seek(timestamp);
+                player.pause();
+                $('tr.annotation[data-timestamp="' + timestamp + '"]').addClass('active');
+                var id = $(this).data('id');
+                var theAnnotation = annotations.find(x => x.id == id);
+                runInteraction(theAnnotation);
             });
         }
     };

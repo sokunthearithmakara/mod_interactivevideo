@@ -134,6 +134,7 @@ export default class Form extends Base {
     }
 
     postContentRender(annotation, formfields, content, reportpage = false) {
+        let self = this;
         if (annotation.text1 != 0) {
             $(`#message[data-id='${annotation.id}'] #formmeta`)
                 .append(`<div class="duedate">${M.util.get_string('duedate', 'ivplugin_form')}: ${content.duedate}</div>`);
@@ -149,9 +150,11 @@ export default class Form extends Base {
                         action: 'get_log',
                         sesskey: M.cfg.sesskey,
                         userid: this.userid,
-                        cmid: annotation.annotationid,
+                        cm: annotation.annotationid,
                         annotationid: annotation.id,
                         contextid: M.cfg.contextid,
+                        cmid: self.cmid,
+                        token: self.token,
                     },
                     success: function(data) {
                         let log = JSON.parse(data);
@@ -164,7 +167,6 @@ export default class Form extends Base {
             });
         };
 
-        let self = this;
         let formjson = [];
         const renderList = (data) => {
             $(`#form-field-list`).empty();
@@ -507,6 +509,8 @@ export default class Form extends Base {
                         contextid: M.cfg.contextid,
                         draftitemid: 0,
                         value: cleanItems,
+                        cmid: self.cmid,
+                        token: self.token,
                     },
                     success: function(data) {
                         let updated = JSON.parse(data);

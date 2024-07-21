@@ -27,8 +27,30 @@ require_once('../../config.php');
 require_once('locallib.php');
 
 $action = required_param('action', PARAM_TEXT);
-require_sesskey();
-require_login();
+$token = optional_param('token', '', PARAM_TEXT);
+$cmid = optional_param('cmid', 0, PARAM_INT);
+
+switch ($action) {
+    case 'getallcontenttypes':
+        echo json_encode(interactivevideo_util::get_all_activitytypes());
+        break;
+    case 'format_text':
+        $text = required_param('text', PARAM_RAW);
+        $contextid = required_param('contextid', PARAM_INT);
+        echo interactivevideo_util::format_content($text, 1, $contextid);
+        break;
+}
+
+if ($token) {
+    $validated = \mod_interactivevideo\output\mobile::login_after_validate_token($token, $cmid);
+    if (!$validated) {
+        echo json_encode(['error' => 'invalidtoken']);
+        die();
+    }
+} else {
+    require_sesskey();
+    require_login();
+}
 
 switch ($action) {
     case 'get_items':
@@ -103,12 +125,10 @@ switch ($action) {
         $cxtid = required_param('cxtid', PARAM_INT);
         echo json_encode(array_values(interactivevideo_util::get_report_data_by_group($cmid, $groupid, $cxtid)));
         break;
-    case 'getallcontenttypes':
-        echo json_encode(interactivevideo_util::get_all_activitytypes());
-        break;
+
     case 'get_log':
         $userid = required_param('userid', PARAM_INT);
-        $cmid = required_param('cmid', PARAM_INT);
+        $cmid = required_param('cm', PARAM_INT);
         $annotationid = required_param('annotationid', PARAM_INT);
         $contextid = required_param('contextid', PARAM_INT);
         $log = interactivevideo_util::get_log($userid, $cmid, $annotationid, $contextid);
@@ -120,13 +140,5 @@ switch ($action) {
         $contextid = required_param('contextid', PARAM_INT);
         $log = interactivevideo_util::get_logs_by_userids($userids, $annotationid, $contextid);
         echo json_encode($log);
-        break;
-    case 'format_text':
-        $text = required_param('text', PARAM_RAW);
-        $contextid = required_param('contextid', PARAM_INT);
-        echo interactivevideo_util::format_content($text, 1, $contextid);
-        break;
-    default:
-        throw new moodle_exception('invalid', 'error', '', $action);
         break;
 }

@@ -352,7 +352,7 @@ html:has(.path-mod-interactivevideo) {
     left: 0;
     height: 4px;
     border-radius: 2px;
-    background-color: var(--ivdark);
+    background-color: var(--ivdanger);
     display: flex;
     transition: width linear 100ms;
 }
@@ -361,13 +361,23 @@ html:has(.path-mod-interactivevideo) {
     height: 4px;
     opacity: 0.6;
     z-index: 1;
+    transition: height ease-in-out 300ms, opacity ease-in-out 300ms;
+}
+
+.path-mod-interactivevideo #video-nav .annotation.skipsegment:hover {
+    height: 10px;
+    opacity: 1;
 }
 
 .path-mod-interactivevideo #video-nav li {
     list-style: none;
-    display: inline-block;
+    display: flex;
     position: absolute;
     z-index: 1;
+    width: 10px;
+    height: 10px;
+    align-items: center;
+    justify-content: center;
 }
 
 .path-mod-interactivevideo #video-nav li .item {
@@ -377,6 +387,14 @@ html:has(.path-mod-interactivevideo) {
     border: 1px solid #000;
     background-color: #fff;
     transition: transform ease-in-out 300ms;
+}
+
+.path-mod-interactivevideo #video-nav li.dragging {
+    background-color: var(--ivwhite);
+}
+
+.path-mod-interactivevideo #video-nav li.dragging .item {
+    display: none;
 }
 
 .path-mod-interactivevideo #video-nav li:not(.chapter) .item:hover {
@@ -819,7 +837,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo #wrapper.fullscreen #controler {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     margin: 0;
     border-radius: 0 !important;

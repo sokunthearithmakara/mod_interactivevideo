@@ -795,6 +795,8 @@ export default class InlineAnnotation extends Base {
                     contextid: M.cfg.contextid,
                     draftitemid: draftitemid,
                     value: cleanItems,
+                    cmid: self.cmid,
+                    token: self.token,
                 },
                 success: function (data) {
                     let updated = JSON.parse(data);

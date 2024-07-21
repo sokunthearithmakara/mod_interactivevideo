@@ -16,6 +16,9 @@
 
 namespace mod_interactivevideo\output;
 
+defined('MOODLE_INTERNAL') || die();
+require_once($CFG->dirroot . '/lib/externallib.php');
+
 use context_module;
 use moodle_url;
 
@@ -27,8 +30,14 @@ use moodle_url;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mobile {
+
+    /**
+     * Returns the interactive video course view for the mobile app.
+     *
+     * @param mixed $args
+     * @return void
+     */
     public static function mobile_module_view($args) {
-        global $OUTPUT, $DB, $CFG;
         $args = (object)$args;
         $cm = get_coursemodule_from_id('interactivevideo', $args->cmid);
 
@@ -41,16 +50,59 @@ class mobile {
         $url = new moodle_url('/mod/interactivevideo/view.php', [
             'id' => $cm->id,
             'iframe' => 1,
-            'token' => 'abc',
+            'token' => self::create_token(),
         ]);
 
         return [
             'templates' => [
                 [
                     'id' => 'main',
-                    'html' => '<iframe src="' . $url . '" width="100%" height="100%"></iframe>',
+                    'html' => '<iframe src="' . $url->out(false) . '" width="100%" height="100%" '
+                        . ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"'
+                        . ' referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
                 ],
             ],
         ];
+    }
+
+    /**
+     * Create token
+     *
+     * @return string
+     */
+    public static function create_token() {
+        global $DB;
+        $service = $DB->get_record('external_services', ['shortname' => MOODLE_OFFICIAL_MOBILE_SERVICE], '*', MUST_EXIST);
+        $token = external_generate_token_for_current_user($service);
+        return $token->token;
+    }
+
+    /**
+     * Login after validate token
+     *
+     * @param string $token
+     * @param int $cmid
+     * @return bool
+     */
+    public static function login_after_validate_token($token, $cmid) {
+        global $DB;
+        $modulecontext = context_module::instance($cmid);
+        if ($user = $DB->get_record_sql("
+                SELECT u.*
+                FROM {user} u
+                JOIN {external_tokens} t ON t.userid = u.id
+                JOIN {external_services} s ON s.id = t.externalserviceid
+                WHERE
+                    t.token = :token
+          AND s.shortname = :shortname", [
+            'contextid' => $modulecontext->id,
+            'shortname' => MOODLE_OFFICIAL_MOBILE_SERVICE,
+            'token' => $token,
+        ])) {
+            \core\session\manager::login_user($user);
+            return true;
+        } else {
+            return false;
+        }
     }
 }

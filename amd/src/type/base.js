@@ -30,12 +30,27 @@ import 'mod_interactivevideo/libraries/jquery-ui';
 
 class Base {
     constructor(player, annotations, interaction, course, userid, completionpercentage,
-        gradeiteminstance, grademax, vtype, preventskip, totaltime, start, end, properties) {
+        gradeiteminstance, grademax, vtype, preventskip, totaltime, start, end, properties, cm, token) {
+        /**
+         * Access token
+         * @type {string}
+         * @private
+         */
+        this.token = token;
+
+        /**
+         * The course module id
+         * @type {number}
+         * @private
+         */
+        this.cm = cm;
+
         /**
          * The player object
          * @type {Object}
          * @private
          */
+
         this.player = player;
         /**
          * The annotations object
@@ -395,6 +410,8 @@ class Base {
                     id: e.detail.id,
                     sesskey: M.cfg.sesskey,
                     contextid: M.cfg.courseContextId,
+                    token: self.token,
+                    cmid: self.cm,
                 },
                 success: function (data) {
                     var newAnnotation = JSON.parse(data);
@@ -422,6 +439,8 @@ class Base {
                 id: id,
                 sesskey: M.cfg.sesskey,
                 contextid: M.cfg.contextid,
+                token: this.token,
+                cmid: this.cm,
             },
             success: function (data) {
                 var newAnnotation = JSON.parse(data);
@@ -441,6 +460,7 @@ class Base {
      */
     editAnnotation(annotations, id) {
         this.annotations = annotations;
+        let self = this;
         const annotation = annotations.find(x => x.id == id);
         const timestamp = annotation.timestamp;
         const timestampassist = this.convertSecondsToHMS(timestamp);
@@ -493,6 +513,8 @@ class Base {
                     id: e.detail.id,
                     sesskey: M.cfg.sesskey,
                     contextid: M.cfg.courseContextId,
+                    token: self.token,
+                    cmid: self.cm,
                 },
             }).done(function (data) {
                 var updated = JSON.parse(data);
@@ -522,6 +544,8 @@ class Base {
                 sesskey: M.cfg.sesskey,
                 id: id,
                 contextid: M.cfg.contextid,
+                token: this.token,
+                cmid: this.cm,
             },
             success: function () {
                 dispatchEvent('annotationdeleted', {
@@ -609,7 +633,8 @@ class Base {
         const percentage = ((Number(annotation.timestamp) - this.start) / this.totaltime) * 100;
         if (this.isVisible(annotation)) {
             $("#video-nav ul").append(`<li class="annotation ${annotation.completed ? "completed" : ""}
-        ${annotation.type} ${this.isClickable(annotation) ? '' : 'no-pointer-events'}" data-timestamp="${annotation.timestamp}"
+        ${annotation.type} ${this.isClickable(annotation) ? '' : 'no-pointer-events'} li-draggable"
+         data-timestamp="${annotation.timestamp}"
         data-id="${annotation.id}" style="left: calc(${percentage}% - 5px)">
         <div class="item" data-toggle="tooltip" data-container="#wrapper"
         data-trigger="hover" data-html="true" data-original-title='<i class="${this.prop.icon} mr-1"></i>
@@ -734,6 +759,7 @@ class Base {
      * @returns {Promise}
      */
     toggleCompletion(id, action, type = 'manual') {
+        let self = this;
         // Skip if the page is the interactions page.
         if (this.isEditMode()) {
             return Promise.resolve(); // Return a resolved promise for consistency
@@ -774,7 +800,9 @@ class Base {
                     gradeiteminstance: this.gradeiteminstance,
                     c: completed,
                     xp: earnedXp,
-                    completeditems: JSON.stringify(completedItems)
+                    completeditems: JSON.stringify(completedItems),
+                    token: self.token,
+                    cmid: self.cm,
                 },
                 success: () => {
                     // Update the annotations array.
@@ -890,6 +918,7 @@ class Base {
      * @returns {Promise}
      */
     getLogs(annotation, userids) {
+        let self = this;
         return new Promise((resolve) => {
             $.ajax({
                 url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
@@ -901,6 +930,8 @@ class Base {
                     contextid: M.cfg.contextid,
                     userids: userids,
                     sesskey: M.cfg.sesskey,
+                    token: self.token,
+                    cmid: self.cm,
                 },
                 success: (data) => {
                     try {

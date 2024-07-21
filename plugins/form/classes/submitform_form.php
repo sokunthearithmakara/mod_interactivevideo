@@ -188,7 +188,7 @@ class submitform_form extends \core_form\dynamic_form {
 
         $attributes = $mform->getAttributes();
         $attributes['data-name'] = 'submitform-form';
-        $attributes['class'] = $attributes['class'] . ' bg-white' . ($isreviewing ? ' reviewing' : '');
+        $attributes['class'] = $attributes['class'] . ' bg-white px-0' . ($isreviewing ? ' reviewing' : '');
 
         $mform->setAttributes($attributes);
         $mform->addElement('hidden', 'contextid', null);

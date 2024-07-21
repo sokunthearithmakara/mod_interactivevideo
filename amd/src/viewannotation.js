@@ -21,7 +21,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchEvent}, Toast) {
+define(['jquery', 'core/event_dispatcher', 'core/toast'], function ($, { dispatchEvent }, Toast) {
     let ctRenderer = {};
     let annotations, // Array of annotations.
         totaltime, // Video total time.
@@ -44,7 +44,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
         }
     };
 
-    const renderAnnotationItems = async(annos, start, totaltime) => {
+    const renderAnnotationItems = async (annos, start, totaltime) => {
         releventAnnotations = annos;
 
         let actualduration = totaltime;
@@ -92,7 +92,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             return;
         }
         const render = new Promise((resolve) => {
-            annos.forEach(async(x) => {
+            annos.forEach(async (x) => {
                 const renderer = ctRenderer[x.type];
                 renderer.renderItemOnVideoNavigation(x);
             });
@@ -100,12 +100,12 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
         });
 
         render.then(() => {
-            dispatchEvent('annotationitemsrendered', {'annotations': annos});
+            dispatchEvent('annotationitemsrendered', { 'annotations': annos });
             $('.annolistinchapter').empty();
             const chapteritems = releventAnnotations.filter(x => x.type != 'skipsegment' && JSON.parse(x.prop).hascompletion);
             chapteritems.sort((a, b) => a.timestamp - b.timestamp);
             chapteritems.forEach((x) => {
-                $('[data-region="chapterlists"] li').each(function() {
+                $('[data-region="chapterlists"] li').each(function () {
                     const cstart = $(this).data('start');
                     const cend = $(this).data('end');
                     if (x.timestamp >= cstart && x.timestamp < cend) {
@@ -121,10 +121,10 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                 });
             });
         }).then(() => {
-            dispatchEvent('chapterrendered', {'annotations': releventAnnotations});
+            dispatchEvent('chapterrendered', { 'annotations': releventAnnotations });
         });
 
-        $(document).on('annotationitemsrendered', function() {
+        $(document).on('annotationitemsrendered', function () {
             $('#controler [data-toggle="tooltip"]').tooltip({
                 container: '#controler',
                 boundary: 'window',
@@ -144,8 +144,10 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
 
     return {
         renderAnnotationItems: renderAnnotationItems,
-        init: function(url, coursemodule, interaction, course, userid, start = 0, end,
-            completionpercentage, gradeiteminstance, grademax, vtype, preventskip = true, moment = null, doptions = {}) {
+        init: function (
+            url, cmid, interaction, course, userid, start = 0, end,
+            completionpercentage, gradeiteminstance, grademax, vtype,
+            preventskip = true, moment = null, doptions = {}, token = null) {
             // Convert start to number if string
             start = Number(start);
             if (isNaN(start)) {
@@ -184,7 +186,9 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                         action: 'get_items',
                         sesskey: M.cfg.sesskey,
                         id: interaction,
-                        contextid: M.cfg.courseContextId
+                        contextid: M.cfg.courseContextId,
+                        token: token,
+                        cmid: cmid
                     }
                 });
 
@@ -197,7 +201,9 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                         action: 'get_progress',
                         sesskey: M.cfg.sesskey,
                         id: interaction,
-                        uid: userid
+                        uid: userid,
+                        token: token,
+                        cmid: cmid
                     }
                 });
 
@@ -209,14 +215,15 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                     data: {
                         action: 'getallcontenttypes',
                         sesskey: M.cfg.sesskey,
+                        token: token,
+                        cmid: cmid
                     }
                 });
 
-                $.when(annnoitems, userprogress, getContentTypes).done(function(annos, progress, ct) {
+                $.when(annnoitems, userprogress, getContentTypes).done(function (annos, progress, ct) {
                     annotations = JSON.parse(annos[0]);
                     progress = JSON.parse(progress[0]);
                     contentTypes = JSON.parse(ct[0]);
-
                     // Get only annotations within the start and end times.
                     // Remove the skip segments that are completely outside the start and end times.
                     // Remove the annotations whose content type is not in the contentTypes.
@@ -312,10 +319,10 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                         }
                         var count = 0;
                         contentTypes.forEach(x => {
-                            require([x.amdmodule], function(Type) {
+                            require([x.amdmodule], function (Type) {
                                 ctRenderer[x.name] = new Type(player, releventAnnotations, interaction, course, userid,
                                     completionpercentage, gradeiteminstance, grademax, vtype, preventskip, totaltime, start,
-                                    end, x);
+                                    end, x, cmid, token);
                                 try {
                                     ctRenderer[x.name].init();
                                 } catch (error) {
@@ -339,7 +346,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                 });
             };
 
-            const runInteraction = async(annotation) => {
+            const runInteraction = async (annotation) => {
                 player.pause();
                 lastanno = annotation;
                 // Remove the previous message but keep the one below the video.
@@ -363,7 +370,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                 activityType.runInteraction(annotation);
             };
 
-            const shareMoment = async() => {
+            const shareMoment = async () => {
                 if (!moment) {
                     return;
                 }
@@ -437,7 +444,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                     // Toggle the tooltip to show the title.
                     $videoNav.find('.annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('show');
                     // Hide the tooltip after 2 seconds.
-                    setTimeout(function() {
+                    setTimeout(function () {
                         $videoNav.find('.annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('hide');
                     }, 2000);
                 }
@@ -452,19 +459,21 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             };
 
             let interval;
-            const onPlaying = async() => { // Use with player timeupdate event.
+            const onPlaying = async () => { // Use with player timeupdate event.
                 // Reset the annotation content.
                 if (!playerReady) {
                     return;
+                }
+                if ($('body').hasClass('mobiletheme') && !$('#wrapper').hasClass('fullscreen')) {
+                    $("#fullscreen").trigger('click');
                 }
                 $('#annotation-modal').modal('hide');
                 $('#message').not('[data-placement=bottom]').remove();
                 $('#end-screen, #start-screen').fadeOut(300);
                 $('#restart').addClass('d-none');
-
                 $('#playpause').find('i').removeClass('bi-play-fill').addClass('bi-pause-fill');
                 $('#playpause').attr('data-original-title', M.util.get_string('pause', 'mod_interactivevideo'));
-                const intervalFunction = async function() {
+                const intervalFunction = async function () {
                     const isPlaying = await player.isPlaying();
                     const isEnded = await player.isEnded();
                     if (!isPlaying || isEnded) {
@@ -479,7 +488,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                         return;
                     }
 
-                    dispatchEvent('timeupdate', {'time': t});
+                    dispatchEvent('timeupdate', { 'time': t });
 
                     const time = Math.round(t);
 
@@ -500,7 +509,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                         if (theAnnotation) {
                             if (theAnnotation.completed && !theAnnotation.rerunnable) {
                                 $('#video-nav .annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('show');
-                                setTimeout(function() {
+                                setTimeout(function () {
                                     $('#video-nav .annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('hide');
                                 }, 2000);
                             } else {
@@ -513,7 +522,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                     }
 
                     // Pause video on spacebar pressed
-                    $(document).on('keydown', function(e) {
+                    $(document).on('keydown', function (e) {
                         if (e.keyCode == 32) {
                             e.preventDefault();
                             player.pause();
@@ -530,7 +539,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             };
 
             // Implement the player
-            require(['mod_interactivevideo/player/' + vtype], function(VideoPlayer) {
+            require(['mod_interactivevideo/player/' + vtype], function (VideoPlayer) {
                 player = new VideoPlayer(
                     url,
                     start,
@@ -541,7 +550,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                 );
             });
 
-            $(document).on('timeupdate', async function(e) {
+            $(document).on('timeupdate', async function (e) {
                 const t = e.originalEvent.detail.time;
                 if (preventskip) {
                     const theAnnotations = releventAnnotations.filter(x => Number(x.timestamp) <= (t + player.frequency)
@@ -558,7 +567,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             });
 
             // Handle the refresh button:: allowing user to refresh the content
-            $(document).on('click', '#refresh', function(e) {
+            $(document).on('click', '#refresh', function (e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 const id = $(this).data('id');
@@ -568,13 +577,14 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             });
 
             // Handle video control events:: fullscreen toggle
-            $(document).on('click', '#fullscreen', function(e) {
+            $(document).on('click', '#fullscreen', function (e) {
                 e.preventDefault();
                 if (!playerReady) {
                     return;
                 }
+
                 // Put the wrapper in fullscreen mode
-                const elem = document.getElementById('wrapper');
+                let elem = document.getElementById('wrapper');
                 $('#fullscreen').toggleClass('active');
                 if (!$('#wrapper').hasClass('fullscreen')) {
                     if (elem.requestFullscreen) {
@@ -586,7 +596,6 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                     } else if (elem.msRequestFullscreen) { /* IE/Edge */
                         elem.msRequestFullscreen();
                     }
-
                 } else {
                     if (document.exitFullscreen) {
                         document.exitFullscreen();
@@ -600,7 +609,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                 }
             });
 
-            $(document).on('fullscreenchange', function() {
+            $(document).on('fullscreenchange', function () {
                 if (document.fullscreenElement) {
                     $('#wrapper, #interactivevideo-container').addClass('fullscreen');
                     $("#video-wrapper").css('padding-bottom', '0');
@@ -614,14 +623,14 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             });
 
             // Pause video when the tab is not visible.
-            $(document).on('visibilitychange', function() {
+            $(document).on('visibilitychange', function () {
                 if (document.visibilityState == 'hidden') {
                     player.pause();
                 }
             });
 
             // Handle share this moment event.
-            $(document).on('click', '#controler #share', function(e) {
+            $(document).on('click', '#controler #share', function (e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 const $this = $(this);
@@ -630,11 +639,11 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                     const url = window.location.href;
                     const shareurl = url + (url.indexOf('?') > 0 ? '&' : '?') + 't=' + Math.round(time);
                     // Add shareurl to clipboard.
-                    navigator.clipboard.writeText(shareurl).then(function() {
+                    navigator.clipboard.writeText(shareurl).then(function () {
                         // Show the copied message.
                         // Change tooltip to copied.
                         $this.attr('data-original-title', M.util.get_string("copied", "mod_interactivevideo")).tooltip('show');
-                        setTimeout(function() {
+                        setTimeout(function () {
                             // Change tooltip back to share.
                             $this
                                 .attr('data-original-title', M.util.get_string("sharethismoment", "mod_interactivevideo"))
@@ -646,7 +655,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             });
 
             // Display time when user hover on the progress bar.
-            $(document).on('mousemove', '#video-nav #seek', function(e) {
+            $(document).on('mousemove', '#video-nav #seek', function (e) {
                 if (!playerReady) {
                     return;
                 }
@@ -666,7 +675,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                 }).tooltip('show');
             });
 
-            $(document).on('mouseleave', '#video-nav #seek', function() {
+            $(document).on('mouseleave', '#video-nav #seek', function () {
                 if (!playerReady) {
                     return;
                 }
@@ -675,7 +684,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             });
 
             // Handle annotation click event:: when user click on the annotation on the progress bar
-            $(document).on('click', '#video-nav .annotation', async function(e) {
+            $(document).on('click', '#video-nav .annotation', async function (e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if ($(this).hasClass('no-click')) {
@@ -699,7 +708,7 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             });
 
             // Handle seeking event:: when user click on the progress bar
-            $(document).on('click', '#video-nav', async function(e) {
+            $(document).on('click', '#video-nav', async function (e) {
                 if (!playerReady) {
                     return;
                 }
@@ -728,20 +737,17 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             });
 
             // Handle video control events:: play
-            $(document).on('click', '#start-screen #play', async function(e) {
+            $(document).on('click', '#start-screen #play', async function (e) {
                 e.preventDefault();
                 $('#start-screen').fadeOut(300);
                 $(this).addClass('d-none');
                 $videoNav.removeClass('d-none');
-                if ($('body').hasClass('mobiletheme')) {
-                    $("#fullscreen").trigger('click');
-                }
                 await player.seek(start);
                 player.play();
             });
 
             // Handle video control events:: restart
-            $(document).on('click', '#end-screen #restart', async function(e) {
+            $(document).on('click', '#end-screen #restart', async function (e) {
                 e.preventDefault();
                 $('#message').remove();
                 lastanno = null;
@@ -755,14 +761,14 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
             });
 
             // Handle video control events:: pause/resume when user click on the video
-            $(document).on('click', '#video-wrapper .video-block', async function(e) {
+            $(document).on('click', '#video-wrapper .video-block', async function (e) {
                 if (!playerReady) {
                     return;
                 }
                 clearInterval(interval);
                 e.preventDefault();
                 // Pause or resume the video.
-                player.isPlaying().then(async(playing) => {
+                player.isPlaying().then(async (playing) => {
                     if (playing) {
                         player.pause();
                     } else {
@@ -771,14 +777,14 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                 });
             });
 
-            $(document).on('click', '#playpause', function(e) {
+            $(document).on('click', '#playpause', function (e) {
                 if (!playerReady) {
                     return;
                 }
                 e.preventDefault();
                 $(this).tooltip('hide');
                 // Pause or resume the video.
-                player.isPlaying().then(async(playing) => {
+                player.isPlaying().then(async (playing) => {
                     if (playing) {
                         player.pause();
                     } else {
@@ -792,16 +798,16 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                 });
             });
 
-            $(document).on('click', 'li.anno', async function(e) {
+            $(document).on('click', 'li.anno', async function (e) {
                 e.preventDefault();
                 const id = $(this).data('id');
                 $(`li.annotation[data-id=${id}]`).trigger('click');
                 if ($(this).closest('#chapter-container-left').length > 0) {
-                    $('#chaptertoggle button').trigger('click');
+                    $('#chaptertoggle .btn').trigger('click');
                 }
             });
 
-            $(document).on('click', '#mute', function(e) {
+            $(document).on('click', '#mute', function (e) {
                 e.preventDefault();
                 $(this).tooltip('hide');
                 $(this).toggleClass('active');
@@ -816,35 +822,35 @@ define(['jquery', 'core/event_dispatcher', 'core/toast'], function($, {dispatchE
                 $(this).tooltip('show');
             });
 
-            $(document).on('interactionrun', function(e) {
+            $(document).on('interactionrun', function (e) {
                 window.console.log(e);
             });
 
-            $(document).on('interactionclose', function(e) {
+            $(document).on('interactionclose', function (e) {
                 window.console.log(e);
             });
 
-            $(document).on('interactionCompletionUpdated', function(e) {
+            $(document).on('interactionCompletionUpdated', function (e) {
                 window.console.log(e);
             });
 
-            $(document).on('iv:playerReady', function() {
+            $(document).on('iv:playerReady', function () {
                 onReady();
             });
 
-            $(document).on('iv:playerPaused', function() {
+            $(document).on('iv:playerPaused', function () {
                 onPaused();
             });
 
-            $(document).on('iv:playerPlaying', function() {
+            $(document).on('iv:playerPlaying', function () {
                 onPlaying();
             });
 
-            $(document).on('iv:playerEnded', function() {
+            $(document).on('iv:playerEnded', function () {
                 onEnded();
             });
 
-            $(document).on('iv:playerError', function() {
+            $(document).on('iv:playerError', function () {
                 Toast.add(M.util.get_string('thereisanissueloadingvideo', 'mod_interactivevideo'), {
                     type: 'danger'
                 });
