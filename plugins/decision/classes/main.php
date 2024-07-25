@@ -50,17 +50,11 @@ class main extends \ivplugin_richtext\main {
     public function get_content($arg) {
         $content = $arg['content'];
         $dests = json_decode($content);
-        $html = '<div class="position-absolute decision text-center mx-auto w-100">';
-        $html .= '<h5 class="pt-5 pb-3 bg-white" id="decision-q"><i class="mb-2 bi bi-signpost-split-fill"
-         style="font-size: 2em"></i><br>' . $arg['formattedtitle'] . '</h5>';
-        // Loop through the content and format_string the title.
-        foreach ($dests as $order => $dest) {
-            $html .= '<a href="javascript:void(0)" data-timestamp="' . $dest->timestamp . '" data-order="' . $order
-                . '" class="decision-option btn btn-outline-secondary btn-rounded mb-2 d-flex
-             justify-content-between align-items-center mx-auto"><span class="text-truncate">'
-                . format_string($dest->title) . '</span><i class="bi bi-chevron-right"></i></a>';
+        foreach ($dests as $dest) {
+            $dest->title = format_string($dest->title);
         }
-        $html .= '</div>';
-        return $html;
+        $dests = array_values($dests);
+        return json_encode($dests);
+
     }
 }

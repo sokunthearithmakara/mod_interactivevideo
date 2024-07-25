@@ -24,9 +24,29 @@ import { dispatchEvent } from 'core/event_dispatcher';
 let player;
 class Yt {
     constructor(url, start, end, showControls, customStart = false, preload = false) {
+        /**
+         * The type of the player
+         * @type {String}
+         * @default yt
+         * @private
+         * @readonly
+         */
         this.type = 'yt';
+        /**
+         * The start time of the video
+         * @type {Number}
+         * @private
+         */
         this.start = start;
+        /**
+         * The end time of the video
+         * @type {Number}
+         */
         this.end = end;
+        /**
+         * Interval frequency
+         * @type {Number}
+         */
         this.frequency = 0.15;
 
         // Documented at https://developers.google.com/youtube/iframe_api_reference
@@ -40,7 +60,7 @@ class Yt {
         var self = this;
         var options = {
             videoId: videoId,
-            host: 'https://www.youtube-nocookie.com',
+            // host: 'https://www.youtube-nocookie.com',
             width: 1080,
             height: 720,
             playerVars: {
@@ -92,6 +112,7 @@ class Yt {
                         return;
                     }
                     switch (e.data) {
+
                         case YT.PlayerState.ENDED:
                             dispatchEvent('iv:playerEnded');
                             break;
@@ -132,33 +153,73 @@ class Yt {
             player = new YT.Player('player', options);
         }
     }
+    /**
+     * Play the video
+     * @return {Void}
+     */
     play() {
         player.playVideo();
     }
+    /**
+     * Pause the video
+     * @return {Void}
+     */
     pause() {
         player.pauseVideo();
     }
+    /**
+     * Stop the video
+     * @param {Number} starttime
+     * @return {Void}
+     */
     stop(starttime) {
         player.seekTo(starttime);
         player.pauseVideo();
     }
+    /**
+     * Seek the video to a specific time
+     * @param {Number} time
+     * @return {Promise}
+     */
     seek(time) {
         player.seekTo(time, true);
         dispatchEvent('iv:playerSeek', { time: time });
         return Promise.resolve();
     }
+    /**
+     * Get the current time of the video
+     * @return {Promise}
+     */
     getCurrentTime() {
         return Promise.resolve(player.getCurrentTime());
     }
+    /**
+     * Get the duration of the video
+     * @return {Promise}
+     */
     getDuration() {
         return Promise.resolve(player.getDuration());
     }
+    /**
+     * Check if the video is paused
+     * @return {Promise}
+     * @resolve {Boolean}
+     */
     isPaused() {
         return Promise.resolve(player.getPlayerState() === 2);
     }
+    /**
+     * Check if the video is playing
+     * @return {Promise}
+     * @resolve {Boolean}
+     */
     isPlaying() {
         return Promise.resolve(player.getPlayerState() === 1);
     }
+    /**
+     * Check if the video is ended
+     * @return {Promise}
+     */
     isEnded() {
         if (player.getPlayerState() === 0) {
             return Promise.resolve(true);
@@ -169,27 +230,62 @@ class Yt {
         }
         return Promise.resolve(false);
     }
+    /**
+     * Get the aspect ratio of the video
+     * @return {Promise}
+     */
     ratio() {
         return Promise.resolve(16 / 9);
     }
+    /**
+     * Destroy the player
+     * @return {Void}
+     */
     destroy() {
         player.destroy();
         dispatchEvent('iv:playerDestroyed');
     }
+    /**
+     * Get the state of the player
+     * @return {Promise}
+     * @resolve {Number} The state of the player
+     */
     getState() {
         return Promise.resolve(player.getPlayerState());
     }
+    /**
+     * Set playback rate of the video
+     * @param {Number} rate
+     */
     setRate(rate) {
         player.setPlaybackRate(rate);
+        return Promise.resolve();
     }
+    /**
+     * Mute the video
+     */
     mute() {
         player.mute();
     }
+    /**
+     * Unmute the video
+     */
     unMute() {
         player.unMute();
     }
+    /**
+     * Get the original player object
+     */
     originalPlayer() {
         return player;
+    }
+    /**
+     * Set the quality of the video
+     * @param {*} quality
+     */
+    setQuality(quality) {
+        // Not supported by Youtube
+        return quality;
     }
 }
 

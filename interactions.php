@@ -119,10 +119,7 @@ if ($moduleinstance->source == 'url') {
 $datafortemplate = [
     "returnurl" => new moodle_url('/course/view.php', ['id' => $course->id]),
     "canedit" => has_capability('mod/interactivevideo:edit', $modulecontext),
-    "completion" => '<button class="btn btn-primary text-uppercase" type="button"
-      id="addcontent" data-toggle="modal" aria-expanded="false" data-target="#contentmodal">
-      <i class="bi bi-plus-lg mr-2"></i>'
-        . get_string('add', 'mod_interactivevideo') . '</button>' . ($attempted ? '<button class="btn btn-sm ml-2"
+    "completion" => ($attempted ? '<button class="btn btn-sm"
           type="button" data-toggle="popover" data-html="true" data-content=\'' .
             get_string('interactionscannotbeedited', 'mod_interactivevideo') . '\'>
          <i class="bi bi-exclamation-circle-fill text-warning" style="font-size: 25px"></i></button>' : ''),

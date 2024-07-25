@@ -196,3 +196,5 @@ $string['yes'] = 'Yes';
 $string['youcannotviewthisannotationyet'] = 'You cannot view this content yet.';
 $string['youmustcompletethepreviousactivity'] = 'You must complete the previous activity before you can see the rest of the video.';
 $string['invalidtimestamp'] = 'Invalid timestamp';
+$string['unsavedchanges'] = 'You have unsaved changes. Are you sure you want to leave this page?';
+$string['draftsaved'] = 'Draft saved';

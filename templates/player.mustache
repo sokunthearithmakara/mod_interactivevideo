@@ -66,14 +66,7 @@ Example context (json):
                         title="{{#str}}togglefullscreen,mod_interactivevideo{{/str}}"><i
                             class="fa fa-expand"></i></span>
                     {{/displayoptions.hidemainvideocontrols}}
-                    {{! Toast }}
-                    <div id="toast" style="z-index:1090; top: 5px;"
-                        class="toast mx-auto toast-warning fade position-fixed" role="alert" aria-live="assertive"
-                        aria-atomic="true" data-delay="3000">
-                        <div class="toast-body">
-                            {{#str}}youmustcompletethepreviousactivity,mod_interactivevideo{{/str}}
-                        </div>
-                    </div>
+
                     {{^displayoptions.disablechapternavigation}}
                     <div id="chapter-container-left" class="d-none sticky-top position-absolute w-100 h-100">
                         <div data-region="chapterwrapper"
@@ -176,10 +169,12 @@ Example context (json):
                     id="controler" style="height:55px">
                     <div id="taskinfo" class="d-flex align-items-center justify-content-end w-100 px-3 bg-transparent">
                         <div id="video-nav"
-                            class="bg-gray rounded-lg align-items-center {{^darkmode}}mb-1{{/darkmode}} {{#darkmode}}mb-2{{/darkmode}} mt-2">
+                            class="bg-gray rounded-lg align-items-center {{^darkmode}}mb-1{{/darkmode}} {{#darkmode}}mb-2{{/darkmode}} mt-2 position-relative">
                             <ul></ul>
                             <div id="progress" class="bg-danger"></div>
-                            <div id="seek" class="w-100 position-absolute rounded"></div>
+                            <div id="seek" class="w-100 position-absolute rounded">
+                            </div>
+                            <div id="seekhead" class="position-absolute rounded-circle bg-danger" style="top: -3px;"></div>
                         </div>
                     </div>
                     <div class="w-100 px-2 d-flex align-items-center justify-content-between">
@@ -220,7 +215,7 @@ Example context (json):
                 {{/displayoptions.hidemainvideocontrols}}
             </div>
             {{! Content }}
-            <div id="annotation-content" class="bg-white w-100 position-relative mt-3 overflow-hidden border-0"></div>
+            <div id="annotation-content" class="w-100 position-relative overflow-hidden border-0"></div>
         </div>
         {{^displayoptions.disablechapternavigation}}
         <div class="d-none col-lg-12 col-xl-4 mb-3 overflow-hidden" id="chapter-container-right">

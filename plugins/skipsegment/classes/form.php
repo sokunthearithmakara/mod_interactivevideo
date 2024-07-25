@@ -47,7 +47,8 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->addElement('hidden', 'title');
         $mform->setType('title', PARAM_INT);
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
-
+        $starttime = $this->optional_param('timestamp', 0, PARAM_INT);
+        $mform->setDefault('title', $this->optional_param('title', $starttime, PARAM_INT));
         $mform->addElement(
             'text',
             'titleassist',
@@ -55,7 +56,8 @@ class form extends \mod_interactivevideo\form\base_form {
             ['placeholder' => '00:00:00']
         );
         $mform->setType('titleassist', PARAM_TEXT);
-        $mform->setDefault('titleassist', $this->optional_param('timestampassist', '00:00:00', PARAM_TEXT));
+        $starttimeformatted = gmdate("H:i:s", $starttime);
+        $mform->setDefault('titleassist', $this->optional_param('timestampassist', $starttimeformatted, PARAM_TEXT));
         $mform->addRule('titleassist', get_string('required'), 'required', null, 'client');
         $mform->addRule(
             'titleassist',

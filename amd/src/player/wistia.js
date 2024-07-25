@@ -198,6 +198,10 @@ class Wistia {
     originalPlayer() {
         return player;
     }
+    setQuality(quality) {
+        player.setQuality(quality);
+        return quality;
+    }
 }
 
 export default Wistia;

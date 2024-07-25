@@ -1,4 +1,4 @@
-/* eslint-disable promise/always-return */
+
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -23,10 +23,10 @@
  */
 import $ from 'jquery';
 import Base from 'mod_interactivevideo/type/base';
-import { dispatchEvent } from 'core/event_dispatcher';
+import {dispatchEvent} from 'core/event_dispatcher';
 import ModalForm from 'core_form/modalform';
 import Templates from 'core/templates';
-import { notifyFilterContentUpdated as notifyFilter } from 'core_filters/events';
+import {notifyFilterContentUpdated as notifyFilter} from 'core_filters/events';
 export default class InlineAnnotation extends Base {
     postEditCallback() {
         // Do nothing
@@ -38,7 +38,7 @@ export default class InlineAnnotation extends Base {
         videoWrapper.append(`<div id="message" data-id="${annotation.id}"
              class="message text-white bg-transparent inlineannotation"></div>`);
 
-        const updateAspectRatio = async (video, reset) => {
+        const updateAspectRatio = async(video, reset) => {
             let elem = video ? $('#player') : $(`#message[data-id='${annotation.id}']`);
             if ($("#wrapper").hasClass('fullscreen')) {
                 let ratio = await this.player.ratio();
@@ -83,7 +83,7 @@ export default class InlineAnnotation extends Base {
 
         resizeObserver.observe(vwrapper);
 
-        $(document).on('timeupdate', function () {
+        $(document).on('timeupdate', function() {
             updateAspectRatio(true, true);
         });
     }
@@ -207,13 +207,13 @@ export default class InlineAnnotation extends Base {
                         if (self.isEditMode()) {
                             video.autoplay = false;
                         }
-                        video.onplay = function () {
+                        video.onplay = function() {
                             wrapper.find('.playpause').removeClass('bi-play-fill').addClass('bi-pause-fill');
                         };
-                        video.onpause = function () {
+                        video.onpause = function() {
                             wrapper.find('.playpause').removeClass('bi-pause-fill').addClass('bi-play-fill');
                         };
-                        video.onended = function () {
+                        video.onended = function() {
                             wrapper.find('.playpause').removeClass('bi-pause-fill').addClass('bi-play-fill');
                         };
                         wrapper.css(position);
@@ -243,7 +243,7 @@ export default class InlineAnnotation extends Base {
                             let playButton = wrapper.find('.annotation-content');
                             let audioSrc = prop.url;
                             let media = new Audio(audioSrc);
-                            playButton.on('click', function (e) {
+                            playButton.on('click', function(e) {
                                 e.stopImmediatePropagation();
                                 if (media.paused || media.ended || media.currentTime === 0) {
                                     media.play();
@@ -255,17 +255,17 @@ export default class InlineAnnotation extends Base {
                             });
 
                             let totaltime = 0;
-                            media.onloadedmetadata = function () {
+                            media.onloadedmetadata = function() {
                                 totaltime = media.duration;
                                 playButton.find('span.timeremaining').text(convertSecondsToMMSS(totaltime));
                             };
 
-                            media.onended = function () {
+                            media.onended = function() {
                                 playButton.find('i').removeClass('bi-pause-fill').addClass('bi-volume-up');
                                 playButton.find('span.timeremaining').text(convertSecondsToMMSS(totaltime));
                             };
 
-                            media.ontimeupdate = function () {
+                            media.ontimeupdate = function() {
                                 playButton.find('span.timeremaining')
                                     .text(convertSecondsToMMSS(media.duration - media.currentTime));
                             };
@@ -276,7 +276,7 @@ export default class InlineAnnotation extends Base {
                                 }, 100);
                             }
 
-                            $(document).on('iv:playerSeek iv:playerPlaying', function () {
+                            $(document).on('iv:playerSeek iv:playerPlaying', function() {
                                 if (media) {
                                     media.pause();
                                 }
@@ -320,7 +320,7 @@ export default class InlineAnnotation extends Base {
                         if (timer) {
                             clearInterval(timer);
                         }
-                        var intervalfunction = function () {
+                        var intervalfunction = function() {
                             timer = setInterval(() => {
                                 $(`.annotation-content#${id}`).addClass('running');
                                 let time = $(`.annotation-content#${id}`).data('duration');
@@ -339,10 +339,10 @@ export default class InlineAnnotation extends Base {
                                     if (prop.playalarmsound.playsoundatend == 1) {
                                         alarm = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/alarm.mp3');
                                         alarm.play();
-                                        alarm.onplay = function () {
+                                        alarm.onplay = function() {
                                             $(`.annotation-content#${id}`).addClass('pulse');
                                         };
-                                        alarm.onended = function () {
+                                        alarm.onended = function() {
                                             $(`.annotation-content#${id}`).removeClass('pulse');
                                         };
                                     }
@@ -355,7 +355,7 @@ export default class InlineAnnotation extends Base {
 
                         if (!self.isEditMode()) {
                             intervalfunction();
-                            $videoWrapper.on('click', `.annotation-content#${id}`, function (e) {
+                            $videoWrapper.on('click', `.annotation-content#${id}`, function(e) {
                                 e.stopImmediatePropagation();
                                 if (prop.allowpause == 1) {
                                     if ($(this).hasClass('running')) {
@@ -373,7 +373,7 @@ export default class InlineAnnotation extends Base {
                             });
                         }
 
-                        $(document).on('iv:playerSeek', function () {
+                        $(document).on('iv:playerSeek', function() {
                             clearInterval(timer);
                         });
 
@@ -488,7 +488,7 @@ export default class InlineAnnotation extends Base {
                                           <i class="bi bi-arrow-right"><i></i></i></a></div>` : ''}</div>`,
                                 });
 
-                                wrapper.on('shown.bs.popover', function () {
+                                wrapper.on('shown.bs.popover', function() {
                                     let $body = $(`.popover.id-${id} .popover-body`);
                                     self.formatContent(prop.content.text, M.cfg.contextid).then((html) => {
                                         $body.html(html);
@@ -509,11 +509,11 @@ export default class InlineAnnotation extends Base {
                         containment: "#message",
                         cursor: "move",
                         handle: '.annotation-content',
-                        stop: function () {
+                        stop: function() {
                             recalculatingSize($(this));
                             $(this).trigger('click');
                         },
-                        drag: function () {
+                        drag: function() {
                             updatePositionInfo($(this));
                         }
                     });
@@ -521,13 +521,13 @@ export default class InlineAnnotation extends Base {
                     wrapper.resizable({
                         containment: "#message",
                         handles: "all",
-                        start: function (event) {
+                        start: function(event) {
                             // If shape and ctrl key is pressed, keep the aspect ratio 1:1
                             if (type == 'shape' && event.ctrlKey) {
                                 $(this).resizable('option', 'aspectRatio', 1);
                             }
                         },
-                        stop: function () {
+                        stop: function() {
                             if (type == 'text'
                                 || type == 'audio' || type == 'stopwatch' || type == 'file' || type == 'navigation') {
                                 recalculatingTextSize($(this), type != 'text');
@@ -538,7 +538,7 @@ export default class InlineAnnotation extends Base {
                             recalculatingSize($(this));
                             $(this).trigger('click');
                         },
-                        resize: function (event) {
+                        resize: function(event) {
                             if (type == 'text'
                                 || type == 'audio' || type == 'stopwatch' || type == 'file' || type == 'navigation') {
                                 recalculatingTextSize($(this), type != 'text');
@@ -551,7 +551,7 @@ export default class InlineAnnotation extends Base {
                 }
 
                 if (type != 'shape') {
-                    wrapper.on('mouseover', function () {
+                    wrapper.on('mouseover', function() {
                         if (!$(this).hasClass('resizable')) {
                             return;
                         }
@@ -574,7 +574,7 @@ export default class InlineAnnotation extends Base {
 
             // Handle behavior for each item
             if (!self.isEditMode()) {
-                $videoWrapper.on('click', `.annotation-wrapper`, function (e) {
+                $videoWrapper.on('click', `.annotation-wrapper`, function(e) {
                     e.stopImmediatePropagation();
                     let wrapper = $(this);
                     let type = wrapper.data('type');
@@ -624,10 +624,10 @@ export default class InlineAnnotation extends Base {
                                 </div>`;
                                 $('#wrapper').append(modal);
                                 $('#annotation-modal').modal('show');
-                                $('#annotation-modal').on('hide.bs.modal', function () {
+                                $('#annotation-modal').on('hide.bs.modal', function() {
                                     $('#annotation-modal').remove();
                                 });
-                                $('#annotation-modal').on('shown.bs.modal', function () {
+                                $('#annotation-modal').on('shown.bs.modal', function() {
                                     $('#annotation-modal .modal-body').fadeIn(300);
                                     let $body = $('#annotation-modal .modal-body');
                                     self.formatContent(content, M.cfg.contextid).then((html) => {
@@ -642,7 +642,7 @@ export default class InlineAnnotation extends Base {
                     }
                 });
 
-                $playerWrapper.on('click', `.popover-dismiss`, function (e) {
+                $playerWrapper.on('click', `.popover-dismiss`, function(e) {
                     e.stopImmediatePropagation();
                     $(this).closest('.popover').remove();
                 });
@@ -658,7 +658,7 @@ export default class InlineAnnotation extends Base {
             if (existingwrapper.length == 0) {
                 return;
             }
-            existingwrapper.each(function () {
+            existingwrapper.each(function() {
                 let type = $(this).data('type');
                 if (type == 'text' || type == 'audio' || type == 'stopwatch' || type == 'file' || type == 'navigation') {
                     recalculatingTextSize($(this), type != 'text');
@@ -750,11 +750,12 @@ export default class InlineAnnotation extends Base {
             self.enableColorPicker();
         }
 
-        $(document).on('iv:playerSeek iv:playerPlaying', function (e) {
+        $(document).on('iv:playerSeek iv:playerPlaying', function(e) {
             let newTime = e.detail.time;
             if (Math.floor(newTime) != annotation.timestamp) {
                 $(`#inlineannotation-btns`).remove();
                 $('.inlineannotation-popover').remove();
+                $videoWrapper.find(`#message`).remove();
             }
         });
 
@@ -765,7 +766,7 @@ export default class InlineAnnotation extends Base {
 
         const getItems = (updateid) => {
             items = [];
-            $videoWrapper.find(`.annotation-wrapper`).each(function (index, element) {
+            $videoWrapper.find(`.annotation-wrapper`).each(function(index, element) {
                 let item = {
                     "id": (updateid ? (new Date().getTime() + index) : $(element).data('item')),
                     "type": $(element).data('type'),
@@ -776,7 +777,7 @@ export default class InlineAnnotation extends Base {
             });
         };
 
-        $playerWrapper.on('click', `#inlineannotation-btns #save`, function (e) {
+        $playerWrapper.on('click', `#inlineannotation-btns #save`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             getItems(true, true);
@@ -798,7 +799,7 @@ export default class InlineAnnotation extends Base {
                     cmid: self.cmid,
                     token: self.token,
                 },
-                success: function (data) {
+                success: function(data) {
                     let updated = JSON.parse(data);
                     dispatchEvent('annotationupdated', {
                         annotation: updated,
@@ -808,7 +809,7 @@ export default class InlineAnnotation extends Base {
             });
         });
 
-        $playerWrapper.on('click', `#inlineannotation-btns  #close`, function (e) {
+        $playerWrapper.on('click', `#inlineannotation-btns  #close`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(`#inlineannotation-btns`).remove();
@@ -855,7 +856,7 @@ export default class InlineAnnotation extends Base {
             renderItems([newItem], newItem.id, true);
         };
 
-        $playerWrapper.on('click', `#inlineannotation-btns  .add-ia`, function (e) {
+        $playerWrapper.on('click', `#inlineannotation-btns  .add-ia`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             let annoid = $videoWrapper.find(`#message`).data('id');
@@ -886,7 +887,7 @@ export default class InlineAnnotation extends Base {
                     handle: ".modal-header",
                 });
                 if (type == 'navigation' || type == 'image' || type == 'shape') {
-                    $(document).on('change', '[name="timestamp"]', function (e) {
+                    $(document).on('change', '[name="timestamp"]', function(e) {
                         e.preventDefault();
                         let parts = $(this).val().split(':');
                         let timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
@@ -911,7 +912,6 @@ export default class InlineAnnotation extends Base {
                 }
             });
 
-
             iaform.addEventListener(iaform.events.FORM_SUBMITTED, (e) => {
                 getItems(false);
                 let left = Math.random() * 100;
@@ -931,7 +931,7 @@ export default class InlineAnnotation extends Base {
             });
         });
 
-        $playerWrapper.on('click', `#inlineannotation-btns  #edit`, function (e) {
+        $playerWrapper.on('click', `#inlineannotation-btns  #edit`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             let annnoid = $videoWrapper.find(`#message`).data('id');
@@ -939,7 +939,7 @@ export default class InlineAnnotation extends Base {
             getItems(false);
             let item = items.find(x => x.id == active);
             let type = item.type;
-            let formdata = { ...item.properties };
+            let formdata = {...item.properties};
             formdata.contextid = M.cfg.contextid;
             formdata.id = item.id;
             formdata.annotationid = annnoid;
@@ -961,7 +961,7 @@ export default class InlineAnnotation extends Base {
                     handle: ".modal-header",
                 });
                 if (type == 'navigation' || type == 'image' || type == 'shape') {
-                    $(document).on('change', '[name="timestamp"]', function (e) {
+                    $(document).on('change', '[name="timestamp"]', function(e) {
                         e.preventDefault();
                         let parts = $(this).val().split(':');
                         let timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
@@ -996,7 +996,7 @@ export default class InlineAnnotation extends Base {
             });
         });
 
-        $videoWrapper.on('click', `.annotation-wrapper`, function (e) {
+        $videoWrapper.on('click', `.annotation-wrapper`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             if (!e.ctrlKey) {
@@ -1022,11 +1022,11 @@ export default class InlineAnnotation extends Base {
                 $('#inlineannotation-btns #edit').attr('disabled', 'disabled');
                 $('#inlineannotation-btns #edit').removeAttr('disabled');
             } else {
-                let dataActive = activewrapper.map(function () {
+                let dataActive = activewrapper.map(function() {
                     return $(this).data('item');
                 }).get();
                 $('#edit-btns').attr('data-active', dataActive).addClass('d-flex').removeClass('d-none');
-                activewrapper.each(function () {
+                activewrapper.each(function() {
                     let type = $(this).data('type');
                     $(`#inlineannotation-btns .btn[data-mediatype="${type}"]`).addClass('active rotatey-360');
                 });
@@ -1038,7 +1038,7 @@ export default class InlineAnnotation extends Base {
             }
         });
 
-        $playerWrapper.on('click', `#inlineannotation-btns  #up`, function (e) {
+        $playerWrapper.on('click', `#inlineannotation-btns  #up`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             // Increase the z-index of the active item
@@ -1052,7 +1052,7 @@ export default class InlineAnnotation extends Base {
             });
         });
 
-        $playerWrapper.on('click', `#inlineannotation-btns  #down`, function (e) {
+        $playerWrapper.on('click', `#inlineannotation-btns  #down`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             // Decrease the z-index of the active item
@@ -1066,7 +1066,7 @@ export default class InlineAnnotation extends Base {
             });
         });
 
-        $playerWrapper.on('click', `#inlineannotation-btns  #delete`, function (e) {
+        $playerWrapper.on('click', `#inlineannotation-btns  #delete`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             // Delete the active item
@@ -1081,7 +1081,7 @@ export default class InlineAnnotation extends Base {
             $('#inlineannotation-btns .btn').removeClass('active rotatey-360');
         });
 
-        $playerWrapper.on('click', `#inlineannotation-btns  #copy`, function (e) {
+        $playerWrapper.on('click', `#inlineannotation-btns  #copy`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             getItems(false);
@@ -1094,7 +1094,7 @@ export default class InlineAnnotation extends Base {
                 let activeItem = $(`.annotation-wrapper[data-item="${a}"]`);
                 activeItem.removeClass('active');
                 let item = items.find(x => x.id == a);
-                let newItem = { ...item };
+                let newItem = {...item};
                 newItem.position = recalculatingSize(activeItem);
                 newItem.id = new Date().getTime();
                 newItems.push(newItem.id);
@@ -1115,7 +1115,7 @@ export default class InlineAnnotation extends Base {
         });
 
         // Move items with keyboard arrow keys, ctrl + up to layer up, and ctrl + down to layer down.
-        $playerWrapper.on('keydown', '.annotation-wrapper', function (e) {
+        $playerWrapper.on('keydown', '.annotation-wrapper', function(e) {
             let active = $('#edit-btns').attr('data-active');
             active = active.split(',');
             for (let i = 0; i < active.length; i++) {
@@ -1183,7 +1183,7 @@ export default class InlineAnnotation extends Base {
             }
         });
 
-        $playerWrapper.on('click', `#message`, function (e) {
+        $playerWrapper.on('click', `#message`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $videoWrapper.find('.annotation-wrapper').removeClass('active');
@@ -1191,7 +1191,7 @@ export default class InlineAnnotation extends Base {
             $('#edit-btns').attr('data-active', '').addClass('d-none').removeClass('d-flex');
         });
 
-        $(document).on('annotationdeleted', function (e) {
+        $(document).on('annotationdeleted', function(e) {
             let deleted = e.originalEvent.detail.annotation;
             let annoid = $videoWrapper.find(`#message`).data('id');
             if (annoid == deleted.id) {

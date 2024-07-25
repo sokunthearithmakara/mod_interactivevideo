@@ -13,6 +13,7 @@
     --ivdanger: #ca3120;
     --ivlight: #f8f9fa;
     --ivdark: #343a40;
+    --ivblack: #000;
 }
 
 html:has(.path-mod-interactivevideo) {
@@ -21,6 +22,11 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo .opacity-0 {
     opacity: 0 !important;
+}
+
+.path-mod-interactivevideo.darkmode .modal-header .btn-outline-secondary {
+    color: #fff;
+    border: 1px solid #fff;
 }
 
 .path-mod-interactivevideo .bg-dark {
@@ -57,6 +63,10 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo .bg-white {
     background-color: var(--ivwhite) !important;
+}
+
+.path-mod-interactivevideo .bg-black {
+    background-color: var(--ivblack) !important;
 }
 
 .path-mod-interactivevideo .line-height-100 {
@@ -316,7 +326,6 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo #annotationwrapper {
     height: calc(100% - 65px);
-    max-height: 550px;
 }
 
 @media (max-width: 1199.98px) {
@@ -364,11 +373,6 @@ html:has(.path-mod-interactivevideo) {
     transition: height ease-in-out 300ms, opacity ease-in-out 300ms;
 }
 
-.path-mod-interactivevideo #video-nav .annotation.skipsegment:hover {
-    height: 10px;
-    opacity: 1;
-}
-
 .path-mod-interactivevideo #video-nav li {
     list-style: none;
     display: flex;
@@ -401,6 +405,16 @@ html:has(.path-mod-interactivevideo) {
     transform: scale(1.75);
     box-shadow: 0 0 10px #399be2, 0 0 20px #399be2, 0 0 30px #399be2, 0 0 40px #399be2, 0 0 50px #399be2, 0 0 60px #399be2, 0 0 70px #399be2, 0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
     transition: all ease-in-out 300ms;
+}
+
+.path-mod-interactivevideo #video-nav #seekhead:hover,
+.path-mod-interactivevideo #timeline #scrollhead:hover,
+.path-mod-interactivevideo #video-nav #seekhead.active {
+    height: 10px;
+    width: 10px;
+    transition: transform ease-in-out 300ms;
+    box-shadow: 0 0 10px #399be2, 0 0 20px #399be2, 0 0 30px #399be2, 0 0 40px #399be2, 0 0 50px #399be2, 0 0 60px #399be2, 0 0 70px #399be2, 0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
+
 }
 
 .path-mod-interactivevideo #video-nav li.completed .item {
@@ -1072,7 +1086,6 @@ html:has(.path-mod-interactivevideo) {
     font-size: 10px;
     color: #fff;
     position: absolute;
-    top: -12px;
 }
 
 .path-mod-interactivevideo #message .annotation-wrapper {
@@ -1584,4 +1597,122 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo .inlineannotation [data-timestamp] {
     transition: all ease-in-out 300ms;
+}
+
+.path-mod-interactivevideo #scrollbar {
+    cursor: col-resize;
+    top: -5px !important;
+}
+
+.path-mod-interactivevideo #timeline-items #vseek {
+    height: 10px;
+    top: -5px;
+    display: flex;
+    align-items: center;
+}
+
+.path-mod-interactivevideo #timeline-items #vseek div {
+    height: 3px;
+    cursor: pointer;
+    background-color: var(--ivgray);
+    transition: all ease-in-out 300ms;
+}
+
+.path-mod-interactivevideo #timeline-items #vseek:hover div {
+    height: 10px;
+}
+
+.path-mod-interactivevideo .skipsegment .ui-resizable-e {
+    right: -7px;
+    background-color: var(--ivlight);
+    border-bottom-right-radius: 0.15rem;
+    border-top-right-radius: 0.15rem;
+}
+
+.path-mod-interactivevideo .skipsegment .ui-resizable-w {
+    left: -7px;
+    background-color: var(--ivlight);
+    border-bottom-left-radius: 0.15rem;
+    border-top-left-radius: 0.15rem;
+}
+
+.path-mod-interactivevideo .skipsegment .ui-resizable-w::before,
+.path-mod-interactivevideo .skipsegment .ui-resizable-e::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 10px;
+    background-color: #000;
+    border-radius: 1px;
+}
+
+.path-mod-interactivevideo #video-nav li.skipped {
+    .item {
+        background-color: var(--ivgray);
+    }
+
+    i {
+        color: var(--ivgray);
+    }
+}
+
+.path-mod-interactivevideo #timeline-items .minute {
+    top: 0;
+    color: #aaa;
+    font-size: x-small;
+    text-align: center;
+    border-left: 1px dotted #aaa;
+    height: 100%;
+    z-index: -1;
+
+    .minute-label {
+        position: absolute;
+        top: -10px;
+        left: 0;
+    }
+}
+
+.path-mod-interactivevideo .delete-skipsegment {
+    top: -100%;
+    cursor: pointer;
+    display: none;
+}
+
+.path-mod-interactivevideo .skipsegment:hover .delete-skipsegment {
+    display: block;
+}
+
+.path-mod-interactivevideo #video-nav #seekhead {
+    position: absolute;
+    margin-left: -5px;
+    transition: width ease-in-out 300ms, height ease-in-out 300ms;
+    background-color: var(--ivdanger);
+    border-radius: 50%;
+    top: -3px !important;
+}
+
+.path-mod-interactivevideo #video-nav:hover #seekhead {
+    height: 10px;
+    width: 10px;
+}
+
+.path-mod-interactivevideo #video-nav #position {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.path-mod-interactivevideo #video-nav #timelabel {
+    position: absolute;
+    background: #000;
+    color: #fff;
+    font-size: small;
+    top: -24px;
+    padding: 3px 10px;
+    border-radius: 2px;
+    z-index: 4;
 }

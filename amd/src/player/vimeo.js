@@ -50,6 +50,7 @@ class Vimeo {
             width: 1080,
             height: 720,
             autoplay: false,
+            quality: showControls ? '540p' : 'auto', // Reduce quality in editor
             controls: showControls,
             loop: false,
             muted: false,
@@ -60,7 +61,6 @@ class Vimeo {
             title: false,
             speed: false,
             transparent: false,
-            quality: 'auto',
             responsive: false,
             start_time: start,
             end_time: end,
@@ -195,6 +195,10 @@ class Vimeo {
     }
     originalPlayer() {
         return player;
+    }
+    setQuality(quality) {
+        player.setQuality(quality);
+        return quality;
     }
 }
 

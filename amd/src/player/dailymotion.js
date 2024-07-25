@@ -53,6 +53,9 @@ class DailyMotion {
         };
         let dailymotion;
         const dailymotionEvents = (player) => {
+            if (showControls) {
+                player.setQuality(480);
+            }
             player.getState().then(function (state) {
                 end = !end ? state.videoDuration : Math.min(end, state.videoDuration);
                 return;
@@ -68,12 +71,17 @@ class DailyMotion {
                 player.setMute(true);
                 player.play();
                 player.on(dailymotion.events.VIDEO_START, function () {
+                    if (ready == true) { // When the video is replayed, it will fire VIDEO_START event again.
+                        player.setMute(true);
+                    }
                     setTimeout(() => {
                         player.seek(start);
-                        player.pause();
                         player.setMute(false);
-                        ready = true;
-                        dispatchEvent('iv:playerReady');
+                        if (!ready) {
+                            player.pause();
+                            ready = true;
+                            dispatchEvent('iv:playerReady');
+                        }
                     }, 1000);
                 });
             } else {
@@ -90,11 +98,18 @@ class DailyMotion {
                 dispatchEvent('iv:playerSeek', e.videoTime);
             });
 
+            player.on(dailymotion.events.VIDEO_END, function () {
+                player.seek(start);
+                player.pause();
+                dispatchEvent('iv:playerEnded');
+            });
+
             player.on(dailymotion.events.VIDEO_TIMECHANGE, function (e) {
                 if (!ready) {
                     return;
                 }
-                if (e.videoTime >= end || e.playerIsReplayScreen) {
+
+                if (e.videoTime >= end) {
                     dispatchEvent('iv:playerEnded');
                     player.pause();
                 } else if (e.playerIsPlaying === false) {
@@ -156,6 +171,7 @@ class DailyMotion {
     seek(time) {
         return new Promise((resolve) => {
             player.seek(time);
+            dispatchEvent('iv:playerSeek', { time: time });
             resolve();
         });
     }
@@ -226,6 +242,9 @@ class DailyMotion {
     }
     originalPlayer() {
         return player;
+    }
+    setQuality(quality) {
+        player.setQuality(quality);
     }
 }
 

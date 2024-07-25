@@ -31,7 +31,7 @@ export default class SkipSegment extends Base {
         $(document).on('timeupdate', function (e) {
             var t = e.originalEvent.detail.time;
             skipsegment.forEach((annotation) => {
-                if (annotation.timestamp <= t && annotation.title >= t) {
+                if (annotation.timestamp < t && annotation.title > t) {
                     self.runInteraction(annotation);
                 }
             });
@@ -93,22 +93,29 @@ export default class SkipSegment extends Base {
             return;
         }
         var percentage = ((Number(annotation.timestamp) - this.start) / this.totaltime) * 100;
-        if (this.isVisible(annotation)) {
-            var length = (Number(annotation.title) - Number(annotation.timestamp)) / this.totaltime * 100;
+        var length = (Number(annotation.title) - Number(annotation.timestamp)) / this.totaltime * 100;
+        if (this.isVisible(annotation) && !this.isEditMode()) {
             $("#video-nav ul").append(`<li class="annotation ${annotation.type}
              ${this.isClickable(annotation) ? '' : 'no-pointer-events'} position-absolute bg-dark progress-bar-striped progress-bar"
               data-timestamp="${annotation.timestamp}" data-id="${annotation.id}"
-               style="left: calc(${percentage}%); width: ${length}%;" data-toggle="tooltip"
+               style="left: ${percentage}%; width: ${length}%;" data-toggle="tooltip"
                data-container="#wrapper" data-trigger="hover"
          data-html="true" data-original-title='<i class="${this.prop.icon}"></i>'></li>`);
         }
+        if (this.isEditMode()) {
+            $("#video-timeline-wrapper").append(`<div class="position-absolute skipsegment cursor-pointer"
+                 data-timestamp="${annotation.timestamp}" data-id="${annotation.id}"
+                 style="height: 100%; left: ${percentage}%; width: ${length}%;background: rgba(0,0,0,0.75);">
+                 <div class="position-absolute w-100 text-center px-1 delete-skipsegment">
+                 <i class="bi bi-trash3 text-muted fs-unset"></i></div></div>`);
+        }
     }
-    runInteraction(annotation) {
+    async runInteraction(annotation) {
         $('.video-block').append(`<div id="skipsegment" class="text-white position-absolute p-3 hide"
          style="bottom: 0;right: 0;text-shadow: 1px 2px 3px gray;line-height: 1rem;">
          <i class="${this.prop.icon}" style="font-size: xxx-large;"></i></div>`);
         $('#skipsegment').fadeIn(300);
-        this.player.seek(Number(annotation.title));
+        await this.player.seek(Number(annotation.title));
         var percentage = (Number(annotation.title) - this.start) / this.totaltime * 100;
         $('#video-nav #progress').replaceWith(`<div id="progress"
          style="width: ${percentage > 100 ? 100 : percentage}%;"></div>`);
@@ -119,5 +126,6 @@ export default class SkipSegment extends Base {
                 $('#skipsegment').remove();
             }, 300);
         }, 1000);
+
     }
 }

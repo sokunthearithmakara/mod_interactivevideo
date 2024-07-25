@@ -75,7 +75,16 @@ export default class ContentBank extends Base {
 
             uploadForm.show();
         });
-        return {form, event};
+        return { form, event };
+    }
+
+    postContentRender(annotation, callback) {
+        $(`#message[data-id='${annotation.id}']`).addClass('hascontentbank');
+        if (annotation.completiontracking
+            && (annotation.completiontracking != 'manual') && !annotation.completed) {
+            return callback;
+        }
+        return true;
     }
 
     /**
@@ -85,7 +94,6 @@ export default class ContentBank extends Base {
      */
     renderContainer(annotation) {
         let $message = $(`#message[data-id='${annotation.id}']`);
-        $message.addClass('hascontentbank');
         if (annotation.completiontracking && annotation.completiontracking != 'manual') {
             // Disable the mark-done and mark-undone buttons
             let $completiontoggle = $message.find('#completiontoggle');
@@ -97,6 +105,24 @@ export default class ContentBank extends Base {
                 $completiontoggle.find(`span`)
                     .text(`${M.util.get_string('completionincomplete', 'ivplugin_contentbank')}`);
             }
+
+            switch (annotation.completiontracking) {
+                case 'complete':
+                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+                        data-trigger="hover"
+                         data-title="${M.util.get_string("completiononcomplete", "mod_interactivevideo")}"></i>`);
+                    break;
+                case 'completepass':
+                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+        data-trigger="hover"
+         data-title="${M.util.get_string("completiononcompletepass", "mod_interactivevideo")}"></i>`);
+                    break;
+                case 'completefull':
+                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+                data-trigger="hover" data-title="${M.util.get_string("completiononcompletefull", "mod_interactivevideo")}"></i>`);
+                    break;
+            }
+            $message.find('[data-toggle="tooltip"]').tooltip();
         }
         return $message;
     }

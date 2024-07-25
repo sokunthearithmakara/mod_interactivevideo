@@ -67,7 +67,7 @@ class main extends \ivplugin_richtext\main {
                 return '<div class="p-sm-3 p-1 w-100 h5p">'
                     . \core_h5p\player::display($url, new \stdClass) . '</div>';
             } else {
-                return '<iframe class="h5p" id="iframe" src="'
+                return '<iframe id="iframe" src="'
                     . $url->out()
                     . '" style="width: 100%; height: 100%" frameborder="0" allow="autoplay" class="rounded-0"></iframe>';
             }

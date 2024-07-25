@@ -129,6 +129,10 @@ class Html5Video {
     originalPlayer() {
         return this.player;
     }
+    setQuality(quality) {
+        // Not supported.
+        return quality;
+    }
 }
 
 export default Html5Video;

@@ -24,28 +24,43 @@ import $ from 'jquery';
 import Base from 'mod_interactivevideo/type/base';
 export default class H5pUpload extends Base {
     renderContainer(annotation) {
-        $(`#message[data-id='${annotation.id}']`).addClass('hasiframe');
-        if (annotation.completiontracking
-            && (annotation.completiontracking == 'complete'
-                || annotation.completiontracking == 'completepass'
-                || annotation.completiontracking == 'completefull')) {
-            // Disable the mark-done and mark-undone buttons.
-            $(`#message[data-id='${annotation.id}'] #completiontoggle`).prop('disabled', true);
+        let $message = $(`#message[data-id='${annotation.id}']`);
+        if (annotation.completiontracking && annotation.completiontracking != 'manual') {
+            // Disable the mark-done and mark-undone buttons
+            let $completiontoggle = $message.find('#completiontoggle');
+            $completiontoggle.prop('disabled', true);
             if (annotation.completed == true) {
-                $(`#message[data-id='${annotation.id}'] #completiontoggle span`)
-                    .text(`${M.util.get_string('completioncompleted', 'mod_interactivevideo')}`);
+                $completiontoggle.find(`span`)
+                    .text(`${M.util.get_string('completioncompleted', 'ivplugin_contentbank')}`);
             } else {
-                $(`#message[data-id='${annotation.id}'] #completiontoggle span`)
-                    .text(`${M.util.get_string('completionincomplete', 'mod_interactivevideo')}`);
+                $completiontoggle.find(`span`)
+                    .text(`${M.util.get_string('completionincomplete', 'ivplugin_contentbank')}`);
             }
+
+            switch (annotation.completiontracking) {
+                case 'complete':
+                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+                        data-trigger="hover"
+                         data-title="${M.util.get_string("completiononcomplete", "mod_interactivevideo")}"></i>`);
+                    break;
+                case 'completepass':
+                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+        data-trigger="hover"
+         data-title="${M.util.get_string("completiononcompletepass", "mod_interactivevideo")}"></i>`);
+                    break;
+                case 'completefull':
+                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+                data-trigger="hover" data-title="${M.util.get_string("completiononcompletefull", "mod_interactivevideo")}"></i>`);
+                    break;
+            }
+            $message.find('[data-toggle="tooltip"]').tooltip();
         }
+        return $message;
     }
     postContentRender(annotation, callback) {
-        // $(`#message[data-id='${annotation.id}'] iframe`);
+        $(`#message[data-id='${annotation.id}']`).addClass('hasiframe');
         if (annotation.completiontracking
-            && (annotation.completiontracking == 'complete'
-                || annotation.completiontracking == 'completepass'
-                || annotation.completiontracking == 'completefull') && !annotation.completed) {
+            && (annotation.completiontracking != 'manual') && !annotation.completed) {
             return callback;
         }
         return true;

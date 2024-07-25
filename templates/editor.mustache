@@ -24,15 +24,16 @@ Example context (json):
 {
 }
 }}
-<div id="wrapper" class="mt-3">
-    <div class="px-3 container-fluid">
-        <div class="row m-0">
+<div id="wrapper" >
+    <div class="p-3 container-fluid" style="height: calc(100vh - 175px); overflow: auto;">
+        <div class="row m-0" style="min-height: 100%;">
             <div class="pl-0 pr-0 pr-xl-3 col-lg-12 col-xl-7 order-0 order-xl-0" id="player-region">
                 {{! Player }}
                 <div id="video-wrapper" class="bg-dark">
                     {{#html5}}<video id="player" class="w-100"></video>{{/html5}}
                     {{^html5}}<div id="player" class="w-100 p-0"></div>{{/html5}}
                 </div>
+                <div id="annotation-content" class="w-100 position-relative"></div>
             </div>
 
             <div class="col-lg-12 col-xl-5 p-0 order-2 order-xl-1 mt-3 mt-xl-0">
@@ -42,7 +43,6 @@ Example context (json):
                         class="px-3 py-2 bg-light d-flex align-items-center justify-content-between mx-auto w-100 position-sticky">
                         <div class="text-truncate">
                             <h4 class="mb-0 text-truncate font-weight-bold">{{title}}</h4>
-                            <span id="timeframe"></span>
                         </div>
                         <div class="d-flex">
                             <div class="btn border-0" id="xp"><span class="font-weight-bold">0</span><i
@@ -101,54 +101,11 @@ Example context (json):
                     </table>
                 </div>
             </div>
-
-            <div class="pr-xl-0 px-0 col-12 order-xl-2 order-1">
-                <div id="playercontrol" class="w-100 d-flex align-items-center">
-                    <div id="taskinfo"
-                        class="d-flex align-items-center justify-content-end w-100 p-2 bg-dark rounded mx-auto mb-0">
-                        <div class="w-100 overflow-hidden px-1 py-2">
-                            <div id="video-nav" class="bg-gray rounded-lg align-items-center">
-                                <ul></ul>
-                                <div id="progress" class="bg-danger"></div>
-                                <div id="seek" class="w-100 bg-transparent h-100 position-absolute"></div>
-                            </div>
-                        </div>
-                        <button class="border-0 p-0 btn btn-text text-white rounded-circle ml-2" data-toggle="popover"
-                            data-trigger="hover" data-placement="top"
-                            data-content='{{#str}}videonavhelp,mod_interactivevideo{{/str}}' data-html="true"><i
-                                class="bi bi-info-circle"></i></button>
-                    </div>
-
-                </div>
-                <div id="annotation-content" class="w-100 position-relative mt-3"></div>
-            </div>
-
         </div>
     </div>
-
 </div>
+
 {{! content type modal }}
+{{> mod_interactivevideo/addcontenttype }}
 
-<div class="modal fade" id="contentmodal" role="dialog" aria-labelledby="contentmodal" aria-hidden="true"
-    style="z-index: 1050; background: rgba(0,0,0,0.5);">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
-        <div class="modal-content rounded-lg">
-            <div class="modal-header align-items-center">
-                <h5 class="modal-title">{{#str}}selectacontenttypetoadd, mod_interactivevideo{{/str}}</h5>
-                <button type="button" class="close btn mx-2 p-0 " data-dismiss="modal" aria-label="Close">
-                   <i class="bi bi-x-lg fa-fw" style="font-size: x-large;"></i>
-                </button>
-            </div>
-            <div class="px-0" id="addcontentdropdown">
-                {{#contenttype}}
-                <a class="dropdown-item px-4 py-3 border-bottom d-flex w-100 {{^description}}align-items-center{{/description}} {{^description}}align-items-start{{/description}}"
-                    href="javascript:void(0)" data-type="{{{name}}}"><i
-                        class="mr-3 {{{icon}}} {{^hascompletion}}text-secondary{{/hascompletion}}"></i>
-                    <div><span class="font-weight-bold">{{{title}}}</span>{{#description}}<p
-                            class="font-weight-light text-muted mb-0">{{{description}}}</p>{{/description}}</div>
-                </a>
-                {{/contenttype}}
-            </div>
-        </div>
-    </div>
-</div>
+{{> mod_interactivevideo/editortimeline }}

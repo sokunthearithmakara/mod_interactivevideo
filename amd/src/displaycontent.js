@@ -58,10 +58,11 @@ const formatText = async (text, shorttext = false) => {
 };
 
 const defaultDisplayContent = async (annotation, player) => {
+    const isDarkMode = $('body').hasClass('darkmode');
     // Play pop sound
-    var audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
+    const audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
     audio.play();
-    var displayoptions = annotation.displayoptions;
+    let displayoptions = annotation.displayoptions;
     if ($('body').hasClass('mobiletheme')) {
         displayoptions = 'popup';
     }
@@ -70,22 +71,12 @@ const defaultDisplayContent = async (annotation, player) => {
         displayoptions = 'inline';
     }
 
-    var completionbutton = "";
+    let completionbutton = "";
+    if (annotation.xp > 0) {
+        completionbutton += `<span class="badge
+         ${annotation.completed ? 'alert-success' : 'badge-secondary'} mr-2">${annotation.xp} XP</span>`;
+    }
     if (JSON.parse(annotation.prop).hascompletion) {
-        if (annotation.completiontracking == 'complete') {
-            completionbutton = `<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-            data-trigger="hover"
-             data-title="${M.util.get_string("completiononcomplete", "mod_interactivevideo")}"></i>`;
-        } else if (annotation.completiontracking == 'completepass') {
-            completionbutton = `<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-            data-trigger="hover"
-             data-title="${M.util.get_string("completiononcompletepass", "mod_interactivevideo")}"></i>`;
-        } else if (annotation.completiontracking == 'completefull') {
-            completionbutton = `<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-            data-trigger="hover"
-             data-title="${M.util.get_string("completiononcompletefull", "mod_interactivevideo")}"></i>`;
-        }
-
         if (annotation.completed) {
             completionbutton += `<button id="completiontoggle" class="btn mark-undone btn-success btn-sm"
              data-id="${annotation.id}"><i class="bi bi-check2"></i>
@@ -107,7 +98,7 @@ const defaultDisplayContent = async (annotation, player) => {
         completionbutton = ``;
     }
 
-    var messageTitle = `<h5 class="modal-title text-truncate mb-0">
+    let messageTitle = `<h5 class="modal-title text-truncate mb-0">
     <i class="${JSON.parse(annotation.prop).icon} mr-2 d-none d-md-inline"></i>${annotation.formattedtitle}</h5>
                             <div class="btns d-flex align-items-center">
                             ${completionbutton}
@@ -122,7 +113,7 @@ const defaultDisplayContent = async (annotation, player) => {
     $(document).on('click', `#message[data-id='${annotation.id}'] #title .close`, async function (e) {
         e.preventDefault();
         $(this).closest("#annotation-modal").modal('hide');
-        var targetMessage = $(this).closest("#message");
+        const targetMessage = $(this).closest("#message");
         targetMessage.addClass('bottom-0');
         setTimeout(function () {
             targetMessage.remove();
@@ -177,9 +168,10 @@ const defaultDisplayContent = async (annotation, player) => {
         case 'bottom':
             $('#annotation-content').empty();
             // Display the content below the video
-            $('#annotation-content').append(`<div id="message" class="fade show" data-placement="bottom" data-id="${annotation.id}">
-        <div id="title" class="modal-header shadow-sm pr-0">${messageTitle}</div>
-        <div class="modal-body" id="content"></div></div>`);
+            $('#annotation-content').append(`<div id="message" class="fade show mt-3 ${!isDarkMode ? 'border' : ''}
+                 rounded-lg bg-white" data-placement="bottom" data-id="${annotation.id}">
+                 <div id="title" class="modal-header shadow-sm pr-0">${messageTitle}</div>
+                <div class="modal-body" id="content"></div></div>`);
             // Scroll to annotation-content
             $('html, body, #page.drawers, .modal-body').animate({
                 scrollTop: $("#annotation-content").offset().top

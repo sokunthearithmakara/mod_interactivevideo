@@ -1,0 +1,48 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_interactivevideo/addcontenttype
+
+    TODO describe template addcontenttype
+
+    Example context (json):
+    {
+    }
+}}
+<div class="modal fade" id="contentmodal" role="dialog" aria-labelledby="contentmodal" aria-hidden="true"
+    style="z-index: 1050; background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content rounded-lg">
+            <div class="modal-header align-items-center">
+                <h5 class="modal-title">{{#str}}selectacontenttypetoadd, mod_interactivevideo{{/str}}</h5>
+                <button type="button" class="close btn mx-2 p-0 " data-dismiss="modal" aria-label="Close">
+                   <i class="bi bi-x-lg fa-fw" style="font-size: x-large;"></i>
+                </button>
+            </div>
+            <div class="px-0" id="addcontentdropdown">
+                {{#contenttype}}
+                <a class="dropdown-item px-4 py-3 border-bottom d-flex w-100 {{^description}}align-items-center{{/description}} {{^description}}align-items-start{{/description}}"
+                    href="javascript:void(0)" data-type="{{{name}}}"><i
+                        class="mr-3 {{{icon}}} {{^hascompletion}}text-secondary{{/hascompletion}}"></i>
+                    <div><span class="font-weight-bold">{{{title}}}</span>{{#description}}<p
+                            class="font-weight-light text-muted mb-0">{{{description}}}</p>{{/description}}</div>
+                </a>
+                {{/contenttype}}
+            </div>
+        </div>
+    </div>
+</div>

@@ -39,6 +39,7 @@ define(['jquery',
     const replaceProgressBars = (percentage) => {
         percentage = percentage > 100 ? 100 : percentage;
         $('#video-nav #progress').replaceWith(`<div id="progress"  style="width: ${percentage}%;"></div>`);
+        $('#scrollbar').css('left', percentage + '%');
     };
     /**
      * Render the annotations on the video navigation.
@@ -49,12 +50,12 @@ define(['jquery',
      * */
     const renderVideoNav = async (annos, start, totaltime) => {
         if (annos.length == 0) {
-            $("#taskinfo #completion-info").text('0/0');
             $("#video-nav ul").empty();
             return;
         }
 
         $("#video-nav ul").empty();
+        $("#video-timeline-wrapper .skipsegment").remove();
         annos.forEach(async (x) => {
             var render = ctRenderer[x.type];
             await render.renderItemOnVideoNavigation(x);
@@ -72,7 +73,6 @@ define(['jquery',
         dispatchEvent('annotationitemsrendered', { 'annotations': annos });
 
     };
-
 
 
     return {
@@ -96,10 +96,14 @@ define(['jquery',
             var annotations = [];
             var contentTypes;
 
-            const convertSecondsToHMS = (s) => {
+            const convertSecondsToHMS = (s, dynamic = false) => {
                 var hours = Math.floor(s / 3600);
                 var minutes = Math.floor(s % 3600 / 60);
                 var seconds = Math.floor(s % 3600 % 60);
+                if (dynamic && hours == 0) {
+                    return (minutes < 10 ? '0' + minutes : minutes) + ':' +
+                        (seconds < 10 ? '0' + seconds : seconds);
+                }
                 return (hours < 10 ? '0' + hours : hours) + ':' +
                     (minutes < 10 ? '0' + minutes : minutes) + ':' +
                     (seconds < 10 ? '0' + seconds : seconds);
@@ -212,8 +216,8 @@ define(['jquery',
                 if (checkduration) {
                     if (timestamp > end || timestamp < start) {
                         var message = M.util.get_string('timemustbebetweenstartandendtime', 'mod_interactivevideo', {
-                            "start": convertSecondsToHMS(start),
-                            "end": convertSecondsToHMS(end)
+                            "start": convertSecondsToHMS(start, true),
+                            "end": convertSecondsToHMS(end, true)
                         });
                         addNotification(message, 'danger');
                         if (existing) {
@@ -245,8 +249,8 @@ define(['jquery',
                         && Number(x.title) > Number(timestamp));
                     if (skip) {
                         addNotification(M.util.get_string('interactionisbetweentheskipsegment', 'mod_interactivevideo', {
-                            "start": convertSecondsToHMS(skip.timestamp),
-                            "end": convertSecondsToHMS(skip.title)
+                            "start": convertSecondsToHMS(skip.timestamp, true),
+                            "end": convertSecondsToHMS(skip.title, true)
                         }), 'danger');
                         if (existing) {
                             $(fld).val(existing);
@@ -262,11 +266,11 @@ define(['jquery',
             };
 
             const runInteraction = (annotation) => {
-                player.pause();
                 // Remove the previous message but keep the one below the video.
                 $('#annotation-modal').modal('hide');
                 $('#message').not('[data-placement=bottom]').remove();
                 $('#end-screen').remove();
+                player.pause();
                 var activityType = ctRenderer[annotation.type];
                 activityType.runInteraction(annotation);
             };
@@ -290,21 +294,48 @@ define(['jquery',
                         $("#video-wrapper").css('padding-bottom', (1 / ratio) * 100 + '%');
                     });
                     playerReady = true;
-                    $("#timeframe").text("[" + convertSecondsToHMS(start) + ' - ' + convertSecondsToHMS(end) + "]");
+
+                    // Handle timeline block
+                    $("#timeline #video-timeline").css({
+                        'background-image': 'url(' + player.posterImage + ')',
+                        'background-size': 'contain',
+                        'background-repeat': 'no-repeat',
+                    });
+                    $("#timeline #duration").text(convertSecondsToHMS(end, true));
+                    $("#timeline #currenttime").text(convertSecondsToHMS(start, true));
+                    // Render minute markers
+                    const minutes = Math.floor(totaltime / 60);
+                    $('#timeline-items-wrapper').css('width', (minutes * 300) + 'px');
+                    $('#timeline-items .minute').remove();
+                    for (let i = start; i <= end; i += 60) {
+                        let percentage = (i - start) / totaltime * 100;
+                        let marker = '';
+                        // Format h:m (e.g 3h1m);
+                        if (i >= 3600) {
+                            marker = Math.floor(i / 3600) + 'h' + Math.floor((i % 3600) / 60) + 'm';
+                        } else {
+                            marker = Math.floor(i / 60) + 'm';
+                        }
+                        $('#timeline-items').append(`<div class="minute position-absolute" style="left: ${percentage}%">
+                            <div class="minute-label">${marker}</div></div>`);
+                    }
                     return getAnnotations();
                 }).catch(() => {
                     // Do nothing.
                 });
+
             };
 
             const onEnded = () => {
                 player.pause();
+                $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
                 // Cover the video with a message on a white background div.
                 $('#video-wrapper').append(`<div id="end-screen" class="position-absolute w-100 h-100 bg-white d-flex
                      justify-content-center align-items-center style="top: 0; left: 0;">
                      <button class="btn btn-danger rounded-circle" style="font-size: 1.5rem;" id="restart">
                     <i class="bi bi-arrow-repeat" style="font-size: x-large;"></i></button></div>`);
                 $('#video-nav #progress').css('width', '100%');
+                $('#scrollbar').css('left', '100%');
                 // Focus on the restart button;
                 $('#message #restart').focus();
 
@@ -325,18 +356,26 @@ define(['jquery',
             };
 
             const onSeek = async (t) => {
+                if (!playerReady) {
+                    return;
+                }
                 if (t) {
                     t = Number(t);
                 } else {
                     t = await player.getCurrentTime();
                 }
+                if (t > start && t < end) {
+                    $('#end-screen').remove();
+                }
                 var percentage = (t - start) / (totaltime) * 100;
-                return $('#video-nav #progress').css('width', percentage + '%');
+                $('#scrollbar').css('left', percentage + '%');
+                return $('#timeline #currenttime').text(convertSecondsToHMS(t, true));
             };
 
             var onPlayingInterval;
             const onPlaying = () => {
                 $('#message, #end-screen').remove();
+                $('#playpause').find('i').removeClass('bi-play-fill').addClass('bi-pause-fill');
                 var intervalFunction = async function () {
                     var thisTime = await player.getCurrentTime();
                     var isPlaying = await player.isPlaying();
@@ -347,7 +386,7 @@ define(['jquery',
                     }
 
                     if (thisTime < start) {
-                        player.seek(start);
+                        await player.seek(start);
                         thisTime = start;
                     }
 
@@ -357,9 +396,19 @@ define(['jquery',
                         onEnded();
                         return;
                     }
-
+                    $('#timeline #currenttime').text(convertSecondsToHMS(thisTime, true));
                     var percentage = (thisTime - start) / (totaltime) * 100;
                     $('#video-nav #progress').css('width', percentage + '%');
+
+                    $("#scrollbar").css('left', percentage + '%');
+
+                    // Scroll the timeline so that the current time is in the middle of the timeline.
+                    const scrollBar = document.getElementById('scrollbar');
+                    // Check if the scrollbar is in view.
+                    const rect = scrollBar.getBoundingClientRect();
+                    if (rect.left < 0 || rect.right > window.innerWidth) {
+                        scrollBar.scrollIntoView({ behavior: "instant", block: "center", inline: "center" });
+                    }
 
                     // If the current time matches the timestamp of an annotation, highlight the annotation
                     var currentAnnotation = annotations.find(x => (thisTime - player.frequency) <= x.timestamp
@@ -382,7 +431,7 @@ define(['jquery',
                     var skip = skipsegments.find(x => Number(x.timestamp) < Number(thisTime)
                         && Number(x.title) > Number(thisTime));
                     if (skip) {
-                        player.seek(Number(skip.title));
+                        await player.seek(Number(skip.title));
                         // Replace the progress bar
                         percentage = (skip.title - start) / totaltime * 100;
                         replaceProgressBars(percentage);
@@ -397,6 +446,7 @@ define(['jquery',
 
             const onPause = () => {
                 clearInterval(onPlayingInterval);
+                $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
             };
 
             // Implement the player
@@ -433,7 +483,7 @@ define(['jquery',
             $(document).on('annotationupdated', function (e) {
                 var updated = e.originalEvent.detail.annotation;
                 var action = e.originalEvent.detail.action;
-                if (action == 'edit') {
+                if (action == 'edit' || action == 'draft' || action == 'savedraft') {
                     annotations = annotations.filter(function (item) {
                         return item.id != updated.id;
                     });
@@ -462,6 +512,13 @@ define(['jquery',
                         $(`tr[data-id="${updated.id}"]`).removeClass('active');
                     }, 1500);
                 }
+
+                // If draft exists, activate the save button.
+                if (annotations.find(x => x.status == 'draft')) {
+                    $('#timeline #savedraft').removeAttr('disabled');
+                } else {
+                    $('#timeline #savedraft').attr('disabled', 'disabled');
+                }
             });
 
             // Implement create annotation
@@ -481,13 +538,12 @@ define(['jquery',
             });
 
             // Implement edit annotation
-            $(document).on('click', 'tr .edit', function (e) {
+            $(document).on('click', 'tr .edit', async function (e) {
                 e.preventDefault();
                 var timestamp = $(this).closest('.annotation').data('timestamp');
                 if (timestamp) {
-                    player.seek(timestamp, true);
+                    await player.seek(timestamp, true);
                 }
-
                 player.pause();
                 var id = $(this).closest('.annotation').data('id');
                 var contenttype = $(this).closest('.annotation').data('type');
@@ -534,12 +590,10 @@ define(['jquery',
             });
 
             // Implement view annotation
-            $(document).on('click', '.annotation .title', function (e) {
+            $(document).on('click', '.annotation .title', async function (e) {
                 e.preventDefault();
                 var timestamp = $(this).closest('.annotation').data('timestamp');
-                player.seek(timestamp, true);
-                player.pause();
-
+                await player.seek(timestamp, true);
                 // Update the progress bar
                 var percentage = (timestamp - start) / totaltime * 100;
                 replaceProgressBars(percentage);
@@ -552,57 +606,14 @@ define(['jquery',
             });
 
             // Implement go to timestamp
-            $(document).on('click', '.timestamp', function (e) {
+            $(document).on('click', '.timestamp', async function (e) {
                 e.preventDefault();
                 var timestamp = $(this).data('timestamp');
-                player.seek(timestamp);
+                await player.seek(timestamp);
                 player.play();
             });
 
-            // Display time when user hover on the progress bar
-            $(document).on('mousemove', '#video-nav #seek', function (e) {
-                if (!playerReady) {
-                    return;
-                }
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                var percentage = e.offsetX / $(this).width();
-                var time = Math.floor(percentage * (totaltime) + start);
-                var formattedTime = convertSecondsToHMS(time);
-                $('.tooltip').remove();
-                $('#video-nav #seek #tooltip').remove();
-                // Create a dummy element on the ul and show the time as tooltip
-                $('#video-nav #seek').append(`<div id="tooltip" class="position-absolute bg-transparent text-white"
-                    data-toggle="tooltip" data-container="#wrapper" data-original-title="${formattedTime}"
-                    style="left: calc(${percentage * 100}%); width: 3px;"></div>`);
-                $('#tooltip').tooltip('show');
-            });
-
-            $(document).on('mouseleave', '#video-nav #seek', function (e) {
-                if (!playerReady) {
-                    return;
-                }
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                $('#video-nav #seek #tooltip').remove();
-                $('.tooltip').remove();
-            });
-
-            $(document).on('click', '#video-nav', async function (e) {
-                if (!playerReady) {
-                    return;
-                }
-                e.preventDefault();
-                var percentage = e.offsetX / $(this).width();
-                // Replace the progress bar
-                replaceProgressBars(percentage * 100);
-                player.play();
-                player.seek((percentage * totaltime) + start);
-                player.pause();
-                $("#message, #end-screen").remove();
-            });
-
-            $(document).on('contextmenu', '#video-nav', function (e) {
+            $(document).on('contextmenu', '#vseek, #video-timeline', async function (e) {
                 if (!playerReady) {
                     return;
                 }
@@ -611,10 +622,28 @@ define(['jquery',
                 var percentage = e.offsetX / $(this).width();
                 replaceProgressBars(percentage * 100);
                 currentTime = Math.floor(percentage * totaltime) + start;
-                player.seek(currentTime);
+                await player.seek(currentTime);
                 player.pause();
                 $("#addcontent").trigger('click');
+            });
 
+            $(document).on('click', '#playpause', async function (e) {
+                if (!playerReady) {
+                    return;
+                }
+                e.preventDefault();
+                // Pause or resume the video.
+                let isPlaying = await player.isPlaying();
+                if (isPlaying) {
+                    player.pause();
+                } else {
+                    let t = await player.getCurrentTime();
+                    if (t >= end) {
+                        $('#end-screen #restart').trigger('click');
+                    } else {
+                        player.play();
+                    }
+                }
             });
 
             $(document).on('contextmenu', '#video-nav .annotation', function (e) {
@@ -717,10 +746,10 @@ define(['jquery',
             });
             // End quick edit
 
-            $(document).on('click', '#end-screen #restart', function (e) {
+            $(document).on('click', '#end-screen #restart', async function (e) {
                 e.preventDefault();
                 $('#end-screen').remove();
-                player.seek(start);
+                await player.seek(start);
                 player.play();
             });
 
@@ -735,13 +764,13 @@ define(['jquery',
                 $('.tooltip').remove();
             });
 
-            $(document).on('mouseover', '#video-nav ul li .item', function () {
-                var id = $(this).closest('li').data('id');
+            $(document).on('mouseover', '#video-nav ul li', function () {
+                var id = $(this).data('id');
                 $(`tr.annotation[data-id="${id}"]`).addClass('active');
             });
 
-            $(document).on('mouseout', '#video-nav ul li .item', function () {
-                var id = $(this).closest('li').data('id');
+            $(document).on('mouseout', '#video-nav ul li', function () {
+                var id = $(this).data('id');
                 $(`tr.annotation[data-id="${id}"]`).removeClass('active');
             });
 
@@ -763,6 +792,7 @@ define(['jquery',
             });
 
             $('#contentmodal').on('show.bs.modal', function () {
+                player.pause();
                 $('#addcontentdropdown').addClass('modal-body');
             });
 
@@ -779,21 +809,20 @@ define(['jquery',
                 } else {
                     let modal = `<div class="modal fade p-0" id="distractfreemodal"
                      role="dialog" aria-hidden="true" data-backdrop="static"
-    data-keyboard="false">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
-        <div class="modal-content rounded-0 p-3">
-            <div class="modal-body px-1 px-sm-3" id="distractionfreebody">
-<div class="d-flex w-100 align-items-center justify-content-center mt-5"><div class="spinner-grow text-secondary"
-     style="width: 3rem; height: 3rem;" role="status">
-  <span class="sr-only">Loading...</span>
-</div></div>
-            </div>
-        </div>
-    </div>
-</div>`;
+                    data-keyboard="false">
+                    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+                        <div class="modal-content rounded-0 p-3">
+                            <div class="modal-body px-1 px-sm-3" id="distractionfreebody">
+                <div class="d-flex w-100 align-items-center justify-content-center mt-5"><div class="spinner-grow text-secondary"
+                    style="width: 3rem; height: 3rem;" role="status">
+                <span class="sr-only">Loading...</span>
+                </div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
                     $('body').append(modal);
                     $('#distractfreemodal').modal('show');
-
                 }
 
                 $(this).toggleClass('fullscreen');
@@ -813,199 +842,453 @@ define(['jquery',
                 });
             });
 
+            const appendTimestamp = (seconds) => {
+                var formattedTime = convertSecondsToHMS(seconds, true);
+                $('#scrollbar').append(`<div id="position" class="position-absolute bg-black text-white small rounded-sm p-1"
+                     style="top: -30px;">${formattedTime}</div>`);
+            };
+
             $(document).on('annotationitemsrendered', function () {
-                let secondLength = $('#video-nav').width() / totaltime;
-                $('#wrapper [data-toggle="tooltip"]').tooltip();
+                let secondLength = $('#timeline-items').width() / totaltime;
+                $('#timeline [data-toggle="tooltip"]').tooltip({
+                    'boundary': 'window',
+                    'container': '#timeline',
+                });
+                // Put the minute markers on the timeline;
                 let targetAnnotation = null;
-                $('#video-nav .annotation.li-draggable').draggable({
-                    'containment': '#video-nav',
+                // Tested
+                $('#timeline-items .annotation.li-draggable').draggable({
+                    // 'containment': '#timeline',
                     'axis': 'x',
                     'grid': [secondLength, 0],
                     'start': function () {
-                        // Remove the tooltip
-                        $('.tooltip').remove();
-                        $('#seek').addClass('no-pointer-events');
-                        $(this).addClass('dragging');
-                        $(this).append('<i class="bi bi-grip-vertical"></i>');
+                        appendTimestamp($(this).data('timestamp'));
+                        $('.tooltip, #message').remove();
+                        $('#timeline-items').addClass('no-pointer-events');
                     },
-                    'drag': function (event, ui) {
-                        let timestamp = ((ui.position.left + 5) / $('#video-nav').width()) * totaltime + start;
-                        player.seek(Math.round(timestamp));
+                    'drag': async function (event, ui) {
                         $('.tooltip').remove();
+                        let timestamp = ((ui.position.left + 5) / $('#timeline-items').width()) * totaltime + start;
+                        if (timestamp < start) {
+                            timestamp = start;
+                            $(this).css('left', 0);
+                        }
+                        if (timestamp > end) {
+                            timestamp = end;
+                            $(this).css('left', '100%');
+                        }
+                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                        await player.seek(Math.round(timestamp));
+                        player.pause();
+                        $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
                     },
                     'stop': async function (event, ui) {
-                        $(this).removeClass('dragging');
-                        $('#seek').removeClass('no-pointer-events');
-                        $(this).find('i').remove();
-                        let timestamp = ((ui.position.left + 5) / $('#video-nav').width()) * totaltime + start;
-                        player.play();
-                        player.seek(Math.round(timestamp));
-                        player.pause();
                         $('.tooltip').remove();
+                        $('#scrollbar #position').remove();
+                        setTimeout(function () {
+                            $('#timeline-items').removeClass('no-pointer-events');
+                        }, 200);
+                        let timestamp = ((ui.position.left + 5) / $('#timeline-items').width()) * totaltime + start;
+                        if (timestamp < start) {
+                            timestamp = start;
+                            $(this).css('left', '-5px');
+                        }
+                        if (timestamp > end) {
+                            timestamp = end;
+                            $(this).css('left', 'calc(100% - 5px)');
+                        }
+                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
                         const id = $(this).data('id');
                         targetAnnotation = annotations.find(x => x.id == id);
-                        let playerTime = await player.getCurrentTime();
-                        const existingAnnotation = annotations.find(x => x.timestamp == Math.round(playerTime) && x.id != id);
+                        const existingAnnotation = annotations.find(x => x.timestamp == Math.round(timestamp) && x.id != id);
                         if (existingAnnotation) {
                             addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        if (targetAnnotation.timestamp == Math.round(playerTime)) {
+                        if (targetAnnotation.timestamp == Math.round(timestamp)) {
                             return;
                         }
-                        targetAnnotation.timestamp = Math.round(playerTime);
+                        targetAnnotation.timestamp = Math.round(timestamp);
+                        targetAnnotation.status = "draft";
                         dispatchEvent('annotationupdated', {
                             annotation: targetAnnotation,
-                            action: 'edit'
+                            action: 'draft'
                         });
-                        // $.ajax({
-                        //     url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
-                        //     method: "POST",
-                        //     dataType: "text",
-                        //     data: {
-                        //         action: 'quickeditfield',
-                        //         sesskey: M.cfg.sesskey,
-                        //         id: id,
-                        //         field: 'timestamp',
-                        //         contextid: M.cfg.contextid,
-                        //         value: Math.round(playerTime),
-                        //     },
-                        //     success: function (data) {
-                        //         var updated = JSON.parse(data);
-                        //         dispatchEvent('annotationupdated', {
-                        //             annotation: updated,
-                        //             action: 'edit'
-                        //         });
-                        //     }
-                        // });
+                        await player.seek(Math.round(timestamp)); // Seek to the new position
+                        player.pause();
+                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
                     }
                 });
 
-
-                $('#video-nav .annotation.skipsegment').draggable({
-                    'containment': '#video-nav',
+                $('#video-timeline-wrapper .skipsegment').draggable({
                     'axis': 'x',
                     'grid': [secondLength, 0],
                     'start': function () {
-                        $('.tooltip').remove();
-                        $('#seek').addClass('no-pointer-events');
+                        $('#message').remove();
+                        appendTimestamp($(this).data('timestamp'));
+                        $('#timeline-items').addClass('no-pointer-events');
                     },
-                    'drag': function (event, ui) {
-                        let timestamp = ((ui.position.left) / $('#video-nav').width()) * totaltime + start;
-                        player.seek(Math.round(timestamp));
-                        $('.tooltip').remove();
-                    },
-                    'stop': async function (event, ui) {
-                        $('#seek').removeClass('no-pointer-events');
-                        $('.tooltip').remove();
-                        let timestamp = ((ui.position.left) / $('#video-nav').width()) * totaltime + start;
-                        player.play();
-                        player.seek(Math.round(timestamp));
-                        player.pause();
+                    'drag': async function (event, ui) {
                         const id = $(this).data('id');
                         targetAnnotation = annotations.find(x => x.id == id);
-                        let playerTime = await player.getCurrentTime();
-                        const existingAnnotation = annotations.find(x => x.timestamp == Math.round(playerTime) && x.id != id);
+                        let timestamp = ((ui.position.left) / $('#video-timeline').width()) * totaltime + start;
+                        if (timestamp < start) {
+                            timestamp = start;
+                        }
+
+                        if (timestamp > end) {
+                            timestamp = end;
+                        }
+
+                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                        await player.seek(Math.round(timestamp));
+                        player.pause();
+                        $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
+                    },
+                    'stop': async function (event, ui) {
+                        $('#scrollbar #position').remove();
+                        setTimeout(function () {
+                            $('#video-timeline').removeClass('no-pointer-events');
+                        }, 200);
+                        let timestamp = ((ui.position.left) / $('#video-timeline').width()) * totaltime + start;
+                        const id = $(this).data('id');
+                        targetAnnotation = annotations.find(x => x.id == id);
+                        let skipduration = Number(targetAnnotation.title) - Number(targetAnnotation.timestamp);
+                        if (timestamp < 0 && timestamp + skipduration < start) {
+                            renderAnnotationItems(annotations);
+                            return;
+                        }
+                        if (timestamp > end) {
+                            renderAnnotationItems(annotations);
+                            return;
+                        }
+                        if (timestamp < start) {
+                            skipduration = skipduration - Math.abs(start - timestamp);
+                            timestamp = start;
+                        }
+                        if (timestamp + skipduration > end) {
+                            skipduration = Math.abs(end - timestamp);
+                            timestamp = end - skipduration;
+                        }
+                        if (skipduration <= 0) {
+                            renderAnnotationItems(annotations);
+                            return;
+                        }
+                        const existingAnnotation = annotations.find(x => x.timestamp == Math.round(timestamp) && x.id != id);
                         if (existingAnnotation) {
                             addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        if (targetAnnotation.timestamp == Math.round(playerTime)) {
+                        if (targetAnnotation.timestamp == Math.round(timestamp)) {
+                            renderAnnotationItems(annotations);
                             return;
                         }
-                        const skipduration = Number(targetAnnotation.title) - Number(targetAnnotation.timestamp);
-                        targetAnnotation.timestamp = Math.floor(playerTime);
-                        targetAnnotation.title = Math.floor(playerTime) + skipduration;
+                        targetAnnotation.timestamp = Math.round(timestamp);
+                        targetAnnotation.title = Math.round(timestamp) + skipduration;
+                        targetAnnotation.status = "draft";
                         dispatchEvent('annotationupdated', {
                             annotation: targetAnnotation,
-                            action: 'edit'
+                            action: 'draft'
                         });
+                        await player.seek(Math.round(timestamp)); // Seek to the new position
+                        player.pause();
+                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
                     }
                 });
 
-                $('#video-nav .annotation.skipsegment').resizable({
-                    'containment': '#video-nav',
-                    'grid': [secondLength, 0],
+                $('#video-timeline-wrapper .skipsegment').resizable({
+                    'containment': '#video-timeline-wrapper',
                     'handles': 'e, w',
+                    'grid': [secondLength, 0],
                     'start': function () {
-                        $('.tooltip').remove();
+                        $('#message').remove();
+                        appendTimestamp($(this).data('timestamp'));
+                        $('#timeline-items').addClass('no-pointer-events');
                     },
-                    'resize': function (event, ui) {
-                        $('.tooltip').remove();
-                        $(this).css({
-                            'height': '10px',
-                            'top': 'unset',
-                            'opacity': '1',
-                            'background-image': 'none',
-                        });
-                        window.console.log(ui.size.width);
+                    'resize': async function (event, ui) {
                         let timestamp;
-                        if (ui.originalPosition.left != ui.position.left) {
-                            timestamp = ((ui.position.left + 5) / $('#video-nav').width()) * totaltime + start;
+                        if (ui.originalPosition.left != ui.position.left || ui.originalSize.width == ui.size.width) {
+                            if (ui.position.left < 0) {
+                                ui.position.left = 0;
+                            }
+                            timestamp = ((ui.position.left) / $('#video-timeline').width()) * totaltime + start;
                         } else {
-                            timestamp = ((ui.position.left + 5 + ui.size.width) / $('#video-nav').width()) * totaltime + start;
+                            timestamp = ((ui.position.left + ui.size.width) / $('#video-timeline').width()) * totaltime + start;
                         }
-                        player.seek(Math.floor(timestamp));
+                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                        await player.seek(Math.round(timestamp));
+                        player.pause();
+                        $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
                     },
                     'stop': async function (event, ui) {
-                        $('.tooltip').remove();
+                        $('#scrollbar #position').remove();
+                        setTimeout(function () {
+                            $('#timeline-items').removeClass('no-pointer-events');
+                        }, 200);
                         const id = $(this).data('id');
                         targetAnnotation = annotations.find(x => x.id == id);
                         let timestamp, direction;
                         if (ui.originalPosition.left != ui.position.left) {
-                            timestamp = ((ui.position.left + 5) / $('#video-nav').width()) * totaltime + start;
+                            if (ui.position.left < 0) {
+                                ui.position.left = 0;
+                            }
+                            timestamp = ((ui.position.left) / $('#video-timeline').width()) * totaltime + start;
                             direction = "left";
-
                         } else {
-                            timestamp = ((ui.position.left + 5 + ui.size.width) / $('#video-nav').width()) * totaltime + start;
+                            timestamp = ((ui.position.left + ui.size.width) / $('#video-timeline').width()) * totaltime + start;
                             direction = "right";
                         }
-                        player.play();
-                        player.seek(Math.round(timestamp));
-                        player.pause();
-                        let playerTime = await player.getCurrentTime();
-                        const existingAnnotation = annotations.find(x => x.timestamp == Math.floor(playerTime) && x.id != id);
+                        const existingAnnotation = annotations.find(x => x.timestamp == Math.round(timestamp) && x.id != id);
                         if (existingAnnotation) {
                             addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        if (targetAnnotation.timestamp == Math.floor(playerTime)) {
+                        if (targetAnnotation.timestamp == Math.round(timestamp)) {
                             return;
                         }
-                        window.console.log(targetAnnotation.title);
                         if (direction == "left") {
-                            targetAnnotation.timestamp = Math.floor(playerTime);
+                            targetAnnotation.timestamp = Math.round(timestamp);
                         } else {
-                            targetAnnotation.title = Math.floor(playerTime);
+                            targetAnnotation.title = Math.round(timestamp);
                         }
+                        targetAnnotation.status = 'draft';
                         dispatchEvent('annotationupdated', {
                             annotation: targetAnnotation,
-                            action: 'edit'
+                            action: 'draft'
                         });
+                        await player.seek(Math.round(timestamp));
+                        player.pause();
+                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
                     }
+                });
 
+                $('#video-timeline-wrapper .skipsegment').on('click', async function (e) {
+                    e.preventDefault();
+                    const timestamp = $(this).data('timestamp');
+                    await player.seek(timestamp);
+                    player.pause();
+                });
+
+                $('#video-timeline-wrapper .skipsegment .delete-skipsegment').on('click', function (e) {
+                    e.preventDefault();
+                    const id = $(this).closest('.skipsegment').data('id');
+                    $(`tr.annotation[data-id="${id}"] .delete`).trigger('click');
                 });
             });
 
-            $(document).on('click', '#video-nav .annotation', function (e) {
+            // Tested
+            $('#scrollbar').draggable({
+                'containment': '#timeline-items',
+                'axis': 'x',
+                'handle': '#scrollhead, #scrollline',
+                'cursor': 'col-resize',
+                'start': function (event, ui) {
+                    $('#timeline-items').addClass('no-pointer-events');
+                    $("#message").remove();
+                    appendTimestamp(Math.round(((ui.position.left) / $('#timeline-items').width()) * totaltime + start));
+                },
+                'drag': async function (event, ui) {
+                    let timestamp = ((ui.position.left) / $('#timeline-items').width()) * totaltime + start;
+                    await player.seek(Math.round(timestamp));
+                    player.pause();
+                    $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
+                },
+                'stop': function (event, ui) {
+                    $('#scrollbar #position').remove();
+                    setTimeout(function () {
+                        $('#timeline-items').removeClass('no-pointer-events');
+                    }, 200);
+                    // Convert the position to percentage
+                    let timestamp = ((ui.position.left) / $('#timeline-items').width()) * totaltime + start;
+                    $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                }
+            });
+
+            // Seek bar functionalities
+            $('#vseek, #video-timeline, #video-nav .annotation').on('mouseenter', function (e) {
+                $('#cursorbar').remove();
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                // Check if ctrl key or command key is pressed
-                if (!e.ctrlKey && !e.metaKey) {
+                // First clone the #scrollbar and place it where the cursor is.
+                var $scrollbar = $('#scrollbar').clone();
+                $scrollbar.attr('id', 'cursorbar');
+
+                const parentOffset = $(this).offset();
+                const relX = e.pageX - parentOffset.left;
+
+                $scrollbar.css('left', (relX + 3) + 'px');
+                $scrollbar.find('#scrollhead').remove();
+                var percentage = relX / $(this).width();
+                var time = Math.round(percentage * (totaltime) + start);
+                var formattedTime = convertSecondsToHMS(time, true);
+                $scrollbar.append(`<div id="position" class="position-absolute bg-dark text-white small rounded-sm p-1"
+                     style="top: -30px;">${formattedTime}</div>`);
+                $('#timeline-items').append($scrollbar);
+            });
+
+            $('#vseek, #video-timeline, #video-nav .annotation').on('mouseleave', function (e) {
+                e.stopImmediatePropagation();
+                $('#cursorbar').remove();
+            });
+
+            $('#vseek, #video-timeline').on('mousemove', function (e) {
+                e.stopImmediatePropagation();
+                const parentOffset = $(this).offset();
+                const relX = e.pageX - parentOffset.left;
+                var percentage = relX / $(this).width();
+                var time = Math.round(percentage * (totaltime) + start);
+                var formattedTime = convertSecondsToHMS(time, true);
+                // Move the cursorbar
+                $('#cursorbar').css('left', (relX + 3) + 'px');
+                $('#cursorbar #position').text(formattedTime);
+            });
+
+            $(document).on('click', '#video-nav .annotation', async function (e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                var id = $(this).data('id');
+                var annotation = annotations.find(x => x.id == id);
+                await player.seek(annotation.timestamp);
+                runInteraction(annotation);
+            });
+
+            $(document).on('click', '#vseek, #video-timeline', async function (e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                var percentage = e.offsetX / $(this).width();
+                replaceProgressBars(percentage * 100);
+                await player.seek(Math.round((percentage * totaltime) + start));
+                player.pause();
+                $("#message, #end-screen").remove();
+            });
+
+            $('#zoomout').on('click', function () {
+                let currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
+                let newLevel = parseInt(currentLevel) - 300;
+                $('#timeline-items-wrapper').css('width', newLevel + 'px');
+                let timelineElement = document.getElementById('timeline');
+                if (timelineElement.scrollWidth <= timelineElement.clientWidth) {
+                    $(this).attr('disabled', 'disabled');
+                }
+                dispatchEvent('annotationitemsrendered', { 'annotations': annotations });
+            });
+
+            $("#timeline").on('wheel', function (e) {
+                e.preventDefault();
+                if (e.originalEvent.deltaY < 0) {
+                    $('#zoomin').trigger('click');
+                } else {
+                    $('#zoomout').trigger('click');
+                }
+            });
+
+            $('#zoomin').on('click', function () {
+                let currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
+                let newLevel = parseInt(currentLevel) + 300;
+                $('#timeline-items-wrapper').css('width', newLevel + 'px');
+                $('#zoomout').removeAttr('disabled');
+                dispatchEvent('annotationitemsrendered', { 'annotations': annotations });
+            });
+
+            $('#savedraft').on('click', function (e) {
+                e.stopImmediatePropagation();
+                let draftAnnotations = annotations.filter(x => x.status == 'draft');
+                let count = 0;
+                draftAnnotations.forEach(function (a) {
+                    $.ajax({
+                        url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                        method: "POST",
+                        dataType: "text",
+                        data: {
+                            action: 'quickeditfield',
+                            sesskey: M.cfg.sesskey,
+                            id: a.id,
+                            field: 'timestamp',
+                            contextid: M.cfg.contextid,
+                            value: a.timestamp,
+                        },
+                        success: function (data) {
+                            var updated = JSON.parse(data);
+                            dispatchEvent('annotationupdated', {
+                                annotation: updated,
+                                action: 'savedraft'
+                            });
+                        }
+                    });
+                    if (a.type == 'skipsegment') {
+                        $.ajax({
+                            url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                            method: "POST",
+                            dataType: "text",
+                            data: {
+                                action: 'quickeditfield',
+                                sesskey: M.cfg.sesskey,
+                                id: a.id,
+                                field: 'title',
+                                contextid: M.cfg.contextid,
+                                value: a.title,
+                            },
+                            success: function (data) {
+                                var updated = JSON.parse(data);
+                                dispatchEvent('annotationupdated', {
+                                    annotation: updated,
+                                    action: 'savedraft'
+                                });
+                            }
+                        });
+                    }
+                    count++;
+                    if (count == draftAnnotations.length) {
+                        addNotification(M.util.get_string('draftsaved', 'mod_interactivevideo'), 'success');
+                    }
+                });
+
+            });
+
+            $('#addcontent').on('click', async function (e) {
+                e.preventDefault();
+                if (!playerReady) {
                     return;
                 }
-                var timestamp = $(this).data('timestamp');
-                player.play();
-                player.seek(timestamp);
-                player.pause();
-                $('tr.annotation[data-timestamp="' + timestamp + '"]').addClass('active');
-                var id = $(this).data('id');
-                var theAnnotation = annotations.find(x => x.id == id);
-                runInteraction(theAnnotation);
+                const currentTime = await player.getCurrentTime();
+                if (annotations.find(x => x.timestamp == currentTime)) {
+                    addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
+                    return;
+                }
+                // Check skip segments
+                const skipsegments = annotations.filter(x => x.type == 'skipsegment');
+                const skip = skipsegments.find(x => Number(x.timestamp) < Number(currentTime)
+                    && Number(x.title) > Number(currentTime));
+                if (skip) {
+                    addNotification(M.util.get_string('interactionisbetweentheskipsegment', 'mod_interactivevideo'), 'danger');
+                    return;
+                }
+                $('#contentmodal').modal('show');
             });
+
+            $('#player-region').resizable({
+                'containment': 'parent',
+                'handles': 'e',
+                'grid': [10, 10],
+            });
+
+            $('#interaction-region').resizable({
+                'containment': 'parent',
+                'handles': 'e',
+                'grid': [10, 10],
+            });
+
+            window.addEventListener('beforeunload', (e) => {
+                if (annotations.find(x => x.status == 'draft')) {
+                    const confirmationMessage = M.util.get_string('unsavedchanges', 'mod_interactivevideo');
+                    e.returnValue = confirmationMessage;
+                    return confirmationMessage;
+                }
+            });
+
         }
     };
 });

@@ -58,7 +58,8 @@ export default class Decision extends Base {
         var percentage = ((Number(annotation.timestamp) - this.start) / this.totaltime) * 100;
         if (this.isVisible(annotation)) {
             $("#video-nav ul").append(`<li class="annotation ${annotation.completed ? "completed" : ""}
-        ${annotation.type} ${this.isClickable(annotation) ? '' : 'no-pointer-events'} li-draggable"
+        ${annotation.type} ${this.isClickable(annotation) ? '' : 'no-pointer-events'} li-draggable
+         ${this.isSkipped(annotation.timestamp) ? 'skipped' : ''}"
          data-timestamp="${annotation.timestamp}"
         data-id="${annotation.id}" style="left: calc(${percentage}% - 5px)">
         <i data-toggle="tooltip" data-trigger="hover" data-html="true" data-original-title='<i class="${this.prop.icon} mr-1"></i>
@@ -100,7 +101,7 @@ export default class Decision extends Base {
             }
         }, 100);
 
-        body.on('click', '.input-group .add-dest', function(e) {
+        body.on('click', '.input-group .add-dest', function (e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             var target = $(this).closest('.input-group');
@@ -118,16 +119,16 @@ export default class Decision extends Base {
             $('[type="text"]').trigger('input');
         });
 
-        body.on('click', '.input-group .delete-dest', function(e) {
+        body.on('click', '.input-group .delete-dest', function (e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(this).closest('.input-group').remove();
             $('[type="text"]').trigger('input');
         });
 
-        body.on('input', '.input-group [type="text"]', function() {
+        body.on('input', '.input-group [type="text"]', function () {
             var dest = [];
-            $('#destination-list .input-group').each(function() {
+            $('#destination-list .input-group').each(function () {
                 var title = $(this).find('input[type="text"]');
                 var timestamp = $(this).find('.timestamp-input');
                 if (title.val() != '' && timestamp.val() != ''
@@ -142,7 +143,7 @@ export default class Decision extends Base {
             });
             $('[name=content').val(JSON.stringify(dest));
         });
-        return {form, event};
+        return { form, event };
     }
     /**
      * Run the interaction
@@ -150,56 +151,67 @@ export default class Decision extends Base {
      * @returns {void}
      */
     runInteraction(annotation) {
+
         let self = this;
-        if (!$('body').hasClass('page-interactions')) {
+        var dest = JSON.parse(annotation.content);
+        dest = dest.filter((d) => {
+            return !self.isSkipped(d.timestamp);
+        });
+
+        if (dest.length == 0) {
+            this.player.play();
+            return;
+        }
+
+        if (!self.isEditMode()) {
             annotation.viewed = true;
             this.annotations = this.annotations.filter((d) => d.id != annotation.id);
             this.annotations.push(annotation);
         }
-        this.render(annotation, 'html').then((data) => {
-            let $message = $(`<div id="message" style="z-index:5;display:none;" data-id="${annotation.id}">
-                <div class="modal-body p-0" id="content">${data}</div></div>`);
-            $('#video-wrapper').append($message);
-            var int = setInterval(() => {
-                if ($message.find(`.decision-option`).length > 0) {
-                    clearInterval(int);
-                    // Gotta remove the items that are not relevant (e.g. outside of start and end time and in the skip segment);
-                    var dest = JSON.parse(annotation.content);
-                    dest.forEach((d) => {
-                        var dtime = Number(d.timestamp);
-                        if (!this.isBetweenStartAndEnd(dtime) || this.isInSkipSegment(dtime)) {
-                            $message.find(`.decision-option[data-timestamp='${dtime}']`).remove();
-                        }
-                    });
-                    // Focus on the first .decision-option
-                    $message.fadeIn(300, 'swing', function() {
-                        if (annotation.char1 == 1) {
-                            $message.append(`<button class="btn btn-secondary btn-rounded position-absolute"
-                             id="close-decision" style="right: 1rem; top: 1rem;">
-                             ${M.util.get_string('skip', 'ivplugin_decision')}
-                             <i class="ml-2 bi bi-chevron-right"></i></button>`);
-                        }
-                        $(document).on('click', '#close-decision', function(e) {
-                            e.preventDefault();
-                            e.stopImmediatePropagation();
-                            self.player.play();
-                            $('#video-nav').fadeIn(300);
-                            $('[data-region="chapterlists"], #controler').removeClass('no-pointer-events');
-                        });
 
-                        if (!$('body').hasClass('page-interactions')) {
-                            $('#video-nav').fadeOut(300);
-                            $('[data-region="chapterlists"], #controler').addClass('no-pointer-events');
-                        }
-                    });
+        let newannotation = { ...annotation };
+        newannotation.content = JSON.stringify(dest);
+        this.render(newannotation, 'json').then((data) => {
+            let $html = `<div class="position-absolute decision text-center mx-auto w-100">
+            <h5 class="pt-5 pb-3 bg-white" id="decision-q">
+            <i class="mb-2 bi bi-signpost-split-fill" style="font-size: 2em"></i><br>${newannotation.formattedtitle}</h5>`;
+
+            data.forEach((dest, order) => {
+                $html += `<a href="javascript:void(0)" data-timestamp="${dest.timestamp}"
+                 data-order="${order}" class="decision-option btn btn-outline-secondary btn-rounded mb-2 d-flex
+                  justify-content-between align-items-center mx-auto"><span class="text-truncate">${dest.title}</span>
+                  <i class="bi bi-chevron-right"></i></a>`;
+            });
+            $html += '</div>';
+            let $message = $(`<div id="message" style="z-index:5;display:none;" data-id="${annotation.id}">
+            <div class="modal-body p-0" id="content">${$html}</div></div>`);
+            $('#video-wrapper').append($message);
+            $message.fadeIn(300, 'swing', function () {
+                if (annotation.char1 == 1) {
+                    $message.append(`<button class="btn btn-secondary btn-rounded position-absolute"
+                     id="close-decision" style="right: 1rem; top: 1rem;">
+                     ${M.util.get_string('skip', 'ivplugin_decision')}
+                     <i class="ml-2 bi bi-chevron-right"></i></button>`);
                 }
-            }, 100);
+                $(document).on('click', '#close-decision', function (e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    self.player.play();
+                    $('#video-nav').fadeIn(300);
+                    $('[data-region="chapterlists"], #controler').removeClass('no-pointer-events');
+                });
+
+                if (!$('body').hasClass('page-interactions')) {
+                    $('#video-nav').fadeOut(300);
+                    $('[data-region="chapterlists"], #controler').addClass('no-pointer-events');
+                }
+            });
             return $message;
         }).catch(() => {
             // Do nothing
         });
 
-        $(document).on('click', `#message[data-id='${annotation.id}'] .decision-option`, function(e) {
+        $(document).on('click', `#message[data-id='${annotation.id}'] .decision-option`, function (e) {
             e.preventDefault();
             var time = Number($(this).data('timestamp'));
             if (time < this.start) {
