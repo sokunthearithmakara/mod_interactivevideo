@@ -857,6 +857,7 @@ class Base {
      * @returns {void}
      */
     runInteraction(annotation) {
+        this.player.pause();
         // Apply content.
         const applyContent = (annotation) => {
             this.render(annotation, 'html').then((data) => {

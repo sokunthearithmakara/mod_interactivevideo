@@ -133,6 +133,7 @@ export default class ContentBank extends Base {
      * @returns {void}
      */
     runInteraction(annotation) {
+        this.player.pause();
         var annoid = annotation.id;
         var self = this;
         let $message;

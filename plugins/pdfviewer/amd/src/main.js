@@ -54,6 +54,8 @@ export default class PdfViewer extends Iframe {
         }, 1000);
     }
     runInteraction(annotation) {
+        this.player.pause();
+
         let self = this;
         const pdfCheck = (annotation) => {
             var iframeinterval = setInterval(() => {

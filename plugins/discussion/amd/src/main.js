@@ -105,6 +105,7 @@ export default class Discussion extends Base {
     }
 
     runInteraction(annotation) {
+        this.player.pause();
         // Apply content.
         const applyContent = (annotation) => {
             this.render(annotation, 'json').then((data) => {

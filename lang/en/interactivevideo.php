@@ -198,3 +198,5 @@ $string['youmustcompletethepreviousactivity'] = 'You must complete the previous 
 $string['invalidtimestamp'] = 'Invalid timestamp';
 $string['unsavedchanges'] = 'You have unsaved changes. Are you sure you want to leave this page?';
 $string['draftsaved'] = 'Draft saved';
+$string['changeplaybackspeed'] = 'Playback speed';
+$string['videoquality'] = 'Video quality';

@@ -774,7 +774,7 @@ define(['jquery',
                 $(`tr.annotation[data-id="${id}"]`).removeClass('active');
             });
 
-            $(document).on('change', '.timestamp-input', function () {
+            $(document).on('change', '.timestamp-input, .timestamp-field input', function () {
                 $(this).removeClass('is-invalid');
                 var parts = $(this).val().split(':');
                 var seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
@@ -949,7 +949,7 @@ define(['jquery',
                     'stop': async function (event, ui) {
                         $('#scrollbar #position').remove();
                         setTimeout(function () {
-                            $('#video-timeline').removeClass('no-pointer-events');
+                            $('#timeline-items').removeClass('no-pointer-events');
                         }, 200);
                         let timestamp = ((ui.position.left) / $('#video-timeline').width()) * totaltime + start;
                         const id = $(this).data('id');
@@ -1119,7 +1119,7 @@ define(['jquery',
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
 
-                $scrollbar.css('left', (relX + 3) + 'px');
+                $scrollbar.css('left', (relX + 4) + 'px');
                 $scrollbar.find('#scrollhead').remove();
                 var percentage = relX / $(this).width();
                 var time = Math.round(percentage * (totaltime) + start);
@@ -1142,7 +1142,7 @@ define(['jquery',
                 var time = Math.round(percentage * (totaltime) + start);
                 var formattedTime = convertSecondsToHMS(time, true);
                 // Move the cursorbar
-                $('#cursorbar').css('left', (relX + 3) + 'px');
+                $('#cursorbar').css('left', (relX + 4) + 'px');
                 $('#cursorbar #position').text(formattedTime);
             });
 
@@ -1177,11 +1177,12 @@ define(['jquery',
             });
 
             $("#timeline").on('wheel', function (e) {
-                e.preventDefault();
-                if (e.originalEvent.deltaY < 0) {
-                    $('#zoomin').trigger('click');
-                } else {
-                    $('#zoomout').trigger('click');
+                if (!e.shiftKey) {
+                    if (e.originalEvent.deltaY < 0) {
+                        $('#zoomin').trigger('click');
+                    } else {
+                        $('#zoomout').trigger('click');
+                    }
                 }
             });
 

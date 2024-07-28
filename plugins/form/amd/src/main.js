@@ -710,6 +710,7 @@ export default class Form extends Base {
      * @returns {void}
      */
     runInteraction(annotation) {
+        this.player.pause();
         let self = this;
         if (this.isEditMode()) {
             annotation.editmode = true; // Use editmode to render the draft content (i.e draft.php vs plugin.php).

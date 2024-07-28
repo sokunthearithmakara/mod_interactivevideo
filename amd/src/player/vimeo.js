@@ -28,7 +28,10 @@ class Vimeo {
         this.type = 'vimeo';
         this.start = start;
         this.frequency = 0.27;
-
+        this.support = {
+            playbackrate: true,
+            quality: false,
+        };
         // Documented at https://developer.vimeo.com/player/sdk/reference
         var VimeoPlayer;
         var regex = /(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com)\/(?:video\/|)([^\/]+)/g;
@@ -59,7 +62,6 @@ class Vimeo {
             byline: false,
             portrait: false,
             title: false,
-            speed: false,
             transparent: false,
             responsive: false,
             start_time: start,
@@ -98,6 +100,10 @@ class Vimeo {
 
             player.on('seeked', function (e) {
                 dispatchEvent('iv:playerSeek', { time: e.seconds });
+            });
+
+            player.on('playbackratechange', function (e) {
+                dispatchEvent('iv:playerRateChange', { rate: e.playbackRate });
             });
         };
         if (!VimeoPlayer) {
@@ -199,6 +205,9 @@ class Vimeo {
     setQuality(quality) {
         player.setQuality(quality);
         return quality;
+    }
+    getQuality() {
+        return player.getQualities();
     }
 }
 

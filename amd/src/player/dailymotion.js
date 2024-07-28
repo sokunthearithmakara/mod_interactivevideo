@@ -29,6 +29,10 @@ class DailyMotion {
         this.type = 'dailymotion';
         this.start = start;
         this.frequency = 0.27;
+        this.support = {
+            playbackrate: true,
+            quality: true,
+        };
         // Documented at https://developer.dailymotion.com/player#player-parameters.
         var reg = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^\/]+)/g;
         var match = reg.exec(url);
@@ -58,6 +62,7 @@ class DailyMotion {
             }
             player.getState().then(function (state) {
                 end = !end ? state.videoDuration : Math.min(end, state.videoDuration);
+                self.qualities = state.videoQualitiesList;
                 return;
             }).catch(() => {
                 // Do nothing.
@@ -121,6 +126,10 @@ class DailyMotion {
 
             player.on(dailymotion.events.PLAYER_ERROR, function (e) {
                 dispatchEvent('iv:playerError', { error: e });
+            });
+
+            player.on(dailymotion.events.PLAYER_PLAYBACKSPEEDCHANGE, function (e) {
+                dispatchEvent('iv:playerRateChange', { rate: e.playerPlaybackSpeed });
             });
         };
 
@@ -232,7 +241,7 @@ class DailyMotion {
         });
     }
     setRate(rate) {
-        player.setPlaybackRate(rate);
+        player.setPlaybackSpeed(rate);
     }
     mute() {
         player.setMute(true);
@@ -245,6 +254,13 @@ class DailyMotion {
     }
     setQuality(quality) {
         player.setQuality(quality);
+    }
+    async getQualities() {
+        let states = await this.getState();
+        return {
+            qualities: ['default', ...states.videoQualitiesList],
+            currentQuality: states.videoQuality == 'Auto' ? 'default' : states.videoQuality,
+        };
     }
 }
 

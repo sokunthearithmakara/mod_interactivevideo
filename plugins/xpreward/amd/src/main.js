@@ -31,7 +31,7 @@ export default class XpReward extends Base {
      * @returns {void}
      */
     renderContainer(annotation) {
-        $('#video-wrapper #message').remove();
+        $('#video-wrapper #message[data-id="${annotation.id}"]').remove();
         $('#video-wrapper').append(`<div id="message" data-id="${annotation.id}"
              class="text-white bg-transparent" style="z-index:5;">
             </div>`);
@@ -61,6 +61,7 @@ export default class XpReward extends Base {
      * @returns {void}
      */
     runInteraction(annotation) {
+        this.player.pause();
         this.renderContainer(annotation);
         this.render(annotation).then((content) => {
             let $message = $(`#message[data-id='${annotation.id}']`);

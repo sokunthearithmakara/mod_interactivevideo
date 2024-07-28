@@ -25,7 +25,6 @@ import Base from 'mod_interactivevideo/type/base';
 
 export default class SkipSegment extends Base {
     init() {
-        this.typeItems = this.annotations.filter((annotation) => annotation.type == this.type);
         var self = this;
         var skipsegment = this.annotations.filter((annotation) => annotation.type == 'skipsegment');
         $(document).on('timeupdate', function (e) {

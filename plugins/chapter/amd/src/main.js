@@ -166,6 +166,7 @@ export default class Chapter extends Base {
      * @returns {void}
      */
     runInteraction(annotation) {
+        this.player.pause();
         $('#controler').addClass('no-pointer-events');
         $('#video-wrapper').append(`<h2 id="message" class="chapter position-absolute w-100 py-4
         px-3 m-0 justify-content-start"><span class="text-truncate">${annotation.formattedtitle}</span></h2>`);

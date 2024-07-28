@@ -384,6 +384,10 @@ html:has(.path-mod-interactivevideo) {
     justify-content: center;
 }
 
+#page-mod-interactivevideo-view #video-nav li.decision {
+    top: -10px;
+}
+
 .path-mod-interactivevideo #video-nav li .item {
     border-radius: 50%;
     width: 5px;
@@ -1140,13 +1144,13 @@ html:has(.path-mod-interactivevideo) {
 }
 
 #page-mod-interactivevideo-interactions #inlineannotation-btns {
-    position: absolute;
-    top: -41px;
+    position: fixed;
+    top: 15px;
     right: 0;
     width: 100%;
     text-align: right;
     padding: 0 0.5rem;
-    background: var(--ivsecondary);
+    background: #fff;
     height: 40px;
     left: 0;
     border-radius: 0.5rem;
@@ -1166,12 +1170,6 @@ html:has(.path-mod-interactivevideo) {
     align-items: center;
     justify-content: space-between;
     flex-direction: row-reverse;
-}
-
-@media (min-width: 1200px) {
-    #page-mod-interactivevideo-interactions #inlineannotation-btns {
-        width: calc(100% - 1rem);
-    }
 }
 
 #page-mod-interactivevideo-interactions #inlineannotation-btns .btn,

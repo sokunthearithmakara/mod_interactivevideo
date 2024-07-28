@@ -101,3 +101,5 @@ $string['darkoutline'] = 'Dark outline';
 $string['timestamp'] = 'Timestamp';
 $string['content'] = 'Content';
 $string['usemodal'] = 'Display in modal';
+$string['sticky'] = 'Sticky';
+$string['showuntil'] = 'Show until';

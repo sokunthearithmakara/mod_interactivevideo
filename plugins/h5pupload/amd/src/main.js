@@ -66,6 +66,8 @@ export default class H5pUpload extends Base {
         return true;
     }
     runInteraction(annotation) {
+        this.player.pause();
+
         var annoid = annotation.id;
         var self = this;
         const xAPICheck = (annotation) => {

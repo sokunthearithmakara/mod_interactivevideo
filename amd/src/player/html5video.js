@@ -29,6 +29,10 @@ class Html5Video {
         this.start = start;
         this.end = end;
         this.frequency = 0.28;
+        this.support = {
+            playbackrate: true,
+            quality: false,
+        };
         var player = document.getElementById('player');
         player.src = url;
         player.controls = true;
@@ -68,6 +72,10 @@ class Html5Video {
 
         player.addEventListener('error', function (e) {
             dispatchEvent('iv:playerError', { error: e });
+        });
+
+        player.addEventListener('ratechange', function () {
+            dispatchEvent('iv:playerRateChange', { rate: player.playbackRate });
         });
 
         this.player = player;

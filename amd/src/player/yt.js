@@ -48,7 +48,10 @@ class Yt {
          * @type {Number}
          */
         this.frequency = 0.15;
-
+        this.support = {
+            playbackrate: true,
+            quality: false,
+        };
         // Documented at https://developers.google.com/youtube/iframe_api_reference
         var YT;
         var regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)(?:\/embed\/|\/watch\?v=|\/)([^\/]+)/g;
@@ -133,6 +136,10 @@ class Yt {
                             }
                             break;
                     }
+                },
+
+                onPlaybackRateChange: function (e) {
+                    dispatchEvent('iv:playerRateChange', { rate: e.data });
                 }
             }
         };
@@ -278,14 +285,6 @@ class Yt {
      */
     originalPlayer() {
         return player;
-    }
-    /**
-     * Set the quality of the video
-     * @param {*} quality
-     */
-    setQuality(quality) {
-        // Not supported by Youtube
-        return quality;
     }
 }
 

@@ -51,7 +51,10 @@ Example context (json):
 }
 }}
 <div id="interactivevideo-container"
-    class="container-fluid {{#darkmode}}p-sm-3{{/darkmode}} {{^darkmode}}p-sm-3{{/darkmode}} alternative">
+    class="container-fluid {{#darkmode}}p-sm-3{{/darkmode}} {{^darkmode}}p-sm-3{{/darkmode}} alternative"
+    data-noskip="{{displayoptions.preventskipping}}"
+    data-duntilcomplete="{{displayoptions.disableinteractionclickuntilcompleted}}"
+    data-dc="{{displayoptions.disableinteractionclick}}" data-noseek="{{displayoptions.preventseeking}}">
     <div class="row justify-content-center mx-0">
         <div class="col-lg-12 col-xl-8 px-0">
             <div id="wrapper" class="position-relative">
@@ -200,22 +203,14 @@ Example context (json):
                                 title="{{#str}}mute,mod_interactivevideo{{/str}}"><i class="bi bi-volume-up"></i></span>
                             <div class="btn-group dropup">
     <span id="changerate" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-                                class="btn border-0 btn-sm btn-control text-white bg-transparent py-0 px-1 mx-1"><i class="bi bi-speedometer2" data-toggle="tooltip" data-trigger="focus"
-                                title="{{#str}}changeplaybackspeed,mod_interactivevideo{{/str}}"></i></span>
+                                class="btn border-0 btn-sm btn-control text-white bg-transparent py-0 px-1 mx-1"
+                                data-toggle="tooltip" data-trigger="focus"
+                                title="{{#str}}changeplaybackspeed,mod_interactivevideo{{/str}}"><i class="bi bi-speedometer2"></i></span>
     <div class="dropdown-menu dropdown-menu-right bg-black text-white">
         <a class="dropdown-item text-white changerate" data-rate="0.5" href="#"><i class="bi fa-fw ml-n3"></i>0.5</a>
-        <a class="dropdown-item text-white changerate" data-rate="1" href="#"><i class="bi fa-fw bi-check ml-n3"></i>1</a>
-        <a class="dropdown-item text-white changerate" data-rate="1.5" href="#"><i class="bi fa-fw ml-n3"></i>1.5</a>
-                <a class="dropdown-item text-white changerate" data-rate="2" href="#"><i class="bi fa-fw ml-n3"></i>2</a>
-    </div>
-</div>
-
-<div class="btn-group dropup">
-    <span id="changequality" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-                                class="btn border-0 btn-sm btn-control text-white bg-transparent py-0 px-1 mx-1"
-                                ><i class="bi bi-gear" data-toggle="tooltip" data-trigger="focus"
-                                title="{{#str}}videoquality,mod_interactivevideo{{/str}}"></i></span>
-    <div class="dropdown-menu dropdown-menu-right bg-black text-white" id="qualitieslist">
+        <a class="dropdown-item text-white changerate border-top border-bottom"  data-rate="1" href="#"><i class="bi fa-fw bi-check ml-n3"></i>1</a>
+        <a class="dropdown-item text-white changerate border-bottom"  data-rate="1.5"  href="#"><i class="bi fa-fw ml-n3"></i>1.5</a>
+                <a class="dropdown-item text-white changerate"  data-rate="2"  href="#"><i class="bi fa-fw ml-n3"></i>2</a>
     </div>
 </div>
 

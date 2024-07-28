@@ -151,7 +151,7 @@ export default class Decision extends Base {
      * @returns {void}
      */
     runInteraction(annotation) {
-
+        this.player.pause();
         let self = this;
         var dest = JSON.parse(annotation.content);
         dest = dest.filter((d) => {

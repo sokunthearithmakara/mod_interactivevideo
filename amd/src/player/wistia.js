@@ -29,14 +29,18 @@ class Wistia {
         this.type = 'wistia';
         this.start = start;
         this.frequency = 0.3;
+        this.support = {
+            playbackrate: false,
+            quality: false,
+        };
         var regex = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^\/]+)/g;
         var match = regex.exec(url);
         var videoId = match[1];
         this.videoId = videoId;
         var playerIframe = `<iframe id="player" src="https://fast.wistia.net/embed/iframe/${videoId}?`;
         playerIframe += `seo=false&videoFoam=false&controlsVisibleOnLoad=${showControls}`;
-        playerIframe += `&playButton=${showControls}&time=${start}&autoPlay=false&efullscreenButton=false" `;
-        playerIframe += `allow="autoplay;" allowtransparency="true" frameborder="0" scrolling="no"`;
+        playerIframe += `&playButton=${showControls}&time=${start}&autoPlay=false&fullscreenButton=false&playbackRate=1" `;
+        playerIframe += `allow="autoplay;" allowtransparency="true" frameborder="0" scrolling="no" `;
         playerIframe += `class="wistia_embed" name="wistia_embed" msallowfullscreen></iframe>`;
         $("#player").replaceWith(playerIframe);
         var self = this;
@@ -49,6 +53,7 @@ class Wistia {
             id: videoId,
             options: {
                 autoPlay: false,
+                playbackRate: 1,
                 time: start,
                 fullscreenButton: false,
                 controlsVisibleOnLoad: showControls,
@@ -59,7 +64,6 @@ class Wistia {
             onReady: function (video) {
                 player = video;
                 end = !end ? video.duration() : Math.min(end, video.duration());
-
                 var interval = setInterval(() => {
                     if (video.state() === 'paused') {
                         ready = true;
@@ -201,6 +205,12 @@ class Wistia {
     setQuality(quality) {
         player.setQuality(quality);
         return quality;
+    }
+    getQualities() {
+        return {
+            qualities: ['default', '360', '540', '720', '1080'],
+            currentQuality: player.videoQuality() == 'auto' ? 'default' : player.videoQuality(),
+        };
     }
 }
 
