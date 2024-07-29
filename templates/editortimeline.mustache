@@ -24,49 +24,53 @@
     }
 }}
 
-<div id="timeline" class="w-100 fixed-bottom bg-dark px-4" style="scrollbar-width: thin; overflow-x: scroll; overflow-y:hidden;">
-    <div id="timeline-btns" class="d-flex py-2 w-100 text-white align-items-center justify-content-between" style="position: sticky; left: 0;">
-    <button class="btn btn-sm p-0 text-white text-uppercase" type="button" id="addcontent">
+<div id="timeline" class="w-100 fixed-bottom bg-dark px-4"
+    style="scrollbar-width: thin; overflow-x: scroll; overflow-y:hidden;">
+    <div id="timeline-btns" class="d-flex py-2 w-100 text-white align-items-center justify-content-between"
+        style="position: sticky; left: 0;">
+        <button class="btn btn-sm p-0 text-white text-uppercase" type="button" id="addcontent">
             <i class="bi bi-plus-lg mr-2"></i>{{#str}}add,mod_interactivevideo{{/str}}</button>
-    <div>
-        <button class="btn btn-sm p-0 text-white mr-3" type="button" id="playpause"><i
-                class="bi bi-play-fill fs-25px"></i></button>
-        <span class="text-white" id="currenttime">00:00</span><span class="mx-1">/</span><span class="text-white mr-2"
-            id="duration">00:00</span>
-            </div>
-        <div class="d-flex">
-        <button class="btn btn-sm p-0 text-white text-uppercase mr-4" disabled id="savedraft"><i
-                class="bi bi-floppy mr-2"></i>{{#str}}save,mod_interactivevideo{{/str}}</button>
-        <div id="zoomlevel" class="d-flex align-items-center">
-            <button class="btn btn-sm p-0 text-white mr-2" type="button" disabled id="zoomout"><i
-                    class="bi bi-zoom-out"></i></button>
-            <button class="btn btn-sm p-0 text-white mr-4" type="button" id="zoomin"><i
-                    class="bi bi-zoom-in"></i></button>
+        <div>
+            <button class="btn btn-sm p-0 text-white mr-3" type="button" id="playpause"><i
+                    class="bi bi-play-fill fs-25px"></i></button>
+            <span class="text-white" id="currenttime">00:00</span><span class="mx-1">/</span><span
+                class="text-white mr-2" id="duration">00:00</span>
         </div>
-        <button class="border-0 btn btn-sm p-0 text-white" data-toggle="popover" data-trigger="hover" data-placement="auto"
-            data-boundary="viewport" data-content='{{#str}}videonavhelp,mod_interactivevideo{{/str}}'
-            data-html="true"><i class="bi bi-info-circle"></i></button>
+        <div class="d-flex">
+            <button class="btn btn-sm p-0 text-white text-uppercase mr-4" disabled id="savedraft"><i
+                    class="bi bi-floppy mr-2"></i>{{#str}}save,mod_interactivevideo{{/str}}</button>
+            <div id="zoomlevel" class="d-flex align-items-center">
+                <button class="btn btn-sm p-0 text-white mr-2" type="button" disabled id="zoomout"><i
+                        class="bi bi-zoom-out"></i></button>
+                <button class="btn btn-sm p-0 text-white mr-4" type="button" id="zoomin"><i
+                        class="bi bi-zoom-in"></i></button>
             </div>
+            <button class="border-0 btn btn-sm p-0 text-white" data-toggle="popover" data-trigger="hover"
+                data-placement="auto" data-boundary="viewport"
+                data-content='{{#str}}videonavhelp,mod_interactivevideo{{/str}}' data-html="true"><i
+                    class="bi bi-info-circle"></i></button>
+        </div>
     </div>
     <div id="timeline-items-wrapper" class="px-2 pt-2" style="width:100%; min-width: 100%">
-    <div id="timeline-items" class="w-100 position-relative mx-auto"
-        style="height: calc(35px + 1rem)">
-        <div id="vseek" class="w-100 position-absolute" style="height:10px; margin-top: 5px"><div class="w-100"></div></div>
-        <div id="scrollbar" class="d-flex flex-column position-absolute align-items-center"
-            style="left: 0;top: -5px!important;margin: 0 -5px;">
-            <div id="scrollhead" style="width: 10px;height: 10px;background: #fff;border-radius: 50%;"></div>
-            <div id="scrollline" style="width: 1px;background: #fff;height: calc(35px + 1rem);z-index: 1;"></div>
-        </div>
-        <div id="interaction-timeline" class="d-flex align-items-center" style="padding: 0.75rem 0;">
-            <div id="video-nav" class="align-items-center" style="height:0;background: transparent;">
-                <ul></ul>
+        <div id="timeline-items" class="w-100 position-relative mx-auto" style="height: calc(35px + 1rem)">
+            <div id="vseek" class="w-100 position-absolute" style="height:10px; margin-top: 5px">
+                <div class="w-100"></div>
+            </div>
+            <div id="scrollbar" class="d-flex flex-column position-absolute align-items-center"
+                style="left: 0;top: -5px!important;margin: 0 -5px;">
+                <div id="scrollhead" style="width: 10px;height: 10px;background: #fff;border-radius: 50%;"></div>
+                <div id="scrollline" style="width: 1px;background: #fff;height: calc(35px + 1rem);z-index: 1;"></div>
+            </div>
+            <div id="interaction-timeline" class="d-flex align-items-center" style="padding: 0.75rem 0;">
+                <div id="video-nav" class="align-items-center" style="height:0;background: transparent;">
+                    <ul></ul>
+                </div>
+            </div>
+            <div id="video-timeline-wrapper" class="w-100 d-flex align-items-center position-relative"
+                style="height:20px;">
+                <div id="video-timeline" class="w-100 rounded-sm bg-primary h-100 position-absolute">
+                </div>
             </div>
         </div>
-        <div id="video-timeline-wrapper" class="w-100 d-flex align-items-center position-relative"  style="height:20px;">
-        <div id="video-timeline" class="w-100 rounded-sm bg-primary h-100 position-absolute">
-            </div>
-            </div>
-        </div>
-    </div>
     </div>
 </div>
