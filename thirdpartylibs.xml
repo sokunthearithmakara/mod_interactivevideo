@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <libraries>
     <library>
-        <location>libraries/Datatables/datatables.min.css</location>
+        <location>libraries/Datatables</location>
         <name>Datatables stylesheet</name>
         <version>1.13.5</version>
         <license>MIT</license>
