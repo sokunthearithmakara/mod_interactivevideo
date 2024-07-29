@@ -20,7 +20,7 @@
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-import { dispatchEvent } from 'core/event_dispatcher';
+import {dispatchEvent} from 'core/event_dispatcher';
 import $ from 'jquery';
 
 class Html5Video {
@@ -50,16 +50,16 @@ class Html5Video {
         // Play inline.
         player.setAttribute('playsinline', '');
 
-        player.addEventListener('loadedmetadata', function () {
+        player.addEventListener('loadedmetadata', function() {
             dispatchEvent('iv:playerReady');
             end = !end ? player.duration : Math.min(end, player.duration);
         });
 
-        player.addEventListener('seeked', function () {
-            dispatchEvent('iv:playerSeek', { time: player.currentTime });
+        player.addEventListener('seeked', function() {
+            dispatchEvent('iv:playerSeek', {time: player.currentTime});
         });
 
-        player.addEventListener('timeupdate', function () {
+        player.addEventListener('timeupdate', function() {
             if (player.ended || (end && player.currentTime >= end)) {
                 dispatchEvent('iv:playerEnded');
                 player.pause();
@@ -70,12 +70,12 @@ class Html5Video {
             }
         });
 
-        player.addEventListener('error', function (e) {
-            dispatchEvent('iv:playerError', { error: e });
+        player.addEventListener('error', function(e) {
+            dispatchEvent('iv:playerError', {error: e});
         });
 
-        player.addEventListener('ratechange', function () {
-            dispatchEvent('iv:playerRateChange', { rate: player.playbackRate });
+        player.addEventListener('ratechange', function() {
+            dispatchEvent('iv:playerRateChange', {rate: player.playbackRate});
         });
 
         this.player = player;
@@ -92,29 +92,29 @@ class Html5Video {
     }
     seek(time) {
         this.player.currentTime = time;
-        return Promise.resolve();
+        return true;
     }
     getCurrentTime() {
-        return Promise.resolve(this.player.currentTime);
+        return this.player.currentTime;
     }
     getDuration() {
-        return Promise.resolve(this.player.duration);
+        return this.player.duration;
     }
     isPaused() {
-        return Promise.resolve(this.player.paused);
+        return this.player.paused;
     }
     isPlaying() {
-        return Promise.resolve(!this.player.paused);
+        return !this.player.paused;
     }
     isEnded() {
-        return Promise.resolve(this.player.ended);
+        return this.player.ended;
     }
     ratio() {
         // If wide video, use that ratio; otherwise, 16:9
         if (this.player.videoWidth / this.player.videoHeight > 16 / 9) {
-            return Promise.resolve(this.player.videoWidth / this.player.videoHeight);
+            return this.player.videoWidth / this.player.videoHeight;
         } else {
-            return Promise.resolve(16 / 9);
+            return 16 / 9;
         }
     }
     destroy() {
@@ -123,7 +123,7 @@ class Html5Video {
         this.player.load();
     }
     getState() {
-        return Promise.resolve(this.player.paused ? 'paused' : 'playing');
+        return this.player.paused ? 'paused' : 'playing';
     }
     setRate(rate) {
         this.player.playbackRate = rate;

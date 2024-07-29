@@ -20,10 +20,9 @@
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-import { dispatchEvent } from 'core/event_dispatcher';
+import {dispatchEvent} from 'core/event_dispatcher';
 import $ from 'jquery';
 let player;
-
 class DailyMotion {
     constructor(url, start, end, showControls, customStart = false) {
         this.type = 'dailymotion';
@@ -60,9 +59,8 @@ class DailyMotion {
             if (showControls) {
                 player.setQuality(480);
             }
-            player.getState().then(function (state) {
+            player.getState().then(function(state) {
                 end = !end ? state.videoDuration : Math.min(end, state.videoDuration);
-                self.qualities = state.videoQualitiesList;
                 return;
             }).catch(() => {
                 // Do nothing.
@@ -75,7 +73,7 @@ class DailyMotion {
             if (customStart) {
                 player.setMute(true);
                 player.play();
-                player.on(dailymotion.events.VIDEO_START, function () {
+                player.on(dailymotion.events.VIDEO_START, function() {
                     if (ready == true) { // When the video is replayed, it will fire VIDEO_START event again.
                         player.setMute(true);
                     }
@@ -95,21 +93,21 @@ class DailyMotion {
             }
 
             // Show ads to user so they know ad is playing, not because something is wrong.
-            player.on(dailymotion.events.AD_START, function () {
+            player.on(dailymotion.events.AD_START, function() {
                 $(".video-block").css('background', 'transparent');
             });
 
-            player.on(dailymotion.events.VIDEO_SEEKEND, function (e) {
+            player.on(dailymotion.events.VIDEO_SEEKEND, function(e) {
                 dispatchEvent('iv:playerSeek', e.videoTime);
             });
 
-            player.on(dailymotion.events.VIDEO_END, function () {
+            player.on(dailymotion.events.VIDEO_END, function() {
                 player.seek(start);
                 player.pause();
                 dispatchEvent('iv:playerEnded');
             });
 
-            player.on(dailymotion.events.VIDEO_TIMECHANGE, function (e) {
+            player.on(dailymotion.events.VIDEO_TIMECHANGE, function(e) {
                 if (!ready) {
                     return;
                 }
@@ -124,12 +122,12 @@ class DailyMotion {
                 }
             });
 
-            player.on(dailymotion.events.PLAYER_ERROR, function (e) {
-                dispatchEvent('iv:playerError', { error: e });
+            player.on(dailymotion.events.PLAYER_ERROR, function(e) {
+                dispatchEvent('iv:playerError', {error: e});
             });
 
-            player.on(dailymotion.events.PLAYER_PLAYBACKSPEEDCHANGE, function (e) {
-                dispatchEvent('iv:playerRateChange', { rate: e.playerPlaybackSpeed });
+            player.on(dailymotion.events.PLAYER_PLAYBACKSPEEDCHANGE, function(e) {
+                dispatchEvent('iv:playerRateChange', {rate: e.playerPlaybackSpeed});
             });
         };
 
@@ -147,7 +145,7 @@ class DailyMotion {
             window.dailymotion = {
                 onScriptLoaded: () => {
                     dailymotion = window.dailymotion;
-                    dailymotion.createPlayer("player", dmOptions).then(function (pl) {
+                    dailymotion.createPlayer("player", dmOptions).then(function(pl) {
                         player = pl;
                         dailymotionEvents(player);
                         return;
@@ -157,7 +155,7 @@ class DailyMotion {
                 }
             };
         } else {
-            dailymotion.createPlayer("player", dmOptions).then(function (pl) {
+            dailymotion.createPlayer("player", dmOptions).then(function(pl) {
                 player = pl;
                 dailymotionEvents(player);
                 dailymotion = window.dailymotion;
@@ -177,68 +175,45 @@ class DailyMotion {
         player.seek(starttime);
         player.pause();
     }
-    seek(time) {
-        return new Promise((resolve) => {
-            player.seek(time);
-            dispatchEvent('iv:playerSeek', { time: time });
-            resolve();
-        });
+    async seek(time) {
+        await player.seek(time);
+        dispatchEvent('iv:playerSeek', {time: time});
     }
-    getCurrentTime() {
-        return new Promise((resolve) => {
-            player.getState().then(function (state) {
-                resolve(state.videoTime);
-            });
-        });
+    async getCurrentTime() {
+        const state = await player.getState();
+        return state.videoTime;
     }
-    getDuration() {
-        return new Promise((resolve) => {
-            player.getState().then(function (state) {
-                resolve(state.videoDuration);
-            });
-        });
+    async getDuration() {
+        const state = await player.getState();
+        return state.videoDuration;
     }
-    isPaused() {
-        return new Promise((resolve) => {
-            player.getState().then(function (state) {
-                resolve(!state.playerIsPlaying);
-            });
-        });
+    async isPaused() {
+        const state = await player.getState();
+        return !state.playerIsPlaying;
     }
-    isPlaying() {
-        return new Promise((resolve) => {
-            player.getState().then(function (state) {
-                resolve(state.playerIsPlaying);
-            });
-        });
+    async isPlaying() {
+        const state = await player.getState();
+        return state.playerIsPlaying;
     }
-    isEnded() {
-        player.getState().then(function (state) {
-            return Promise.resolve(state.playerIsReplayScreen);
-        });
+    async isEnded() {
+        const state = await player.getState();
+        return state.playerIsReplayScreen;
     }
-    ratio() {
-        return new Promise((resolve) => {
-            // If wide video, use that ratio; otherwise, 16:9.
-            player.getState().then(function (state) {
-                var ratio = state.playerAspectRatio.split(':');
-                if (ratio[0] / ratio[1] > 16 / 9) {
-                    resolve(ratio[0] / ratio[1]);
-                } else {
-                    resolve(16 / 9);
-                }
-            });
-        });
+    async ratio() {
+        const state = await player.getState();
+        const ratio = state.playerAspectRatio.split(':');
+        if (ratio[0] / ratio[1] > 16 / 9) {
+            return ratio[0] / ratio[1];
+        } else {
+            return 16 / 9;
+        }
     }
     destroy() {
         player.destroy();
     }
-    getState() {
-        return new Promise((resolve) => {
-            player.getState().then(function (state) {
-                resolve(state);
-            });
-        });
+    async getState() {
+        const state = await player.getState();
+        return state;
     }
     setRate(rate) {
         player.setPlaybackSpeed(rate);

@@ -21,7 +21,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 import $ from 'jquery';
-import { dispatchEvent } from 'core/event_dispatcher';
+import {dispatchEvent} from 'core/event_dispatcher';
 let player;
 
 class Wistia {
@@ -39,13 +39,13 @@ class Wistia {
         this.videoId = videoId;
         var playerIframe = `<iframe id="player" src="https://fast.wistia.net/embed/iframe/${videoId}?`;
         playerIframe += `seo=false&videoFoam=false&controlsVisibleOnLoad=${showControls}`;
-        playerIframe += `&playButton=${showControls}&time=${start}&autoPlay=false&fullscreenButton=false&playbackRate=1" `;
+        playerIframe += `&playButton=${showControls}${start > 0 ? `&time=${start}` : ''}&autoPlay=false&fullscreenButton=false" `;
         playerIframe += `allow="autoplay;" allowtransparency="true" frameborder="0" scrolling="no" `;
         playerIframe += `class="wistia_embed" name="wistia_embed" msallowfullscreen></iframe>`;
         $("#player").replaceWith(playerIframe);
         var self = this;
         $.get('https://fast.wistia.com/oembed.json?url=' + url)
-            .then(function (data) {
+            .then(function(data) {
                 self.posterImage = data.thumbnail_url;
             });
         var ready = false;
@@ -53,7 +53,6 @@ class Wistia {
             id: videoId,
             options: {
                 autoPlay: false,
-                playbackRate: 1,
                 time: start,
                 fullscreenButton: false,
                 controlsVisibleOnLoad: showControls,
@@ -61,16 +60,17 @@ class Wistia {
                 playerColor: "#54bbff",
                 wmode: "transparent",
             },
-            onReady: function (video) {
+            onReady: function(video) {
                 player = video;
                 end = !end ? video.duration() : Math.min(end, video.duration());
-                var interval = setInterval(() => {
-                    if (video.state() === 'paused') {
-                        ready = true;
-                        dispatchEvent('iv:playerReady');
-                        clearInterval(interval);
-                    }
-                }, 1000);
+                video.mute();
+                if (start > 0) {
+                    video.time(start);
+                    video.pause();
+                }
+                video.unmute();
+                ready = true;
+                dispatchEvent('iv:playerReady');
 
                 video.on("pause", () => {
                     if (!ready) {
@@ -83,7 +83,7 @@ class Wistia {
                     if (!ready) {
                         return;
                     }
-                    dispatchEvent('iv:playerSeek', { time: e });
+                    dispatchEvent('iv:playerSeek', {time: e});
                 });
 
                 video.bind('play', () => {
@@ -99,20 +99,19 @@ class Wistia {
                 });
 
                 video.on('timechange', (s) => {
-                    if (s > end || s < start) {
+                    if (s > end) {
                         dispatchEvent('iv:playerEnded');
                         video.time(start);
                         video.pause();
                     }
-                    video.unmute();
                 });
 
                 video.on("error", (e) => {
-                    dispatchEvent('iv:playerError', { error: e });
+                    dispatchEvent('iv:playerError', {error: e});
                 });
             },
-            onError: function (e) {
-                dispatchEvent('iv:playerError', { error: e });
+            onError: function(e) {
+                dispatchEvent('iv:playerError', {error: e});
             }
         };
 
@@ -144,51 +143,35 @@ class Wistia {
         player.time(starttime);
     }
     seek(time) {
-        return new Promise((resolve) => {
-            player.time(time);
-            resolve();
-        });
+        return player.time(time);
     }
     getCurrentTime() {
-        return new Promise((resolve) => {
-            resolve(player.time());
-        });
+        return player.time();
     }
     getDuration() {
-        return new Promise((resolve) => {
-            resolve(player.duration());
-        });
+        return player.duration();
     }
     isPaused() {
-        return new Promise((resolve) => {
-            resolve(player.state() === 'paused');
-        });
+        return player.state() === 'paused';
     }
     isPlaying() {
-        return new Promise((resolve) => {
-            resolve(player.state() === 'playing');
-        });
+        return player.state() === 'playing';
     }
     isEnded() {
-        return Promise.resolve(player.state() === 'ended');
+        return player.state() === 'ended';
     }
     ratio() {
-        return new Promise((resolve) => {
-            // If wide video, use that ratio; otherwise, 16:9
-            if (player.aspect() > 16 / 9) {
-                resolve(player.aspect());
-            } else {
-                resolve(16 / 9);
-            }
-        });
+        if (player.aspect() > 16 / 9) {
+            return player.aspect();
+        } else {
+            return 16 / 9;
+        }
     }
     destroy() {
         player.remove();
     }
     getState() {
-        return new Promise((resolve) => {
-            resolve(player.state());
-        });
+        return player.state();
     }
     setRate(rate) {
         player.playbackRate(rate);

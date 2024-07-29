@@ -20,7 +20,7 @@
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-import { dispatchEvent } from 'core/event_dispatcher';
+import {dispatchEvent} from 'core/event_dispatcher';
 let player;
 
 class Vimeo {
@@ -74,18 +74,17 @@ class Vimeo {
         };
 
         const vimeoEvents = (player) => {
-            player.on('error', function (e) {
-                dispatchEvent('iv:playerError', { error: e });
+            player.on('error', function(e) {
+                dispatchEvent('iv:playerError', {error: e});
             });
 
-            player.on('loaded', function () {
-                player.getDuration().then(function (duration) {
-                    end = !end ? duration : Math.min(end, duration);
-                });
+            player.on('loaded', async function() {
+                let duration = await player.getDuration();
+                end = !end ? duration : Math.min(end, duration);
                 dispatchEvent('iv:playerReady');
             });
 
-            player.on('timeupdate', async function () {
+            player.on('timeupdate', async function() {
                 let isEnded = await player.getEnded();
                 let currentTime = await player.getCurrentTime();
                 if (isEnded || (end && currentTime >= end)) {
@@ -98,16 +97,16 @@ class Vimeo {
                 }
             });
 
-            player.on('seeked', function (e) {
-                dispatchEvent('iv:playerSeek', { time: e.seconds });
+            player.on('seeked', function(e) {
+                dispatchEvent('iv:playerSeek', {time: e.seconds});
             });
 
-            player.on('playbackratechange', function (e) {
-                dispatchEvent('iv:playerRateChange', { rate: e.playbackRate });
+            player.on('playbackratechange', function(e) {
+                dispatchEvent('iv:playerRateChange', {rate: e.playbackRate});
             });
         };
         if (!VimeoPlayer) {
-            require(['https://player.vimeo.com/api/player.js'], function (Player) {
+            require(['https://player.vimeo.com/api/player.js'], function(Player) {
                 VimeoPlayer = Player;
                 player = new Player('player', option);
                 vimeoEvents(player);
@@ -133,62 +132,41 @@ class Vimeo {
             resolve();
         });
     }
-    getCurrentTime() {
-        return new Promise((resolve) => {
-            player.getCurrentTime().then(function (time) {
-                resolve(time);
-            });
-        });
+    async getCurrentTime() {
+        const time = await player.getCurrentTime();
+        return time;
     }
-    getDuration() {
-        return new Promise((resolve) => {
-            player.getDuration().then(function (duration) {
-                resolve(duration);
-            });
-        });
+    async getDuration() {
+        const duration = await player.getDuration();
+        return duration;
     }
-    isPaused() {
-        return new Promise((resolve) => {
-            player.getPaused().then(function (paused) {
-                resolve(paused);
-            });
-        });
+    async isPaused() {
+        const paused = await player.getPaused();
+        return paused;
     }
-    isPlaying() {
-        return new Promise((resolve) => {
-            player.getPaused().then(function (paused) {
-                resolve(!paused);
-            });
-        });
+    async isPlaying() {
+        const paused = await player.getPaused();
+        return !paused;
     }
-    isEnded() {
-        player.getEnded().then(function (ended) {
-            return Promise.resolve(ended);
-        });
+    async isEnded() {
+        const ended = await player.getEnded();
+        return ended;
     }
-    ratio() {
-        return new Promise((resolve) => {
-            // If wide video, use that ratio; otherwise, 16:9
-            player.getVideoWidth().then(function (width) {
-                player.getVideoHeight().then(function (height) {
-                    if (width / height > 16 / 9) {
-                        resolve(width / height);
-                    } else {
-                        resolve(16 / 9);
-                    }
-                });
-            });
-        });
+    async ratio() {
+        const width = await player.getVideoWidth();
+        const height = await player.getVideoHeight();
+        if (width / height > 16 / 9) {
+            return width / height;
+        } else {
+            return 16 / 9;
+        }
     }
     destroy() {
         player.destroy();
     }
-    getState() {
-        return new Promise((resolve) => {
-            player.getPaused().then(function (paused) {
-                resolve(paused ? 'paused' : 'playing');
-            });
-        });
+    async getState() {
+        const paused = await player.getPaused();
+        return paused ? 'paused' : 'playing';
     }
     setRate(rate) {
         player.setPlaybackRate(rate);

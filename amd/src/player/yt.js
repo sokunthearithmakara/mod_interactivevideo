@@ -20,7 +20,7 @@
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-import { dispatchEvent } from 'core/event_dispatcher';
+import {dispatchEvent} from 'core/event_dispatcher';
 let player;
 class Yt {
     constructor(url, start, end, showControls, customStart = false, preload = false) {
@@ -84,10 +84,10 @@ class Yt {
                 disablekb: 1,
             },
             events: {
-                onError: function (e) {
-                    dispatchEvent('iv:playerError', { error: e.data });
+                onError: function(e) {
+                    dispatchEvent('iv:playerError', {error: e.data});
                 },
-                onReady: function (e) {
+                onReady: function(e) {
                     self.end = !self.end ? e.target.getDuration() : Math.min(self.end, e.target.getDuration());
                     // It's always good idea to play the video at the beginning to download some data.
                     // Otherwise, if user seek before start, they're gonna get blackscreen.
@@ -110,7 +110,7 @@ class Yt {
                     }
                 },
 
-                onStateChange: function (e) {
+                onStateChange: function(e) {
                     if (ready === false) {
                         return;
                     }
@@ -138,8 +138,8 @@ class Yt {
                     }
                 },
 
-                onPlaybackRateChange: function (e) {
-                    dispatchEvent('iv:playerRateChange', { rate: e.data });
+                onPlaybackRateChange: function(e) {
+                    dispatchEvent('iv:playerRateChange', {rate: e.data});
                 }
             }
         };
@@ -151,7 +151,7 @@ class Yt {
             var firstScriptTag = document.getElementsByTagName('script')[0];
             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
             // Replace the 'player' element with an <iframe> and YouTube player
-            window.onYouTubeIframeAPIReady = function () {
+            window.onYouTubeIframeAPIReady = function() {
                 YT = window.YT || {};
                 player = new YT.Player('player', options);
             };
@@ -186,63 +186,61 @@ class Yt {
     /**
      * Seek the video to a specific time
      * @param {Number} time
-     * @return {Promise}
+     * @return {Boolean}
      */
     seek(time) {
         player.seekTo(time, true);
-        dispatchEvent('iv:playerSeek', { time: time });
-        return Promise.resolve();
+        dispatchEvent('iv:playerSeek', {time: time});
+        return true;
     }
     /**
      * Get the current time of the video
-     * @return {Promise}
+     * @return {Number}
      */
     getCurrentTime() {
-        return Promise.resolve(player.getCurrentTime());
+        return player.getCurrentTime();
     }
     /**
      * Get the duration of the video
-     * @return {Promise}
+     * @return {Number}
      */
     getDuration() {
-        return Promise.resolve(player.getDuration());
+        return player.getDuration();
     }
     /**
      * Check if the video is paused
-     * @return {Promise}
-     * @resolve {Boolean}
+     * @return {Boolean}
      */
     isPaused() {
-        return Promise.resolve(player.getPlayerState() === 2);
+        return player.getPlayerState() === 2;
     }
     /**
      * Check if the video is playing
-     * @return {Promise}
-     * @resolve {Boolean}
+     * @return {Boolean}
      */
     isPlaying() {
-        return Promise.resolve(player.getPlayerState() === 1);
+        return player.getPlayerState() === 1;
     }
     /**
      * Check if the video is ended
-     * @return {Promise}
+     * @return {Boolean}
      */
     isEnded() {
         if (player.getPlayerState() === 0) {
-            return Promise.resolve(true);
+            return true;
         } else {
             if (player.getCurrentTime() >= this.end) {
-                return Promise.resolve(true);
+                return true;
             }
         }
-        return Promise.resolve(false);
+        return false;
     }
     /**
      * Get the aspect ratio of the video
-     * @return {Promise}
+     * @return {Number}
      */
     ratio() {
-        return Promise.resolve(16 / 9);
+        return 16 / 9;
     }
     /**
      * Destroy the player
@@ -254,11 +252,10 @@ class Yt {
     }
     /**
      * Get the state of the player
-     * @return {Promise}
-     * @resolve {Number} The state of the player
+     * @return {Number}
      */
     getState() {
-        return Promise.resolve(player.getPlayerState());
+        return player.getPlayerState();
     }
     /**
      * Set playback rate of the video
@@ -266,7 +263,7 @@ class Yt {
      */
     setRate(rate) {
         player.setPlaybackRate(rate);
-        return Promise.resolve();
+        return rate;
     }
     /**
      * Mute the video
