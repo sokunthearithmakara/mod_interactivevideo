@@ -407,9 +407,17 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo #video-nav li:not(.chapter) .item:hover {
     transform: scale(1.75);
-    box-shadow: 0 0 10px #399be2, 0 0 20px #399be2, 0 0 30px #399be2,
-        0 0 40px #399be2, 0 0 50px #399be2, 0 0 60px #399be2, 0 0 70px #399be2,
-        0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
+    box-shadow:
+        0 0 10px #399be2,
+        0 0 20px #399be2,
+        0 0 30px #399be2,
+        0 0 40px #399be2,
+        0 0 50px #399be2,
+        0 0 60px #399be2,
+        0 0 70px #399be2,
+        0 0 80px #399be2,
+        0 0 90px #399be2,
+        0 0 100px #399be2;
     transition: all ease-in-out 300ms;
 }
 
@@ -419,9 +427,17 @@ html:has(.path-mod-interactivevideo) {
     height: 10px;
     width: 10px;
     transition: transform ease-in-out 300ms;
-    box-shadow: 0 0 10px #399be2, 0 0 20px #399be2, 0 0 30px #399be2,
-        0 0 40px #399be2, 0 0 50px #399be2, 0 0 60px #399be2, 0 0 70px #399be2,
-        0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
+    box-shadow:
+        0 0 10px #399be2,
+        0 0 20px #399be2,
+        0 0 30px #399be2,
+        0 0 40px #399be2,
+        0 0 50px #399be2,
+        0 0 60px #399be2,
+        0 0 70px #399be2,
+        0 0 80px #399be2,
+        0 0 90px #399be2,
+        0 0 100px #399be2;
 }
 
 .path-mod-interactivevideo #video-nav li.completed .item {
@@ -573,9 +589,17 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo #taskinfo .bg-translucent:hover {
-    box-shadow: 0 0 10px #399be2, 0 0 20px #399be2, 0 0 30px #399be2,
-        0 0 40px #399be2, 0 0 50px #399be2, 0 0 60px #399be2, 0 0 70px #399be2,
-        0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
+    box-shadow:
+        0 0 10px #399be2,
+        0 0 20px #399be2,
+        0 0 30px #399be2,
+        0 0 40px #399be2,
+        0 0 50px #399be2,
+        0 0 60px #399be2,
+        0 0 70px #399be2,
+        0 0 80px #399be2,
+        0 0 90px #399be2,
+        0 0 100px #399be2;
     transition: all ease-in-out 300ms;
 }
 
@@ -667,7 +691,8 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo .hasiframe iframe,
 .path-mod-interactivevideo .modalhasiframe iframe,
 .path-mod-interactivevideo .loader {
-    background: url([[pix:mod_interactivevideo|loader]]) center / 90px auto
+    background:
+        url([[pix:mod_interactivevideo|loader]]) center / 90px auto
         no-repeat;
     background-color: #fff;
     min-height: 15px;
@@ -873,8 +898,7 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo
 [data-region="chapterlists"]
-.chapter.active-chapter
-> div {
+.chapter.active-chapter > div {
     color: #fff;
     background: var(--ivprimary);
 }
