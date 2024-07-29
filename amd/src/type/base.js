@@ -856,28 +856,26 @@ class Base {
      * @param {Object} annotation The annotation object
      * @returns {void}
      */
-    runInteraction(annotation) {
+    async runInteraction(annotation) {
+        let self = this;
         this.player.pause();
-        // Apply content.
-        const applyContent = (annotation) => {
-            this.render(annotation, 'html').then((data) => {
-                let $message = $(`#message[data-id='${annotation.id}']`);
-                $message.find(`.modal-body`).html(data);
-                $message.find(`.modal-body`).attr('id', 'content');
-                this.postContentRender(annotation);
-                this.interactionRunEvent(annotation, data);
-            });
+
+        const applyContent = async function(annotation) {
+            const data = await self.render(annotation);
+            let $message = $(`#message[data-id='${annotation.id}']`);
+            $message.find(`.modal-body`).html(data);
+            $message.find(`.modal-body`).attr('id', 'content');
+            this.postContentRender(annotation);
+            this.interactionRunEvent(annotation, data);
         };
 
-        this.renderViewer(annotation).then(() => {
-            this.renderContainer(annotation);
-            applyContent(annotation);
-        });
+        await this.renderViewer(annotation);
+        this.renderContainer(annotation);
+        applyContent(annotation);
 
         this.enableManualCompletion();
 
         if (annotation.displayoptions == 'popup') {
-            let self = this;
             $('#annotation-modal').on('shown.bs.modal', function() {
                 self.setModalDraggable('#annotation-modal .modal-dialog');
             });
@@ -903,18 +901,17 @@ class Base {
      * @param {Object} annotation the annotation
      * @returns {void}
      */
-    displayReportView(annotation) {
-        this.render(annotation, 'html').then((data) => {
-            let $message = $(`#message[data-id='${annotation.id}']`);
-            $message.find(`.modal-body`).html(data);
-            $message.find(`.modal-body`).attr('id', 'content');
-            this.postContentRender(annotation);
-        });
+    async displayReportView(annotation) {
+        const data = await this.render(annotation, 'html');
+        let $message = $(`#message[data-id='${annotation.id}']`);
+        $message.find(`.modal-body`).html(data);
+        $message.find(`.modal-body`).attr('id', 'content');
+        this.postContentRender(annotation);
     }
 
     /**
      * Get the log data for multiple users from annotation_log table
-    * @param {Object} annotation the annotation
+     * @param {Object} annotation the annotation
      * @param {Array} userids array of user ids
      * @returns {Promise}
      */

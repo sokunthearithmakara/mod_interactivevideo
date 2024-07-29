@@ -22,9 +22,9 @@
  */
 import $ from 'jquery';
 import Fragment from 'core/fragment';
-import { dispatchEvent } from 'core/event_dispatcher';
+import {dispatchEvent} from 'core/event_dispatcher';
 
-const renderContent = async (annotation, format = 'html') => {
+const renderContent = async function(annotation, format = 'html') {
     const args = {
         ...annotation,
         contextid: M.cfg.contextid
@@ -37,7 +37,7 @@ const renderContent = async (annotation, format = 'html') => {
     }
 };
 
-const formatText = async (text, shorttext = false) => {
+const formatText = async function(text, shorttext = false) {
     try {
         const response = await $.ajax({
             url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
@@ -57,7 +57,7 @@ const formatText = async (text, shorttext = false) => {
     }
 };
 
-const defaultDisplayContent = async (annotation, player) => {
+const defaultDisplayContent = async function(annotation, player) {
     const isDarkMode = $('body').hasClass('darkmode');
     // Play pop sound
     const audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
@@ -110,12 +110,12 @@ const defaultDisplayContent = async (annotation, player) => {
     $('#annotation-modal').modal('hide');
 
     // Handle annotation close event:: when user click on the close button of the annotation
-    $(document).on('click', `#message[data-id='${annotation.id}'] #title .close`, async function (e) {
+    $(document).on('click', `#message[data-id='${annotation.id}'] #title .close`, async function(e) {
         e.preventDefault();
         $(this).closest("#annotation-modal").modal('hide');
         const targetMessage = $(this).closest("#message");
         targetMessage.addClass('bottom-0');
-        setTimeout(function () {
+        setTimeout(function() {
             targetMessage.remove();
             dispatchEvent('interactionclose', {
                 annotation: annotation,
@@ -143,11 +143,11 @@ const defaultDisplayContent = async (annotation, player) => {
                                     </div>`;
             $('#wrapper').append(modal);
             $('#annotation-modal').modal('show');
-            $('#annotation-modal').on('hide.bs.modal', function () {
+            $('#annotation-modal').on('hide.bs.modal', function() {
                 $('#annotation-modal').remove();
             });
 
-            $('#annotation-modal').on('shown.bs.modal', function () {
+            $('#annotation-modal').on('shown.bs.modal', function() {
                 $('#annotation-modal .modal-body').fadeIn(300);
                 return Promise.resolve();
             });
@@ -161,7 +161,7 @@ const defaultDisplayContent = async (annotation, player) => {
         </div></div>`);
             $(`#message[data-id='${annotation.id}']`).animate({
                 top: '0',
-            }, 300, 'linear', function () {
+            }, 300, 'linear', function() {
                 return Promise.resolve();
             });
             break;
@@ -175,7 +175,7 @@ const defaultDisplayContent = async (annotation, player) => {
             // Scroll to annotation-content
             $('html, body, #page.drawers, .modal-body').animate({
                 scrollTop: $("#annotation-content").offset().top
-            }, 1000, 'swing', function () {
+            }, 1000, 'swing', function() {
                 return Promise.resolve();
             });
             break;
@@ -183,4 +183,4 @@ const defaultDisplayContent = async (annotation, player) => {
 
 };
 
-export { renderContent, defaultDisplayContent, formatText };
+export {renderContent, defaultDisplayContent, formatText};

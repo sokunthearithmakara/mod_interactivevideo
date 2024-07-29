@@ -74,7 +74,7 @@ const init = (cmid, groupid) => {
                 },
                 {
                     data: "picture",
-                    render: function (data) {
+                    render: function(data) {
                         return '<div class="text-truncate">' + data + '</div>';
                     }
                 },
@@ -92,7 +92,7 @@ const init = (cmid, groupid) => {
                 },
                 {
                     data: "timecreated",
-                    "render": function (data, type) {
+                    "render": function(data, type) {
                         if (!data || data == 0) {
                             if (type === 'display') {
                                 return M.util.get_string('notstarted', 'mod_interactivevideo');
@@ -113,7 +113,7 @@ const init = (cmid, groupid) => {
                 },
                 {
                     data: "timecompleted",
-                    render: function (data, type) {
+                    render: function(data, type) {
                         if (!data || data == 0) {
                             if (type === 'display') {
                                 return M.util.get_string('inprogress', 'mod_interactivevideo');
@@ -134,7 +134,7 @@ const init = (cmid, groupid) => {
                 },
                 {
                     data: "completionpercentage",
-                    render: function (data) {
+                    render: function(data) {
                         if (data) {
                             return data + "%";
                         } else {
@@ -145,7 +145,7 @@ const init = (cmid, groupid) => {
                 },
                 {
                     data: "xp",
-                    render: function (data) {
+                    render: function(data) {
                         if (data) {
                             return data;
                         } else {
@@ -169,11 +169,11 @@ const init = (cmid, groupid) => {
                     "previous": M.util.get_string('previous', 'mod_interactivevideo')
                 }
             },
-            stateSaveParams: function (settings, data) {
+            stateSaveParams: function(settings, data) {
                 // We only want to save the state of the colvis and length menu
                 data.search.search = "";
                 data.start = 0;
-                data.columns.forEach(function (column) {
+                data.columns.forEach(function(column) {
                     column.search.search = "";
                 });
                 return data;
@@ -208,7 +208,7 @@ const init = (cmid, groupid) => {
                     }
                 }
             ],
-            "initComplete": function () {
+            "initComplete": function() {
                 $("table#completiontable")
                     .wrap("<div style='overflow:auto;position:relative' class='completiontablewrapper'></div>");
                 $("#reporttable .dataTables_length ").addClass("d-inline ml-1");
@@ -219,7 +219,7 @@ const init = (cmid, groupid) => {
             }
         };
 
-        $("#reporttable th.rotate").each(function () {
+        $("#reporttable th.rotate").each(function() {
             const itemid = $(this).data("item").toString();
             const ctype = $(this).data("type");
             const annotation = itemsdata.find(x => x.id == itemid);
@@ -227,7 +227,7 @@ const init = (cmid, groupid) => {
                 data: null,
                 sortable: false,
                 className: "text-center exportable",
-                render: function (data, type, row) {
+                render: function(data, type, row) {
                     if (!data.completeditems) {
                         return `<i class="fa fa-times"></i>`;
                     }
@@ -249,7 +249,7 @@ const init = (cmid, groupid) => {
         tabledata = $('#completiontable').DataTable(datatableOptions);
     });
 
-    $(document).on('click', '[data-item] a', function () {
+    $(document).on('click', '[data-item] a', function() {
         const convertSecondsToHMS = (seconds) => {
             var h = Math.floor(seconds / 3600);
             var m = Math.floor(seconds % 3600 / 60);
@@ -282,23 +282,23 @@ const init = (cmid, groupid) => {
                                     </div>`;
         $('body').append(modal);
         $('#annotation-modal').modal('show');
-        $('#annotation-modal').on('hide.bs.modal', function () {
+        $('#annotation-modal').on('hide.bs.modal', function() {
             $('#annotation-modal').remove();
         });
 
-        $('#annotation-modal').on('shown.bs.modal', function () {
+        $('#annotation-modal').on('shown.bs.modal', function() {
             $('#annotation-modal .modal-body').fadeIn(300);
             let matchingContentTypes = contentTypes.find(x => x.name === theAnnotation.type);
             let amdmodule = matchingContentTypes.amdmodule;
-            require([amdmodule + ''], function (Module) {
-                theAnnotation['completed'] = true;
+            require([amdmodule + ''], function(Module) {
+                theAnnotation.completed = true;
                 new Module().displayReportView(theAnnotation, tabledatajson);
             });
             $(this).find('.close').focus();
         });
     });
 
-    $(document).on('click', '[data-id].fa-check', function () {
+    $(document).on('click', '[data-id].fa-check', function() {
         let id = $(this).data('id');
         let userid = $(this).data('userid');
         let type = $(this).data('type');
@@ -306,7 +306,7 @@ const init = (cmid, groupid) => {
         let amdmodule = matchingContentTypes.amdmodule;
         // Get column header with the item id.
         let theAnnotation = itemsdata.find(x => x.id == id);
-        require([amdmodule + ''], function (Module) {
+        require([amdmodule + ''], function(Module) {
             new Module().getCompletionData(theAnnotation, userid).then((data) => {
                 return window.console.log(data);
             }).catch((error) => {
@@ -342,11 +342,11 @@ const renderAnnotationLogs = (data, node) => {
                 "previous": M.util.get_string('previous', 'mod_interactivevideo')
             }
         },
-        stateSaveParams: function (settings, data) {
+        stateSaveParams: function(settings, data) {
             // We only want to save the state of the colvis and length menu
             data.search.search = "";
             data.start = 0;
-            data.columns.forEach(function (column) {
+            data.columns.forEach(function(column) {
                 column.search.search = "";
             });
             return data;
@@ -381,7 +381,7 @@ const renderAnnotationLogs = (data, node) => {
                 }
             }
         ],
-        "initComplete": function () {
+        "initComplete": function() {
             $(`${node} table`)
                 .wrap("<div style='overflow:auto;position:relative' class='completiontablewrapper'></div>");
             $(`${node} .dataTables_length`).addClass("d-inline ml-1");

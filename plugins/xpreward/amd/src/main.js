@@ -46,7 +46,7 @@ export default class XpReward extends Base {
 
     postContentRender(annotation) {
         var self = this;
-        $(document).on('click', `#message[data-id='${annotation.id}'] #xpreward`, function (e) {
+        $(document).on('click', `#message[data-id='${annotation.id}'] #xpreward`, function(e) {
             e.preventDefault();
             $(this).find('button').prop('disabled', true);
             $(this).find('button').text(M.util.get_string('claimedxp', 'ivplugin_xpreward', annotation.xp));
@@ -60,15 +60,12 @@ export default class XpReward extends Base {
      * @param {Object} annotation The annotation object
      * @returns {void}
      */
-    runInteraction(annotation) {
+    async runInteraction(annotation) {
         this.player.pause();
         this.renderContainer(annotation);
-        this.render(annotation).then((content) => {
-            let $message = $(`#message[data-id='${annotation.id}']`);
-            $message.html('<div class="modal-body d-flex align-items-center justify-content-center">' + content + '</div>');
-            return this.postContentRender(annotation);
-        }).catch(() => {
-            // Do nothing.
-        });
+        let content = await this.render(annotation);
+        let $message = $(`#message[data-id='${annotation.id}']`);
+        $message.html('<div class="modal-body d-flex align-items-center justify-content-center">' + content + '</div>');
+        this.postContentRender(annotation);
     }
 }

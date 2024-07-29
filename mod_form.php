@@ -103,9 +103,9 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             get_string('videourl', 'mod_interactivevideo'),
             [
                 'size' => '100',
-                'onkeydown' => 'return (event.ctrlKey && event.key === \'v\') ' .
-                    '|| (event.ctrlKey && event.key === \'c\') || (event.ctrlKey && event.key === \'x\') ' .
-                    '|| (event.ctrlKey && event.key === \'a\') || event.key === \'Backspace\' ? true : false;',
+                'onkeydown' => 'return ((event.ctrlKey || event.metaKey) && event.key === \'v\') ' .
+                    '|| ((event.ctrlKey || event.metaKey) && event.key === \'c\') || ((event.ctrlKey || event.metaKey) && event.key === \'x\') ' .
+                    '|| ((event.ctrlKey || event.metaKey) && event.key === \'a\') || event.key === \'Backspace\' ? true : false;',
                 'placeholder' => get_string('videourlplaceholder', 'mod_interactivevideo'),
             ]
         );

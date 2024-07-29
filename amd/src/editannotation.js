@@ -25,7 +25,7 @@ define(['jquery',
     'core/notification',
     'core/event_dispatcher',
     'mod_interactivevideo/libraries/jquery-ui',
-], function ($, addToast, Notification, { dispatchEvent }) {
+], function($, addToast, Notification, {dispatchEvent}) {
     var ctRenderer = new Object();
     var player;
     var totaltime;
@@ -48,7 +48,7 @@ define(['jquery',
      * @param {Number} totaltime - Total time of the video.
      * @returns {void}
      * */
-    const renderVideoNav = async (annos, start, totaltime) => {
+    const renderVideoNav = async function(annos, start, totaltime) {
         if (annos.length == 0) {
             $("#video-nav ul").empty();
             return;
@@ -61,22 +61,18 @@ define(['jquery',
             await render.renderItemOnVideoNavigation(x);
         });
 
-        player.getCurrentTime().then((time) => {
-            // Replace progress bar.
-            var percentage = (time - start) / totaltime * 100;
-            replaceProgressBars(percentage);
-            return;
-        }).catch(() => {
-            // Do nothing.
-        });
+        const time = await player.getCurrentTime();
+        // Replace progress bar.
+        var percentage = (time - start) / totaltime * 100;
+        replaceProgressBars(percentage);
 
-        dispatchEvent('annotationitemsrendered', { 'annotations': annos });
+        dispatchEvent('annotationitemsrendered', {'annotations': annos});
 
     };
 
 
     return {
-        init: function (url, coursemodule, interaction, course, start, end, coursecontextid, type = 'yt') {
+        init: function(url, coursemodule, interaction, course, start, end, coursecontextid, type = 'yt') {
             const addNotification = (msg, type = "info") => {
                 addToast.add(msg, {
                     type: type
@@ -119,11 +115,11 @@ define(['jquery',
                         .addClass("d-flex align-items-center justify-content-center");
                     return;
                 }
-                annotations.sort(function (a, b) {
+                annotations.sort(function(a, b) {
                     return Number(a.timestamp) - Number(b.timestamp);
                 });
 
-                annotations.forEach(function (item) {
+                annotations.forEach(function(item) {
                     var listItem = $('#annotation-template').clone();
                     ctRenderer[item.type].renderEditItem(annotations, listItem, item);
                 });
@@ -162,7 +158,7 @@ define(['jquery',
                     }
                 });
 
-                $.when(getItems, getContentTypes).done(function (items, contenttypes) {
+                $.when(getItems, getContentTypes).done(function(items, contenttypes) {
                     annotations = JSON.parse(items[0]);
                     contentTypes = JSON.parse(contenttypes[0]);
                     // Remove all annotations that are not in the content types.
@@ -170,7 +166,7 @@ define(['jquery',
                     const getRenderers = new Promise((resolve) => {
                         var count = 0;
                         contentTypes.forEach(x => {
-                            require(['' + x.amdmodule], function (Type) {
+                            require(['' + x.amdmodule], function(Type) {
                                 ctRenderer[x.name] = new Type(player, annotations, interaction,
                                     course, 0, 0, 0, 0, type, 0, totaltime, start, end, x, coursemodule);
                                 count++;
@@ -275,54 +271,50 @@ define(['jquery',
                 activityType.runInteraction(annotation);
             };
 
-            const onReady = () => {
-                let duration = player.getDuration();
-                duration.then(t => {
-                    if (!end) {
-                        end = t;
-                    } else {
-                        end = Math.min(end, t);
-                    }
+            const onReady = async () => {
+                let t = await player.getDuration();
+                if (!end) {
+                    end = t;
+                } else {
+                    end = Math.min(end, t);
+                }
 
-                    if (start > end) {
-                        start = 0;
-                    }
+                if (start > end) {
+                    start = 0;
+                }
 
-                    totaltime = end - start;
-                    // Recalculate the ratio of the video
-                    player.ratio().then((ratio) => {
-                        $("#video-wrapper").css('padding-bottom', (1 / ratio) * 100 + '%');
-                    });
-                    playerReady = true;
+                totaltime = end - start;
+                // Recalculate the ratio of the video
+                let ratio = await player.ratio();
+                $("#video-wrapper").css('padding-bottom', (1 / ratio) * 100 + '%');
 
-                    // Handle timeline block
-                    $("#timeline #video-timeline").css({
-                        'background-image': 'url(' + player.posterImage + ')',
-                        'background-size': 'contain',
-                        'background-repeat': 'no-repeat',
-                    });
-                    $("#timeline #duration").text(convertSecondsToHMS(end, true));
-                    $("#timeline #currenttime").text(convertSecondsToHMS(start, true));
-                    // Render minute markers
-                    const minutes = Math.floor(totaltime / 60);
-                    $('#timeline-items-wrapper').css('width', (minutes * 300) + 'px');
-                    $('#timeline-items .minute').remove();
-                    for (let i = start; i <= end; i += 60) {
-                        let percentage = (i - start) / totaltime * 100;
-                        let marker = '';
-                        // Format h:m (e.g 3h1m);
-                        if (i >= 3600) {
-                            marker = Math.floor(i / 3600) + 'h' + Math.floor((i % 3600) / 60) + 'm';
-                        } else {
-                            marker = Math.floor(i / 60) + 'm';
-                        }
-                        $('#timeline-items').append(`<div class="minute position-absolute" style="left: ${percentage}%">
-                            <div class="minute-label">${marker}</div></div>`);
-                    }
-                    return getAnnotations();
-                }).catch(() => {
-                    // Do nothing.
+                playerReady = true;
+
+                // Handle timeline block
+                $("#timeline #video-timeline").css({
+                    'background-image': 'url(' + player.posterImage + ')',
+                    'background-size': 'contain',
+                    'background-repeat': 'no-repeat',
                 });
+                $("#timeline #duration").text(convertSecondsToHMS(end, true));
+                $("#timeline #currenttime").text(convertSecondsToHMS(start, true));
+                // Render minute markers
+                const minutes = Math.floor(totaltime / 60);
+                $('#timeline-items-wrapper').css('width', (minutes * 300) + 'px');
+                $('#timeline-items .minute').remove();
+                for (let i = start; i <= end; i += 60) {
+                    let percentage = (i - start) / totaltime * 100;
+                    let marker = '';
+                    // Format h:m (e.g 3h1m);
+                    if (i >= 3600) {
+                        marker = Math.floor(i / 3600) + 'h' + Math.floor((i % 3600) / 60) + 'm';
+                    } else {
+                        marker = Math.floor(i / 60) + 'm';
+                    }
+                    $('#timeline-items').append(`<div class="minute position-absolute" style="left: ${percentage}%">
+                        <div class="minute-label">${marker}</div></div>`);
+                }
+                getAnnotations();
 
             };
 
@@ -349,13 +341,13 @@ define(['jquery',
                     // toggle the tooltip to show the title
                     $('#video-nav .annotation[data-id="' + currentAnnotation.id + '"] .item').tooltip('show');
                     // Hide the tooltip after 2 seconds
-                    setTimeout(function () {
+                    setTimeout(function() {
                         $('#video-nav .annotation[data-id="' + currentAnnotation.id + '"] .item').tooltip('hide');
                     }, 2000);
                 }
             };
 
-            const onSeek = async (t) => {
+            const onSeek = async function(t) {
                 if (!playerReady) {
                     return;
                 }
@@ -369,14 +361,14 @@ define(['jquery',
                 }
                 var percentage = (t - start) / (totaltime) * 100;
                 $('#scrollbar').css('left', percentage + '%');
-                return $('#timeline #currenttime').text(convertSecondsToHMS(t, true));
+                $('#timeline #currenttime').text(convertSecondsToHMS(t, true));
             };
 
             var onPlayingInterval;
             const onPlaying = () => {
                 $('#message, #end-screen').remove();
                 $('#playpause').find('i').removeClass('bi-play-fill').addClass('bi-pause-fill');
-                var intervalFunction = async function () {
+                var intervalFunction = async function() {
                     var thisTime = await player.getCurrentTime();
                     var isPlaying = await player.isPlaying();
                     var isEnded = await player.isEnded();
@@ -407,7 +399,7 @@ define(['jquery',
                     // Check if the scrollbar is in view.
                     const rect = scrollBar.getBoundingClientRect();
                     if (rect.left < 0 || rect.right > window.innerWidth) {
-                        scrollBar.scrollIntoView({ behavior: "instant", block: "center", inline: "center" });
+                        scrollBar.scrollIntoView({behavior: "instant", block: "center", inline: "center"});
                     }
 
                     // If the current time matches the timestamp of an annotation, highlight the annotation
@@ -421,7 +413,7 @@ define(['jquery',
                         // toggle the tooltip to show the title
                         $('#video-nav .annotation[data-id="' + currentAnnotation.id + '"] .item').tooltip('show');
                         // Hide the tooltip after 2 seconds
-                        setTimeout(function () {
+                        setTimeout(function() {
                             $('#video-nav .annotation[data-id="' + currentAnnotation.id + '"] .item').tooltip('hide');
                         }, 2000);
                     }
@@ -450,7 +442,7 @@ define(['jquery',
             };
 
             // Implement the player
-            require(['mod_interactivevideo/player/' + type], function (VideoPlayer) {
+            require(['mod_interactivevideo/player/' + type], function(VideoPlayer) {
                 player = new VideoPlayer(
                     url,
                     start,
@@ -460,31 +452,31 @@ define(['jquery',
                 );
             });
 
-            $(document).on('iv:playerReady', function () {
+            $(document).on('iv:playerReady', function() {
                 onReady();
             });
 
-            $(document).on('iv:playerPaused', function () {
+            $(document).on('iv:playerPaused', function() {
                 onPause();
             });
 
-            $(document).on('iv:playerPlaying', function () {
+            $(document).on('iv:playerPlaying', function() {
                 onPlaying();
             });
 
-            $(document).on('iv:playerEnded', function () {
+            $(document).on('iv:playerEnded', function() {
                 onEnded();
             });
 
-            $(document).on('iv:playerSeek', function (e) {
+            $(document).on('iv:playerSeek', function(e) {
                 onSeek(e.detail.time);
             });
 
-            $(document).on('annotationupdated', function (e) {
+            $(document).on('annotationupdated', function(e) {
                 var updated = e.originalEvent.detail.annotation;
                 var action = e.originalEvent.detail.action;
                 if (action == 'edit' || action == 'draft' || action == 'savedraft') {
-                    annotations = annotations.filter(function (item) {
+                    annotations = annotations.filter(function(item) {
                         return item.id != updated.id;
                     });
                 }
@@ -501,14 +493,14 @@ define(['jquery',
                     addNotification(M.util.get_string('interactionadded', 'mod_interactivevideo'), 'success');
                     $(`tr[data-id="${updated.id}"]`).addClass('active');
                     if (action == 'clone') {
-                        setTimeout(function () {
+                        setTimeout(function() {
                             $(`tr[data-id="${updated.id}"]`).find(`[data-editable="timestamp"]`).trigger('contextmenu');
                         }, 100);
                     }
                 } else if (action == 'edit') {
                     addNotification(M.util.get_string('interactionupdated', 'mod_interactivevideo'), 'success');
                     $(`tr[data-id="${updated.id}"]`).addClass('active');
-                    setTimeout(function () {
+                    setTimeout(function() {
                         $(`tr[data-id="${updated.id}"]`).removeClass('active');
                     }, 1500);
                 }
@@ -522,7 +514,7 @@ define(['jquery',
             });
 
             // Implement create annotation
-            $(document).on('click', '#addcontentdropdown a', async function (e) {
+            $(document).on('click', '#addcontentdropdown a', async function(e) {
                 if (!playerReady) {
                     return;
                 }
@@ -538,7 +530,7 @@ define(['jquery',
             });
 
             // Implement edit annotation
-            $(document).on('click', 'tr .edit', async function (e) {
+            $(document).on('click', 'tr .edit', async function(e) {
                 e.preventDefault();
                 var timestamp = $(this).closest('.annotation').data('timestamp');
                 if (timestamp) {
@@ -551,19 +543,19 @@ define(['jquery',
             });
 
             // Implement copy annotation
-            $(document).on('click', 'tr .copy', function (e) {
+            $(document).on('click', 'tr .copy', function(e) {
                 e.preventDefault();
                 var id = $(this).closest('.annotation').data('id');
                 var contenttype = $(this).closest('.annotation').data('type');
                 ctRenderer[contenttype].cloneAnnotation(id);
             });
 
-            $(document).on('annotationdeleted', function (e) {
+            $(document).on('annotationdeleted', function(e) {
                 var annotation = e.originalEvent.detail.annotation;
                 activeid = null;
                 $(`tr[data-id="${annotation.id}"]`).addClass('deleted');
-                setTimeout(function () {
-                    annotations = annotations.filter(function (item) {
+                setTimeout(function() {
+                    annotations = annotations.filter(function(item) {
                         return item.id != annotation.id;
                     });
                     renderAnnotationItems(annotations);
@@ -572,7 +564,7 @@ define(['jquery',
             });
 
             // Implement delete annotation.
-            $(document).on('click', '.delete', function (e) {
+            $(document).on('click', '.delete', function(e) {
                 e.preventDefault();
                 player.pause();
                 var id = $(this).closest('.annotation').data('id');
@@ -581,7 +573,7 @@ define(['jquery',
                     M.util.get_string('deleteinteraction', 'mod_interactivevideo'),
                     M.util.get_string('deleteinteractionconfirm', 'mod_interactivevideo'),
                     M.util.get_string('delete', 'mod_interactivevideo'),
-                    function () {
+                    function() {
                         ctRenderer[annotation.type].deleteAnnotation(annotations, id);
                     },
                     null
@@ -590,7 +582,7 @@ define(['jquery',
             });
 
             // Implement view annotation
-            $(document).on('click', '.annotation .title', async function (e) {
+            $(document).on('click', '.annotation .title', async function(e) {
                 e.preventDefault();
                 var timestamp = $(this).closest('.annotation').data('timestamp');
                 await player.seek(timestamp, true);
@@ -606,14 +598,14 @@ define(['jquery',
             });
 
             // Implement go to timestamp
-            $(document).on('click', '.timestamp', async function (e) {
+            $(document).on('click', '.timestamp', async function(e) {
                 e.preventDefault();
                 var timestamp = $(this).data('timestamp');
                 await player.seek(timestamp);
                 player.play();
             });
 
-            $(document).on('contextmenu', '#vseek, #video-timeline', async function (e) {
+            $(document).on('contextmenu', '#vseek, #video-timeline', async function(e) {
                 if (!playerReady) {
                     return;
                 }
@@ -627,7 +619,7 @@ define(['jquery',
                 $("#addcontent").trigger('click');
             });
 
-            $(document).on('click', '#playpause', async function (e) {
+            $(document).on('click', '#playpause', async function(e) {
                 if (!playerReady) {
                     return;
                 }
@@ -646,7 +638,7 @@ define(['jquery',
                 }
             });
 
-            $(document).on('contextmenu', '#video-nav .annotation', function (e) {
+            $(document).on('contextmenu', '#video-nav .annotation', function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 var id = $(this).data('id');
@@ -655,7 +647,7 @@ define(['jquery',
             });
 
             // Quick edit
-            $(document).on('contextmenu', '[data-editable]', function (e) {
+            $(document).on('contextmenu', '[data-editable]', function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if ($('[data-field].editing').length > 0) {
@@ -666,7 +658,7 @@ define(['jquery',
                 $(this).siblings('[data-field="' + fld + '"]').removeClass('d-none').focus().addClass('editing');
             });
 
-            $(document).on('keyup', '[data-field].editing', function (e) {
+            $(document).on('keyup', '[data-field].editing', function(e) {
                 $(this).removeClass('is-invalid');
                 var initialValue = $(this).data('initial-value');
                 var val = $(this).val();
@@ -725,7 +717,7 @@ define(['jquery',
                             contextid: M.cfg.contextid,
                             value: fld == 'timestamp' ? seconds : val,
                         },
-                        success: function (data) {
+                        success: function(data) {
                             var updated = JSON.parse(data);
                             dispatchEvent('annotationupdated', {
                                 annotation: updated,
@@ -737,7 +729,7 @@ define(['jquery',
                 }
             });
 
-            $(document).on('blur', '[data-field].editing', function () {
+            $(document).on('blur', '[data-field].editing', function() {
                 var initialValue = $(this).data('initial-value');
                 $(this).val(initialValue);
                 $(this).removeClass('editing');
@@ -746,35 +738,35 @@ define(['jquery',
             });
             // End quick edit
 
-            $(document).on('click', '#end-screen #restart', async function (e) {
+            $(document).on('click', '#end-screen #restart', async function(e) {
                 e.preventDefault();
                 $('#end-screen').remove();
                 await player.seek(start);
                 player.play();
             });
 
-            $(document).on('mouseover', 'tr.annotation', function () {
+            $(document).on('mouseover', 'tr.annotation', function() {
                 var id = $(this).data('id');
                 $(`#video-nav ul li[data-id="${id}"] .item`).trigger('mouseover');
             });
 
-            $(document).on('mouseout', 'tr.annotation', function () {
+            $(document).on('mouseout', 'tr.annotation', function() {
                 var id = $(this).data('id');
                 $(`#video-nav ul li[data-id="${id}"] .item`).trigger('mouseout');
                 $('.tooltip').remove();
             });
 
-            $(document).on('mouseover', '#video-nav ul li', function () {
+            $(document).on('mouseover', '#video-nav ul li', function() {
                 var id = $(this).data('id');
                 $(`tr.annotation[data-id="${id}"]`).addClass('active');
             });
 
-            $(document).on('mouseout', '#video-nav ul li', function () {
+            $(document).on('mouseout', '#video-nav ul li', function() {
                 var id = $(this).data('id');
                 $(`tr.annotation[data-id="${id}"]`).removeClass('active');
             });
 
-            $(document).on('change', '.timestamp-input, .timestamp-field input', function () {
+            $(document).on('change', '.timestamp-input, .timestamp-field input', function() {
                 $(this).removeClass('is-invalid');
                 var parts = $(this).val().split(':');
                 var seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
@@ -791,17 +783,17 @@ define(['jquery',
                 }
             });
 
-            $('#contentmodal').on('show.bs.modal', function () {
+            $('#contentmodal').on('show.bs.modal', function() {
                 player.pause();
                 $('#addcontentdropdown').addClass('modal-body');
             });
 
-            $('#contentmodal').on('hide.bs.modal', function () {
+            $('#contentmodal').on('hide.bs.modal', function() {
                 $('#addcontentdropdown a').removeClass('active');
                 $('#addcontentdropdown').removeClass('modal-body');
             });
 
-            $(document).on('click', '#fullscreen', function (e) {
+            $(document).on('click', '#fullscreen', function(e) {
                 e.preventDefault();
                 if ($(this).hasClass('fullscreen')) {
                     $('#distractfreemodal').modal('hide');
@@ -827,14 +819,14 @@ define(['jquery',
 
                 $(this).toggleClass('fullscreen');
 
-                $('#distractfreemodal').on('shown.bs.modal', function () {
+                $('#distractfreemodal').on('shown.bs.modal', function() {
                     $('body').addClass('distractionfreemode');
                     let $wrapper = $('#wrapper').clone();
                     $('#distractfreemodal').find('#distractionfreebody').html($wrapper);
                     // Remove original wrapper
                     $('#wrapper').remove();
                 });
-                $('#distractfreemodal').on('hidden.bs.modal', function () {
+                $('#distractfreemodal').on('hidden.bs.modal', function() {
                     $('body').removeClass('distractionfreemode');
                     let $wrapper = $('#distractfreemodal #wrapper').clone();
                     $('[role="main"]').append($wrapper);
@@ -848,7 +840,7 @@ define(['jquery',
                      style="top: -30px;">${formattedTime}</div>`);
             };
 
-            $(document).on('annotationitemsrendered', function () {
+            $(document).on('annotationitemsrendered', function() {
                 let secondLength = $('#timeline-items').width() / totaltime;
                 $('#timeline [data-toggle="tooltip"]').tooltip({
                     'boundary': 'window',
@@ -861,12 +853,12 @@ define(['jquery',
                     // 'containment': '#timeline',
                     'axis': 'x',
                     'grid': [secondLength, 0],
-                    'start': function () {
+                    'start': function() {
                         appendTimestamp($(this).data('timestamp'));
                         $('.tooltip, #message').remove();
                         $('#timeline-items').addClass('no-pointer-events');
                     },
-                    'drag': async function (event, ui) {
+                    'drag': async function(event, ui) {
                         $('.tooltip').remove();
                         let timestamp = ((ui.position.left + 5) / $('#timeline-items').width()) * totaltime + start;
                         if (timestamp < start) {
@@ -882,10 +874,10 @@ define(['jquery',
                         player.pause();
                         $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
                     },
-                    'stop': async function (event, ui) {
+                    'stop': async function(event, ui) {
                         $('.tooltip').remove();
                         $('#scrollbar #position').remove();
-                        setTimeout(function () {
+                        setTimeout(function() {
                             $('#timeline-items').removeClass('no-pointer-events');
                         }, 200);
                         let timestamp = ((ui.position.left + 5) / $('#timeline-items').width()) * totaltime + start;
@@ -924,12 +916,12 @@ define(['jquery',
                 $('#video-timeline-wrapper .skipsegment').draggable({
                     'axis': 'x',
                     'grid': [secondLength, 0],
-                    'start': function () {
+                    'start': function() {
                         $('#message').remove();
                         appendTimestamp($(this).data('timestamp'));
                         $('#timeline-items').addClass('no-pointer-events');
                     },
-                    'drag': async function (event, ui) {
+                    'drag': async function(event, ui) {
                         const id = $(this).data('id');
                         targetAnnotation = annotations.find(x => x.id == id);
                         let timestamp = ((ui.position.left) / $('#video-timeline').width()) * totaltime + start;
@@ -946,9 +938,9 @@ define(['jquery',
                         player.pause();
                         $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
                     },
-                    'stop': async function (event, ui) {
+                    'stop': async function(event, ui) {
                         $('#scrollbar #position').remove();
-                        setTimeout(function () {
+                        setTimeout(function() {
                             $('#timeline-items').removeClass('no-pointer-events');
                         }, 200);
                         let timestamp = ((ui.position.left) / $('#video-timeline').width()) * totaltime + start;
@@ -1002,12 +994,12 @@ define(['jquery',
                     'containment': '#video-timeline-wrapper',
                     'handles': 'e, w',
                     'grid': [secondLength, 0],
-                    'start': function () {
+                    'start': function() {
                         $('#message').remove();
                         appendTimestamp($(this).data('timestamp'));
                         $('#timeline-items').addClass('no-pointer-events');
                     },
-                    'resize': async function (event, ui) {
+                    'resize': async function(event, ui) {
                         let timestamp;
                         if (ui.originalPosition.left != ui.position.left || ui.originalSize.width == ui.size.width) {
                             if (ui.position.left < 0) {
@@ -1022,9 +1014,9 @@ define(['jquery',
                         player.pause();
                         $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
                     },
-                    'stop': async function (event, ui) {
+                    'stop': async function(event, ui) {
                         $('#scrollbar #position').remove();
-                        setTimeout(function () {
+                        setTimeout(function() {
                             $('#timeline-items').removeClass('no-pointer-events');
                         }, 200);
                         const id = $(this).data('id');
@@ -1065,14 +1057,14 @@ define(['jquery',
                     }
                 });
 
-                $('#video-timeline-wrapper .skipsegment').on('click', async function (e) {
+                $('#video-timeline-wrapper .skipsegment').on('click', async function(e) {
                     e.preventDefault();
                     const timestamp = $(this).data('timestamp');
                     await player.seek(timestamp);
                     player.pause();
                 });
 
-                $('#video-timeline-wrapper .skipsegment .delete-skipsegment').on('click', function (e) {
+                $('#video-timeline-wrapper .skipsegment .delete-skipsegment').on('click', function(e) {
                     e.preventDefault();
                     const id = $(this).closest('.skipsegment').data('id');
                     $(`tr.annotation[data-id="${id}"] .delete`).trigger('click');
@@ -1085,20 +1077,20 @@ define(['jquery',
                 'axis': 'x',
                 'handle': '#scrollhead, #scrollline',
                 'cursor': 'col-resize',
-                'start': function (event, ui) {
+                'start': function(event, ui) {
                     $('#timeline-items').addClass('no-pointer-events');
                     $("#message").remove();
                     appendTimestamp(Math.round(((ui.position.left) / $('#timeline-items').width()) * totaltime + start));
                 },
-                'drag': async function (event, ui) {
+                'drag': async function(event, ui) {
                     let timestamp = ((ui.position.left) / $('#timeline-items').width()) * totaltime + start;
                     await player.seek(Math.round(timestamp));
                     player.pause();
                     $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
                 },
-                'stop': function (event, ui) {
+                'stop': function(event, ui) {
                     $('#scrollbar #position').remove();
-                    setTimeout(function () {
+                    setTimeout(function() {
                         $('#timeline-items').removeClass('no-pointer-events');
                     }, 200);
                     // Convert the position to percentage
@@ -1108,7 +1100,7 @@ define(['jquery',
             });
 
             // Seek bar functionalities
-            $('#vseek, #video-timeline, #video-nav .annotation').on('mouseenter', function (e) {
+            $('#vseek, #video-timeline, #video-nav .annotation').on('mouseenter', function(e) {
                 $('#cursorbar').remove();
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -1129,12 +1121,12 @@ define(['jquery',
                 $('#timeline-items').append($scrollbar);
             });
 
-            $('#vseek, #video-timeline, #video-nav .annotation').on('mouseleave', function (e) {
+            $('#vseek, #video-timeline, #video-nav .annotation').on('mouseleave', function(e) {
                 e.stopImmediatePropagation();
                 $('#cursorbar').remove();
             });
 
-            $('#vseek, #video-timeline').on('mousemove', function (e) {
+            $('#vseek, #video-timeline').on('mousemove', function(e) {
                 e.stopImmediatePropagation();
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
@@ -1146,7 +1138,7 @@ define(['jquery',
                 $('#cursorbar #position').text(formattedTime);
             });
 
-            $(document).on('click', '#video-nav .annotation', async function (e) {
+            $(document).on('click', '#video-nav .annotation', async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 var id = $(this).data('id');
@@ -1155,7 +1147,7 @@ define(['jquery',
                 runInteraction(annotation);
             });
 
-            $(document).on('click', '#vseek, #video-timeline', async function (e) {
+            $(document).on('click', '#vseek, #video-timeline', async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 var percentage = e.offsetX / $(this).width();
@@ -1165,7 +1157,7 @@ define(['jquery',
                 $("#message, #end-screen").remove();
             });
 
-            $('#zoomout').on('click', function () {
+            $('#zoomout').on('click', function() {
                 let currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
                 let newLevel = parseInt(currentLevel) - 300;
                 $('#timeline-items-wrapper').css('width', newLevel + 'px');
@@ -1173,10 +1165,10 @@ define(['jquery',
                 if (timelineElement.scrollWidth <= timelineElement.clientWidth) {
                     $(this).attr('disabled', 'disabled');
                 }
-                dispatchEvent('annotationitemsrendered', { 'annotations': annotations });
+                dispatchEvent('annotationitemsrendered', {'annotations': annotations});
             });
 
-            $("#timeline").on('wheel', function (e) {
+            $("#timeline").on('wheel', function(e) {
                 if (!e.shiftKey) {
                     if (e.originalEvent.deltaY < 0) {
                         $('#zoomin').trigger('click');
@@ -1186,19 +1178,19 @@ define(['jquery',
                 }
             });
 
-            $('#zoomin').on('click', function () {
+            $('#zoomin').on('click', function() {
                 let currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
                 let newLevel = parseInt(currentLevel) + 300;
                 $('#timeline-items-wrapper').css('width', newLevel + 'px');
                 $('#zoomout').removeAttr('disabled');
-                dispatchEvent('annotationitemsrendered', { 'annotations': annotations });
+                dispatchEvent('annotationitemsrendered', {'annotations': annotations});
             });
 
-            $('#savedraft').on('click', function (e) {
+            $('#savedraft').on('click', function(e) {
                 e.stopImmediatePropagation();
                 let draftAnnotations = annotations.filter(x => x.status == 'draft');
                 let count = 0;
-                draftAnnotations.forEach(function (a) {
+                draftAnnotations.forEach(function(a) {
                     $.ajax({
                         url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
                         method: "POST",
@@ -1211,7 +1203,7 @@ define(['jquery',
                             contextid: M.cfg.contextid,
                             value: a.timestamp,
                         },
-                        success: function (data) {
+                        success: function(data) {
                             var updated = JSON.parse(data);
                             dispatchEvent('annotationupdated', {
                                 annotation: updated,
@@ -1232,7 +1224,7 @@ define(['jquery',
                                 contextid: M.cfg.contextid,
                                 value: a.title,
                             },
-                            success: function (data) {
+                            success: function(data) {
                                 var updated = JSON.parse(data);
                                 dispatchEvent('annotationupdated', {
                                     annotation: updated,
@@ -1249,7 +1241,7 @@ define(['jquery',
 
             });
 
-            $('#addcontent').on('click', async function (e) {
+            $('#addcontent').on('click', async function(e) {
                 e.preventDefault();
                 if (!playerReady) {
                     return;
@@ -1288,6 +1280,7 @@ define(['jquery',
                     e.returnValue = confirmationMessage;
                     return confirmationMessage;
                 }
+                return true;
             });
 
         }

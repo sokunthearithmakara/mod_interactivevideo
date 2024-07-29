@@ -44,7 +44,7 @@ export default class PdfViewer extends Iframe {
         var interval = setInterval(() => {
             if ($('.modalhasiframe iframe').length > 0) {
                 // Remove the loading background because some iframe has transparent content
-                $('.modalhasiframe .modal-body iframe').on('load', function () {
+                $('.modalhasiframe .modal-body iframe').on('load', function() {
                     setTimeout(() => {
                         $('.modalhasiframe .modal-body iframe').css('background', 'none');
                     });
@@ -53,7 +53,7 @@ export default class PdfViewer extends Iframe {
             }
         }, 1000);
     }
-    runInteraction(annotation) {
+    async runInteraction(annotation) {
         this.player.pause();
 
         let self = this;
@@ -71,7 +71,7 @@ export default class PdfViewer extends Iframe {
                     if (pdf.pagesCount == 1) { // Only one page.
                         self.toggleCompletion(annotation.id, "mark-done", "automatic");
                     } else {
-                        pdf.eventBus.on("pagechanging", function (e) {
+                        pdf.eventBus.on("pagechanging", function(e) {
                             if (e.pageNumber == pdf.pagesCount && !annotation.completed) {
                                 self.toggleCompletion(annotation.id, "mark-done", "automatic");
                                 annotation.completed = true;
@@ -83,26 +83,24 @@ export default class PdfViewer extends Iframe {
         };
 
         // Apply content
-        const applyContent = (annotation) => {
-            this.render(annotation, 'html').then((data) => {
-                $(`#message[data-id='${annotation.id}'] .modal-body`).attr('id', 'content').html(data).fadeIn(300);
-                if (annotation.completed ) {
-                    this.postContentRender(annotation);
-                } else if (annotation.completiontracking == 'scrolltolastpage' && annotation.completed == false){
-                    this.postContentRender(annotation, pdfCheck(annotation));
-                }
-            });
+        const applyContent = async (annotation) => {
+            const data = await this.render(annotation, 'html');
+            $(`#message[data-id='${annotation.id}'] .modal-body`).attr('id', 'content').html(data).fadeIn(300);
+            if (annotation.completed) {
+                this.postContentRender(annotation);
+            } else if (annotation.completiontracking == 'scrolltolastpage' && annotation.completed == false) {
+                this.postContentRender(annotation, pdfCheck(annotation));
+            }
         };
 
-        this.renderViewer(annotation).then(() => {
-            this.renderContainer(annotation);
-            applyContent(annotation);
-        });
+        await this.renderViewer(annotation);
+        this.renderContainer(annotation);
+        applyContent(annotation);
 
         this.enableManualCompletion();
 
         if (annotation.displayoptions == 'popup') {
-            $('#annotation-modal').on('shown.bs.modal', function () {
+            $('#annotation-modal').on('shown.bs.modal', function() {
                 self.setModalDraggable('#annotation-modal .modal-dialog');
             });
         }

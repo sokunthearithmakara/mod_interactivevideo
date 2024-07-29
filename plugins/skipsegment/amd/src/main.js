@@ -27,7 +27,7 @@ export default class SkipSegment extends Base {
     init() {
         var self = this;
         var skipsegment = this.annotations.filter((annotation) => annotation.type == 'skipsegment');
-        $(document).on('timeupdate', function (e) {
+        $(document).on('timeupdate', function(e) {
             var t = e.originalEvent.detail.time;
             skipsegment.forEach((annotation) => {
                 if (annotation.timestamp < t && annotation.title > t) {
@@ -53,7 +53,7 @@ export default class SkipSegment extends Base {
     onEditFormLoaded(form, event) {
         var self = this;
         var body = super.onEditFormLoaded(form, event);
-        body.on('change', '[name=titleassist]', function (e) {
+        body.on('change', '[name=titleassist]', function(e) {
             e.preventDefault();
             // Make sure the timestamp format is hh:mm:ss
             if (!self.validateTimestampFormat($(this).val())) {
@@ -84,7 +84,7 @@ export default class SkipSegment extends Base {
 
             $('[name=title]').val(timestamp);
         });
-        return { form, event };
+        return {form, event};
     }
 
     renderItemOnVideoNavigation(annotation) {
