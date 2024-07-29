@@ -101,7 +101,7 @@ export default class Decision extends Base {
             }
         }, 100);
 
-        body.on('click', '.input-group .add-dest', function (e) {
+        body.on('click', '.input-group .add-dest', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             var target = $(this).closest('.input-group');
@@ -119,16 +119,16 @@ export default class Decision extends Base {
             $('[type="text"]').trigger('input');
         });
 
-        body.on('click', '.input-group .delete-dest', function (e) {
+        body.on('click', '.input-group .delete-dest', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(this).closest('.input-group').remove();
             $('[type="text"]').trigger('input');
         });
 
-        body.on('input', '.input-group [type="text"]', function () {
+        body.on('input', '.input-group [type="text"]', function() {
             var dest = [];
-            $('#destination-list .input-group').each(function () {
+            $('#destination-list .input-group').each(function() {
                 var title = $(this).find('input[type="text"]');
                 var timestamp = $(this).find('.timestamp-input');
                 if (title.val() != '' && timestamp.val() != ''
@@ -143,7 +143,7 @@ export default class Decision extends Base {
             });
             $('[name=content').val(JSON.stringify(dest));
         });
-        return { form, event };
+        return {form, event};
     }
     /**
      * Run the interaction
@@ -169,7 +169,7 @@ export default class Decision extends Base {
             this.annotations.push(annotation);
         }
 
-        let newannotation = { ...annotation };
+        let newannotation = {...annotation};
         newannotation.content = JSON.stringify(dest);
         this.render(newannotation, 'json').then((data) => {
             let $html = `<div class="position-absolute decision text-center mx-auto w-100">
@@ -186,14 +186,14 @@ export default class Decision extends Base {
             let $message = $(`<div id="message" style="z-index:5;display:none;" data-id="${annotation.id}">
             <div class="modal-body p-0" id="content">${$html}</div></div>`);
             $('#video-wrapper').append($message);
-            $message.fadeIn(300, 'swing', function () {
+            $message.fadeIn(300, 'swing', function() {
                 if (annotation.char1 == 1) {
                     $message.append(`<button class="btn btn-secondary btn-rounded position-absolute"
                      id="close-decision" style="right: 1rem; top: 1rem;">
                      ${M.util.get_string('skip', 'ivplugin_decision')}
                      <i class="ml-2 bi bi-chevron-right"></i></button>`);
                 }
-                $(document).on('click', '#close-decision', function (e) {
+                $(document).on('click', '#close-decision', function(e) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     self.player.play();
@@ -211,7 +211,7 @@ export default class Decision extends Base {
             // Do nothing
         });
 
-        $(document).on('click', `#message[data-id='${annotation.id}'] .decision-option`, function (e) {
+        $(document).on('click', `#message[data-id='${annotation.id}'] .decision-option`, function(e) {
             e.preventDefault();
             var time = Number($(this).data('timestamp'));
             if (time < this.start) {

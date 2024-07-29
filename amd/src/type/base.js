@@ -21,10 +21,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 import $ from 'jquery';
-import { renderContent, defaultDisplayContent, formatText } from 'mod_interactivevideo/displaycontent';
-import { renderAnnotationItems } from 'mod_interactivevideo/viewannotation';
-import { dispatchEvent } from 'core/event_dispatcher';
-import { add as addToast } from 'core/toast';
+import {renderContent, defaultDisplayContent, formatText} from 'mod_interactivevideo/displaycontent';
+import {renderAnnotationItems} from 'mod_interactivevideo/viewannotation';
+import {dispatchEvent} from 'core/event_dispatcher';
+import {add as addToast} from 'core/toast';
 import ModalForm from 'core_form/modalform';
 import 'mod_interactivevideo/libraries/jquery-ui';
 
@@ -138,7 +138,7 @@ class Base {
      * @returns {void}
      */
     enableColorPicker() {
-        $(document).on('change', 'input[type="color"]', function () {
+        $(document).on('change', 'input[type="color"]', function() {
             const color = $(this).val();
             $(this).closest('.color-picker').css('background-color', color);
             $(this).closest('.fitem').find('input[type="text"]').val(color);
@@ -156,7 +156,7 @@ class Base {
     }
 
     addNotification(msg, type = "danger") {
-        addToast(msg, { type });
+        addToast(msg, {type});
     }
     /**
      * Initialize the interaction type
@@ -278,7 +278,7 @@ class Base {
      */
     validateTimestampFieldValue(fld, hiddenfield) {
         var self = this;
-        $(document).on('change', `form [name=${fld}]`, function (e) {
+        $(document).on('change', `form [name=${fld}]`, function(e) {
             e.preventDefault();
             // Make sure the timestamp format is hh:mm:ss.
             if (!self.validateTimestampFormat($(this).val())) {
@@ -413,7 +413,7 @@ class Base {
                     token: self.token,
                     cmid: self.cm,
                 },
-                success: function (data) {
+                success: function(data) {
                     var newAnnotation = JSON.parse(data);
                     dispatchEvent('annotationupdated', {
                         annotation: newAnnotation,
@@ -442,7 +442,7 @@ class Base {
                 token: this.token,
                 cmid: this.cm,
             },
-            success: function (data) {
+            success: function(data) {
                 var newAnnotation = JSON.parse(data);
                 dispatchEvent('annotationupdated', {
                     annotation: newAnnotation,
@@ -516,7 +516,7 @@ class Base {
                     token: self.token,
                     cmid: self.cm,
                 },
-            }).done(function (data) {
+            }).done(function(data) {
                 var updated = JSON.parse(data);
                 dispatchEvent('annotationupdated', {
                     annotation: updated,
@@ -547,7 +547,7 @@ class Base {
                 token: this.token,
                 cmid: this.cm,
             },
-            success: function () {
+            success: function() {
                 dispatchEvent('annotationdeleted', {
                     annotation: annotation,
                 });
@@ -839,7 +839,7 @@ class Base {
      */
     enableManualCompletion() {
         var self = this;
-        $(document).on('click', '#message button#completiontoggle', function (e) {
+        $(document).on('click', '#message button#completiontoggle', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(this).attr('disabled', true);
@@ -878,7 +878,7 @@ class Base {
 
         if (annotation.displayoptions == 'popup') {
             let self = this;
-            $('#annotation-modal').on('shown.bs.modal', function () {
+            $('#annotation-modal').on('shown.bs.modal', function() {
                 self.setModalDraggable('#annotation-modal .modal-dialog');
             });
         }

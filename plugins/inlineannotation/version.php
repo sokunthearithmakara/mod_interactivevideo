@@ -26,7 +26,7 @@
 
  $plugin->component    = 'ivplugin_inlineannotation';
  $plugin->release      = '1.0';
- $plugin->version      = 2024071500;
+ $plugin->version      = 2024071503;
  $plugin->requires     = 2022112800;
  $plugin->supported    = [401, 404];
  $plugin->maturity     = MATURITY_STABLE;

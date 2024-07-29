@@ -34,7 +34,7 @@ export default class Iframe extends Base {
             $('.preview-iframe').html(embed);
             $('.preview-iframe').css('padding-bottom', ratio);
         };
-        $(document).on('input', '[name="iframeurl"]', function (e) {
+        $(document).on('input', '[name="iframeurl"]', function(e) {
             e.preventDefault();
             e.stopPropagation();
             $('.preview-iframe').html('').css('padding-bottom', '0');
@@ -54,7 +54,7 @@ export default class Iframe extends Base {
                     action: 'getproviders',
                     sesskey: M.cfg.sesskey,
                 },
-                success: function (data) {
+                success: function(data) {
                     window.console.log(data);
                     var providers = data;
                     var url = $('[name="iframeurl"]').val();
@@ -66,7 +66,7 @@ export default class Iframe extends Base {
                     } else {
                         providerUrl = domain[0] + '.' + domain[1];
                     }
-                    var provider = providers.find(function (provider) {
+                    var provider = providers.find(function(provider) {
                         return provider.provider_url.includes(providerUrl);
                     });
                     if (!provider) {
@@ -93,7 +93,7 @@ export default class Iframe extends Base {
                             },
                             method: "POST",
                             dataType: "text",
-                            success: function (res) {
+                            success: function(res) {
                                 var data;
                                 try {
                                     data = JSON.parse(res);
@@ -124,7 +124,7 @@ export default class Iframe extends Base {
                                 $('[name="content"]').val(data.html);
                                 preview(embed, ratio);
                             },
-                            error: function () {
+                            error: function() {
                                 fallback(url);
                             }
                         });
@@ -133,7 +133,7 @@ export default class Iframe extends Base {
             });
         });
 
-        $(document).on('input', '[name=content]', function (e) {
+        $(document).on('input', '[name=content]', function(e) {
             e.preventDefault();
             if ($(this).val() === '') {
                 $('.preview-iframe').html('').css('padding-bottom', '0');
@@ -141,7 +141,7 @@ export default class Iframe extends Base {
             }
             preview($(this).val(), '100%');
         });
-        return { form, event };
+        return {form, event};
     }
     renderContainer(annotation) {
         $(`#message[data-id='${annotation.id}']`).addClass('hasiframe');
@@ -173,13 +173,12 @@ export default class Iframe extends Base {
 
     }
 
-    displayReportView(annotation) {
-        this.render(annotation, 'html').then((data) => {
-            let $message = $(`#message[data-id='${annotation.id}']`);
-            $message.addClass('hasiframe');
-            $message.find(`.modal-body`).html(data);
-            $message.find(`.modal-body`).attr('id', 'content');
-            this.postContentRender(annotation);
-        });
+    async displayReportView(annotation) {
+        const data = await this.render(annotation, 'html');
+        let $message = $(`#message[data-id='${annotation.id}']`);
+        $message.addClass('hasiframe');
+        $message.find(`.modal-body`).html(data);
+        $message.find(`.modal-body`).attr('id', 'content');
+        this.postContentRender(annotation);
     }
 }

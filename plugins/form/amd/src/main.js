@@ -33,7 +33,7 @@ export default class Form extends Base {
         // Do nothing
     }
 
-    renderViewer(annotation) {
+    async renderViewer(annotation) {
         let self = this;
         if (this.isEditMode()) {
             let formfields = [
@@ -102,34 +102,26 @@ export default class Form extends Base {
                 id: annotation.id,
                 items: formfields,
             };
-            Templates.render('ivplugin_form/formedit_modal', dataForTemplate).then((html) => {
-                let $modal = $(html);
-                $modal.appendTo('body');
-                $('#form-modal').modal('show');
+            const template = await Templates.render('ivplugin_form/formedit_modal', dataForTemplate);
+            let $modal = $(template);
+            $modal.appendTo('body');
+            $('#form-modal').modal('show');
 
-                $('#form-modal').on('hidden.bs.modal', function() {
-                    $(this).remove();
-                });
-
-                $('#form-modal').on('shown.bs.modal', function() {
-                    self.render(annotation, 'json').then((content) => {
-                        self.postContentRender(annotation, formfields, content);
-                    });
-                });
-                return;
-            }).catch(() => {
-                // Do nothing.
+            $('#form-modal').on('hidden.bs.modal', function() {
+                $(this).remove();
             });
+
+            $('#form-modal').on('shown.bs.modal', async function() {
+                const content = await self.render(annotation, 'json');
+                self.postContentRender(annotation, formfields, content);
+            });
+
         } else {
-            super.renderViewer(annotation).then(() => {
-                self.render(annotation, 'json').then((content) => {
-                    $(`#message[data-id='${annotation.id}']`).find('#content')
-                        .append('<div id="formmeta" class="mb-3 d-flex"></div><div id="form-preview"></div>');
-                    return this.postContentRender(annotation, '', content);
-                }).catch(() => {
-                    // Do nothing.
-                });
-            });
+            await super.renderViewer(annotation);
+            const content = await self.render(annotation, 'json');
+            $(`#message[data-id='${annotation.id}']`).find('#content')
+                .append('<div id="formmeta" class="mb-3 d-flex"></div><div id="form-preview"></div>');
+            this.postContentRender(annotation, '', content);
         }
     }
 
@@ -603,7 +595,7 @@ export default class Form extends Base {
                 }
             }
 
-            $(document).on('click', `#message[data-id='${annotation.id}'] #submitform-submit`, async(e) => {
+            $(document).on('click', `#message[data-id='${annotation.id}'] #submitform-submit`, async (e) => {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 const event = previewform.trigger(previewform.events.SUBMIT_BUTTON_PRESSED);
@@ -770,194 +762,194 @@ export default class Form extends Base {
              title="${M.util.get_string('responses', 'ivplugin_form')}"></i>
             </button>`);
 
-        this.render(annotation, 'json').then((ct) => {
+        this.render(annotation, 'json').then(async (ct) => {
             let logs = [];
             let users = [];
             const fields = JSON.stringify([...ct.fields]); // Copy the fields object.
             let formfields = ct.fields;
             let userids = tabledata.map((item) => item.id);
-            this.getLogs(annotation, userids).then((res) => {
-                logs = res;
-                logs.map(x => {
-                    const completiondata = tabledata.find(y => y.id == x.userid);
-                    x.completiondata = completiondata;
-                    return x;
-                });
+            let logdata = await this.getLogs(annotation, userids);
+            logs = logdata;
+            logs.map(x => {
+                const completiondata = tabledata.find(y => y.id == x.userid);
+                x.completiondata = completiondata;
+                return x;
+            });
 
-                // We're going to build the table data.
-                let heading = [
-                    {title: M.util.get_string('id', 'mod_interactivevideo'), "class": 'exportable'},
-                    {title: M.util.get_string('timesubmitted', 'mod_interactivevideo'), "class": 'exportable time'},
-                    {title: M.util.get_string('participant', 'mod_interactivevideo'), "class": ''},
-                    {title: M.util.get_string('firstname', 'mod_interactivevideo'), "class": 'exportable'},
-                    {title: M.util.get_string('lastname', 'mod_interactivevideo'), "class": 'exportable'},
-                    {title: M.util.get_string('email', 'mod_interactivevideo'), "class": 'exportable'},
-                ];
+            // We're going to build the table data.
+            let heading = [
+                {title: M.util.get_string('id', 'mod_interactivevideo'), "class": 'exportable'},
+                {title: M.util.get_string('timesubmitted', 'mod_interactivevideo'), "class": 'exportable time'},
+                {title: M.util.get_string('participant', 'mod_interactivevideo'), "class": ''},
+                {title: M.util.get_string('firstname', 'mod_interactivevideo'), "class": 'exportable'},
+                {title: M.util.get_string('lastname', 'mod_interactivevideo'), "class": 'exportable'},
+                {title: M.util.get_string('email', 'mod_interactivevideo'), "class": 'exportable'},
+            ];
 
-                let validfields = [];
+            let validfields = [];
 
-                formfields.forEach(f => {
-                    if (f.type != 'header' && f.type != 'html' && f.type != 'linebreak') {
-                        let head = f.formattedlabel;
-                        if (f.helptext.text && f.helptext.text != '') {
-                            head = `<span>${f.formattedlabel}
+            formfields.forEach(f => {
+                if (f.type != 'header' && f.type != 'html' && f.type != 'linebreak') {
+                    let head = f.formattedlabel;
+                    if (f.helptext.text && f.helptext.text != '') {
+                        head = `<span>${f.formattedlabel}
                             <i class="ml-2 bi bi-info-circle-fill text-secondary helptext" data-fieldid="${f.id}"
                              data-toggle="popover">
                             </i></span>`;
-                        }
-                        heading.push({
-                            title: head,
-                            "class": 'exportable not-sortable',
-                        });
-                        validfields.push(f);
+                    }
+                    heading.push({
+                        title: head,
+                        "class": 'exportable not-sortable',
+                    });
+                    validfields.push(f);
+                }
+            });
+
+            let rows = [];
+
+            logs.forEach(l => {
+                let submission = JSON.parse(l.text1);
+                let row = [
+                    l.id,
+                    `<a href="javascript:void(0)" class="viewsubmission" data-id="${l.id}">${l.formattedtimecreated}</a>`,
+                    `<span class="text-truncate">${l.completiondata.picture}</span>`,
+                    l.completiondata.firstname,
+                    l.completiondata.lastname,
+                    l.completiondata.email,
+                ];
+
+                validfields.forEach(async f => {
+                    let response = submission['field-' + f.id];
+                    if (response == undefined) {
+                        row.push('');
+                        return;
+                    }
+                    switch (f.type) {
+                        case 'text':
+                        case 'textarea':
+                            row.push(response);
+                            break;
+                        case 'editor':
+                            row.push(response.text);
+                            break;
+                        case 'select':
+                            var res = [];
+                            var options = f.options.split('\n');
+                            options.forEach((option) => {
+                                option = option.trim();
+                                let choices = option.split('=');
+                                let value = choices[0];
+                                if (response.indexOf(value) > -1) {
+                                    res.push(choices[1]);
+                                }
+                            });
+                            row.push(res.join(', '));
+                            break;
+                        case 'radio':
+                            var options = f.options.split('\n');
+                            options.forEach((option) => {
+                                option = option.trim();
+                                let choices = option.split('=');
+                                let value = choices[0];
+                                if (response == value) {
+                                    row.push(choices[1]);
+                                    return;
+                                }
+                            });
+                            break;
+                        case 'advcheckbox':
+                            var res = [];
+                            var options = f.options.split('\n');
+                            var selected = Object.values(response);
+                            selected = selected.filter((item) => item != '');
+                            options.forEach((option) => {
+                                option = option.trim();
+                                let choices = option.split('=');
+                                let value = choices[0];
+                                if (selected.indexOf(value) > -1) {
+                                    res.push(choices[1]);
+                                }
+                            });
+                            row.push(res.join(', '));
+                            break;
+                        case 'date_selector':
+                            var date;
+                            if (response.day < 9) {
+                                date += '0' + response.day;
+                            } else {
+                                date += response.day;
+                            }
+                            date += '/';
+                            if (response.month < 9) {
+                                date += '0' + response.month;
+                            } else {
+                                date += response.month;
+                            }
+                            date += '/';
+                            date += response.year;
+                            if (response.hour && response.minute) {
+                                date += ' ';
+                                if (response.hour < 9) {
+                                    date += '0' + response.hour;
+                                } else {
+                                    date += response.hour;
+                                }
+                                date += ':';
+                                if (response.minute < 9) {
+                                    date += '0' + response.minute;
+                                } else {
+                                    date += response.minute;
+                                }
+                            }
+                            row.push(date);
+                            break;
+                        case 'duration':
+                            if (response) {
+                                row.push(response.number + ' ' + M.util.get_string(response.timeunit, 'ivplugin_form'));
+                            } else {
+                                row.push('');
+                            }
+                            break;
+                        case 'filemanager':
+                            if (response.length > 0) {
+                                const files = response.map((file) => {
+                                    const filename = file.split('/').pop();
+                                    return `<a href="${file}" target="_blank" class="text-truncate">
+                                    ${decodeURIComponent(filename.replace('field-' + f.id + '_', ''))}<span class="d-none">
+                                    [${file}]</span></a>`;
+                                });
+                                row.push(files.join(',<br>'));
+                            } else {
+                                row.push('');
+                            }
+                            break;
+                        default:
+                            break;
                     }
                 });
 
-                let rows = [];
+                rows.push(row);
 
-                logs.forEach(l => {
-                    let submission = JSON.parse(l.text1);
-                    let row = [
-                        l.id,
-                        `<a href="javascript:void(0)" class="viewsubmission" data-id="${l.id}">${l.formattedtimecreated}</a>`,
-                        `<span class="text-truncate">${l.completiondata.picture}</span>`,
-                        l.completiondata.firstname,
-                        l.completiondata.lastname,
-                        l.completiondata.email,
-                    ];
+            });
 
-                    validfields.forEach(async f => {
-                        let response = submission['field-' + f.id];
-                        if (response == undefined) {
-                            row.push('');
-                            return;
-                        }
-                        switch (f.type) {
-                            case 'text':
-                            case 'textarea':
-                                row.push(response);
-                                break;
-                            case 'editor':
-                                row.push(response.text);
-                                break;
-                            case 'select':
-                                var res = [];
-                                var options = f.options.split('\n');
-                                options.forEach((option) => {
-                                    option = option.trim();
-                                    let choices = option.split('=');
-                                    let value = choices[0];
-                                    if (response.indexOf(value) > -1) {
-                                        res.push(choices[1]);
-                                    }
-                                });
-                                row.push(res.join(', '));
-                                break;
-                            case 'radio':
-                                var options = f.options.split('\n');
-                                options.forEach((option) => {
-                                    option = option.trim();
-                                    let choices = option.split('=');
-                                    let value = choices[0];
-                                    if (response == value) {
-                                        row.push(choices[1]);
-                                        return;
-                                    }
-                                });
-                                break;
-                            case 'advcheckbox':
-                                var res = [];
-                                var options = f.options.split('\n');
-                                var selected = Object.values(response);
-                                selected = selected.filter((item) => item != '');
-                                options.forEach((option) => {
-                                    option = option.trim();
-                                    let choices = option.split('=');
-                                    let value = choices[0];
-                                    if (selected.indexOf(value) > -1) {
-                                        res.push(choices[1]);
-                                    }
-                                });
-                                row.push(res.join(', '));
-                                break;
-                            case 'date_selector':
-                                var date;
-                                if (response.day < 9) {
-                                    date += '0' + response.day;
-                                } else {
-                                    date += response.day;
-                                }
-                                date += '/';
-                                if (response.month < 9) {
-                                    date += '0' + response.month;
-                                } else {
-                                    date += response.month;
-                                }
-                                date += '/';
-                                date += response.year;
-                                if (response.hour && response.minute) {
-                                    date += ' ';
-                                    if (response.hour < 9) {
-                                        date += '0' + response.hour;
-                                    } else {
-                                        date += response.hour;
-                                    }
-                                    date += ':';
-                                    if (response.minute < 9) {
-                                        date += '0' + response.minute;
-                                    } else {
-                                        date += response.minute;
-                                    }
-                                }
-                                row.push(date);
-                                break;
-                            case 'duration':
-                                if (response) {
-                                    row.push(response.number + ' ' + M.util.get_string(response.timeunit, 'ivplugin_form'));
-                                } else {
-                                    row.push('');
-                                }
-                                break;
-                            case 'filemanager':
-                                if (response.length > 0) {
-                                    const files = response.map((file) => {
-                                        const filename = file.split('/').pop();
-                                        return `<a href="${file}" target="_blank"
-                                         class="text-truncate">${decodeURIComponent(filename.replace('field-' + f.id + '_', ''))}
-                                         <span class="d-none">[${file}]</span></a>`;
-                                    });
-                                    row.push(files.join(', '));
-                                } else {
-                                    row.push('');
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    });
+            users = logs.map((l) => {
+                return {
+                    id: l.id,
+                    fullname: `${l.completiondata.firstname} ${l.completiondata.lastname}`,
+                };
+            });
 
-                    rows.push(row);
+            users.sort((a, b) => {
+                return a.fullname.localeCompare(b.fullname);
+            });
 
-                });
+            users.forEach((user) => {
+                $(`#message[data-id='${annotation.id}']`).find('#submission-list')
+                    .append(`<option value="${user.id}">${user.fullname}</option>`);
+            });
 
-                users = logs.map((l) => {
-                    return {
-                        id: l.id,
-                        fullname: `${l.completiondata.firstname} ${l.completiondata.lastname}`,
-                    };
-                });
-
-                users.sort((a, b) => {
-                    return a.fullname.localeCompare(b.fullname);
-                });
-
-                users.forEach((user) => {
-                    $(`#message[data-id='${annotation.id}']`).find('#submission-list')
-                        .append(`<option value="${user.id}">${user.fullname}</option>`);
-                });
-
-                $(`#message[data-id='${annotation.id}']`).find('#responsetab')
-                    .html(`<div id="formresponsetable" class="table-responsive">
+            $(`#message[data-id='${annotation.id}']`).find('#responsetab')
+                .html(`<div id="formresponsetable" class="table-responsive">
                     <table class="table table-bordered table-striped w-100">
                     <thead>
                         <tr>
@@ -969,11 +961,10 @@ export default class Form extends Base {
                     </table>
                     </div>`);
 
-                renderAnnotationLogs({
-                    heading: heading,
-                    rows: rows,
-                }, '#formresponsetable');
-            });
+            renderAnnotationLogs({
+                heading: heading,
+                rows: rows,
+            }, '#formresponsetable');
 
             $message.find('.btns').on('click', `[data-toggle="tab"]`, function() {
                 $(`[data-toggle="tab"]`).removeClass('active');
@@ -1005,16 +996,12 @@ export default class Form extends Base {
                      <div class="popover-body rounded"></div></div>`,
                 });
                 $this.popover('show');
-                $this.on('shown.bs.popover', function() {
+                $this.on('shown.bs.popover', async function() {
                     let $body = $(`.popover.id-${contentid} .popover-body`);
-                    self.formatContent(content, M.cfg.contextid).then((html) => {
-                        $body.html(html);
-                        notifyFilter($body);
-                        $this.popover('update');
-                        return;
-                    }).catch(() => {
-                        // Do nothing.
-                    });
+                    const html = await self.formatContent(content, M.cfg.contextid);
+                    $body.html(html);
+                    notifyFilter($body);
+                    $this.popover('update');
                 });
             });
 

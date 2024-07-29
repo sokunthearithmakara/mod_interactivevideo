@@ -88,7 +88,7 @@ export default class Chapter extends Base {
             }
         }, 1000);
 
-        $chapterlists.on('click', '.chapter .chapter-title', function (e) {
+        $chapterlists.on('click', '.chapter .chapter-title', function(e) {
             e.preventDefault();
             // Hide the start, end screen.
             $('#start-screen').fadeOut(300);
@@ -110,19 +110,19 @@ export default class Chapter extends Base {
         });
 
         // Chapter toggle.
-        $(document).on('click', '#chaptertoggle .btn', function (e) {
+        $(document).on('click', '#chaptertoggle .btn', function(e) {
             e.preventDefault();
             $('#interactivevideo-container').toggleClass('chapter-open');
             $(this).find('i').toggleClass('bi-collection bi-collection-fill');
         });
 
-        $(document).on('click', '#closechapter', function (e) {
+        $(document).on('click', '#closechapter', function(e) {
             e.preventDefault();
             $('#chaptertoggle .btn').trigger('click');
         });
 
         // Collapse/Expand the chapters on click of the chevron.
-        $(document).on('click', '.chapter i.toggle.bi', function (e) {
+        $(document).on('click', '.chapter i.toggle.bi', function(e) {
             e.preventDefault();
             $(this).closest('.chapter').find('.annolistinchapter').slideToggle(300);
             $(this).toggleClass('bi-chevron-down bi-chevron-right');
@@ -177,7 +177,7 @@ export default class Chapter extends Base {
         $('#message span').animate({
             'top': '30px',
         }, 300, 'swing');
-        $('#chapterprogress .progress-bar').animate({ width: '100%' }, 3000, 'linear', () => {
+        $('#chapterprogress .progress-bar').animate({width: '100%'}, 3000, 'linear', () => {
             if (!this.isEditMode()) {
                 $('#message span').css('top', '0');
                 this.player.play();

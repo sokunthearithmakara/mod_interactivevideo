@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * TODO describe module main
+ * Main class for inlineannotation content type
  *
  * @module     ivplugin_inlineannotation/main
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
@@ -38,7 +38,7 @@ export default class InlineAnnotation extends Base {
         videoWrapper.append(`<div id="message" data-id="${annotation.id}"
              class="message text-white bg-transparent inlineannotation"></div>`);
 
-        const updateAspectRatio = async(video, reset) => {
+        const updateAspectRatio = async (video, reset) => {
             let elem = video ? $('#player') : $(`#message[data-id='${annotation.id}']`);
             if ($("#wrapper").hasClass('fullscreen')) {
                 let ratio = await this.player.ratio();
@@ -627,13 +627,12 @@ export default class InlineAnnotation extends Base {
                                 $('#annotation-modal').on('hide.bs.modal', function() {
                                     $('#annotation-modal').remove();
                                 });
-                                $('#annotation-modal').on('shown.bs.modal', function() {
+                                $('#annotation-modal').on('shown.bs.modal', async function() {
                                     $('#annotation-modal .modal-body').fadeIn(300);
                                     let $body = $('#annotation-modal .modal-body');
-                                    self.formatContent(content, M.cfg.contextid).then((html) => {
-                                        $body.html(html);
-                                        notifyFilter($body);
-                                    });
+                                    const html = await self.formatContent(content, M.cfg.contextid);
+                                    $body.html(html);
+                                    notifyFilter($body);
                                 });
                             } else {
                                 wrapper.popover('show');
@@ -742,7 +741,7 @@ export default class InlineAnnotation extends Base {
             };
 
             Templates.render('ivplugin_inlineannotation/inlineannotation_toolbar', dataForTemplate).then((html) => {
-                $videoWrapper.before(html);
+               return $videoWrapper.before(html);
             }).catch(() => {
                 // Do nothing.
             });
@@ -862,7 +861,7 @@ export default class InlineAnnotation extends Base {
             let annoid = $videoWrapper.find(`#message`).data('id');
             let type = $(this).attr('data-mediatype');
             if (type == 'stopwatch' && items.find(x => x.type == 'stopwatch')) {
-                alert(M.util.get_string('onlyonestopwatch', 'ivplugin_inlineannotation'));
+                self.addNotification(M.util.get_string('onlyonestopwatch', 'ivplugin_inlineannotation'), 'danger');
                 return;
             }
             let iaform = new ModalForm({
@@ -939,7 +938,7 @@ export default class InlineAnnotation extends Base {
             getItems(false);
             let item = items.find(x => x.id == active);
             let type = item.type;
-            let formdata = {...item.properties};
+            let formdata = { ...item.properties };
             formdata.contextid = M.cfg.contextid;
             formdata.id = item.id;
             formdata.annotationid = annnoid;
@@ -1124,7 +1123,7 @@ export default class InlineAnnotation extends Base {
                 if (activeItem != undefined) {
                     let position = activeItem.position();
                     position['z-index'] = parseInt(activeItem.css('z-index'));
-                    let ctrl = e.ctrlKey;
+                    let ctrl = e.ctrlKey || e.metaKey;
                     let step = 1;
                     // Prevent page scroll
                     e.preventDefault();
@@ -1133,37 +1132,29 @@ export default class InlineAnnotation extends Base {
                         case 'ArrowUp':
                             if (ctrl) {
                                 position['z-index'] = position['z-index'] + 1;
-                            } else {
-                                if (position.top > 0) {
-                                    position.top = position.top - step;
-                                } else {
-                                    break;
-                                }
+                                break;
+                            }
+                            if (position.top > 0) {
+                                position.top = position.top - step;
                             }
                             break;
                         case 'ArrowDown':
                             if (ctrl) {
                                 position['z-index'] = position['z-index'] - 1;
-                            } else {
-                                if (position.top + activeItem.outerHeight() < $videoWrapper.find(`#message`).height()) {
-                                    position.top = position.top + step;
-                                } else {
-                                    break;
-                                }
+                                break;
+                            }
+                            if (position.top + activeItem.outerHeight() < $videoWrapper.find(`#message`).height()) {
+                                position.top = position.top + step;
                             }
                             break;
                         case 'ArrowLeft':
                             if (position.left > 0) {
                                 position.left = position.left - step;
-                            } else {
-                                break;
                             }
                             break;
                         case 'ArrowRight':
                             if (position.left + activeItem.outerWidth() < $videoWrapper.find(`#message`).width()) {
                                 position.left = position.left + step;
-                            } else {
-                                break;
                             }
                             break;
                         case 'Delete':

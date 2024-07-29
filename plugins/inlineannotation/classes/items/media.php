@@ -238,7 +238,7 @@ class media extends \core_form\dynamic_form {
         $mform->addElement('text', 'gotourl', get_string('gotourl', 'ivplugin_inlineannotation'), ['size' => 100]);
         $mform->setType('gotourl', PARAM_URL);
         $mform->addRule(
-            'url',
+            'gotourl',
             get_string('invalidurlformat', 'ivplugin_inlineannotation'),
             'regex',
             "/\b(?:(?:https?|ftp):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*\.[a-z]{2,}[-a-z0-9+&@#\/%=~_|]*/i",

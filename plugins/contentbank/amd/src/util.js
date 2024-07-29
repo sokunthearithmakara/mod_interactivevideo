@@ -42,7 +42,7 @@ const getcontent = (id, contextid, target) => {
 };
 
 const init = (contextid) => {
-    $(document).on('click', '.contentbank-container .contentbank-item .contentbank-item-details', function (e) {
+    $(document).on('click', '.contentbank-container .contentbank-item .contentbank-item-details', function(e) {
         e.preventDefault();
         $('.contentbank-container .contentbank-item').removeClass('selected');
         $(this).closest('.contentbank-item').addClass('selected');
@@ -51,7 +51,7 @@ const init = (contextid) => {
         $('[name=contentid]').val(id);
     });
 
-    $(document).on('click', '.contentbank-container .contentbank-item .contentbankview', function (e) {
+    $(document).on('click', '.contentbank-container .contentbank-item .contentbankview', function(e) {
         e.preventDefault();
         $('.contentbank-container .contentbank-item').removeClass('selected');
         var targetContentbank = $(this).closest('.contentbank-item');
@@ -68,7 +68,7 @@ const init = (contextid) => {
         // if they want students to mark it complete manually or automatically.
         var xapicheck = M.util.get_string('xapicheck', 'ivplugin_contentbank');
         var H5P;
-        var iframeinterval = setInterval(function () {
+        var iframeinterval = setInterval(function() {
 
             try { // Try to get the H5P object.
                 H5P = document.querySelector('#contentbank-preview iframe.h5p-player').contentWindow.H5P;
@@ -79,15 +79,15 @@ const init = (contextid) => {
             if (typeof H5P !== 'undefined' && H5P !== null) {
                 $("#contentbank-preview .xapi").remove();
                 $(`#contentbank-preview[data-contentid=${id}]`)
-                .prepend(`<div class="xapi float-right alert-secondary d-inline px-2 text-center rounded-pill mb-2">
+                    .prepend(`<div class="xapi float-right alert-secondary d-inline px-2 text-center rounded-pill mb-2">
                 ${xapicheck}</div>`);
-                H5P.externalDispatcher.on('xAPI', function (event) {
+                H5P.externalDispatcher.on('xAPI', function(event) {
                     if ((event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
-                    || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered')
-                    && event.data.statement.object.id.indexOf('subContentId') < 0) {
+                        || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered')
+                        && event.data.statement.object.id.indexOf('subContentId') < 0) {
                         $("#contentbank-preview .xapi").remove();
                         $("#contentbank-preview")
-                        .prepend(`<div class="xapi float-right alert-success d-inline px-2 text-center rounded-pill mb-2">
+                            .prepend(`<div class="xapi float-right alert-success d-inline px-2 text-center rounded-pill mb-2">
                         <i class="fa fa-check mr-2"></i>${M.util.get_string('xapieventdetected', 'ivplugin_contentbank')}</div>`);
                         var audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
                         audio.play();
@@ -101,9 +101,9 @@ const init = (contextid) => {
     });
 };
 
-const refreshContentBank = (id, coursecontextid, edit = true, callback) => {
+const refreshContentBank = async (id, coursecontextid, edit = true, callback) => {
     $('#contentbank-preview').empty();
-    let contentbankitems = Ajax.call([{
+    let contentbankitems = await Ajax.call([{
         args: {
             contextid: coursecontextid
         },
@@ -111,45 +111,41 @@ const refreshContentBank = (id, coursecontextid, edit = true, callback) => {
         methodname: 'ivplugin_contentbank_getitems',
     }])[0];
 
-    contentbankitems.then((response) => {
-        var contents = JSON.parse(response['contents']);
-            var contentbank = $('.modal-body form .contentbank-container');
-            contentbank.empty();
-            contents.forEach(function (content) {
-                var editurl = M.cfg.wwwroot + '/contentbank/edit.php?contextid='
-                + coursecontextid + '&id=' + content['id'] + '&plugin=' + content['type'];
-                var html = '<div class="contentbank-item d-flex align-items-center p-1 '
-                + (content['id'] == id ? "selected" : "") + ' " data-contentid="' + content['id']
-                + '"><div class="contentbank-item-details d-flex align-items-center">';
-                if (content['icon']) {
-                    html += '<img class="contentbank-item-icon mr-2" src="' + content['icon'] + '"/>';
-                } else {
-                    html += '<div class="contentbank-item-icon mr-2"></div>';
-                }
+    var contents = JSON.parse(contentbankitems.contents);
+    var contentbank = $('.modal-body form .contentbank-container');
+    contentbank.empty();
+    contents.forEach(function(content) {
+        var editurl = M.cfg.wwwroot + '/contentbank/edit.php?contextid='
+            + coursecontextid + '&id=' + content.id + '&plugin=' + content.type;
+        var html = '<div class="contentbank-item d-flex align-items-center p-1 '
+            + (content.id == id ? "selected" : "") + ' " data-contentid="' + content.id
+            + '"><div class="contentbank-item-details d-flex align-items-center">';
+        if (content.icon) {
+            html += '<img class="contentbank-item-icon mr-2" src="' + content.icon + '"/>';
+        } else {
+            html += '<div class="contentbank-item-icon mr-2"></div>';
+        }
 
-                html += '<div class="contentbank-item-name w-100">' + content['name'] + '</div></div>';
-                html += `<div class="btn btn-sm ml-auto contentbankview" data-toggle="tooltip" data-container="#wrapper"
+        html += '<div class="contentbank-item-name w-100">' + content.name + '</div></div>';
+        html += `<div class="btn btn-sm ml-auto contentbankview" data-toggle="tooltip" data-container="#wrapper"
                  data-trigger="hover" data-title="${M.util.get_string('preview', 'ivplugin_contentbank')}">
                  <i class="bi bi-eye-fill"></i></div>`;
-                if (edit) {
-                    html += `<a class="btn btn-sm ml-2" target="_blank" href="${editurl}"
+        if (edit) {
+            html += `<a class="btn btn-sm ml-2" target="_blank" href="${editurl}"
                      data-toggle="tooltip" data-container="#wrapper" data-trigger="hover"
                       data-title="${M.util.get_string('edit', 'ivplugin_contentbank')}">
                      <i class="bi bi-pencil-square"></i></a>`;
-                }
+        }
 
-                html += `</div>`;
+        html += `</div>`;
 
 
-                contentbank.append(html);
-            });
-
-            if (callback) {
-                callback();
-            }
-    }).catch(() => {
-        // Do nothing.
+        contentbank.append(html);
     });
+
+    if (callback) {
+        callback();
+    }
 };
 
 export default {init, getcontent, refreshContentBank};

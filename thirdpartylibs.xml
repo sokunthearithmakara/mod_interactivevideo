@@ -27,7 +27,7 @@
         <version>2.4.1</version>
         <license>MIT</license>
         <licenseversion>?</licenseversion>
-    </libraries>
+    </library>
     <library>
         <location>amd/src/libraries/buttons.html5.js</location>
         <name>Datatables HTML5 Export Extension</name>

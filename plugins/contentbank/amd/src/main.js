@@ -36,20 +36,20 @@ export default class ContentBank extends Base {
         let body = form.modal.modal.find('.modal-body');
         contentbankutil.init(M.cfg.courseContextId);
         // Refresh the content from the content bank.
-        body.on('click', '#refreshcontentbank', function (e) {
+        body.on('click', '#refreshcontentbank', function(e) {
             e.preventDefault();
             $(this).find('i').addClass('fa-spin');
             var currentid = $('[name=contentid]').val();
             $('.contentbank-container').html(`<div class="d-flex justify-content-center align-items-center"
             style="height: 150px;"><div class="spinner-grow text-secondary" role="status">
             <span class="sr-only">Loading...</span></div></div>`);
-            contentbankutil.refreshContentBank(currentid, M.cfg.courseContextId, $(this).data('editable'), function () {
+            contentbankutil.refreshContentBank(currentid, M.cfg.courseContextId, $(this).data('editable'), function() {
                 $('#refreshcontentbank i').removeClass('fa-spin');
             });
         });
 
         // Upload a new content.
-        body.on('click', '#uploadcontentbank', function (e) {
+        body.on('click', '#uploadcontentbank', function(e) {
             e.preventDefault();
             var uploadForm = new ModalForm({
                 formClass: "core_contentbank\\form\\upload_files",
@@ -75,7 +75,7 @@ export default class ContentBank extends Base {
 
             uploadForm.show();
         });
-        return { form, event };
+        return {form, event};
     }
 
     postContentRender(annotation, callback) {
@@ -132,7 +132,7 @@ export default class ContentBank extends Base {
      * @param {Object} annotation The annotation object
      * @returns {void}
      */
-    runInteraction(annotation) {
+    async runInteraction(annotation) {
         this.player.pause();
         var annoid = annotation.id;
         var self = this;
@@ -140,8 +140,8 @@ export default class ContentBank extends Base {
 
         const xAPICheck = (annotation) => {
             var H5P;
-            var iframeinterval = setInterval(function () {
-                try {// Try to get the H5P object.
+            var iframeinterval = setInterval(function() {
+                try { // Try to get the H5P object.
                     H5P = document.querySelector(`#message[data-id='${annoid}'] iframe`).contentWindow.H5P;
                 } catch (e) {
                     H5P = null;
@@ -154,7 +154,7 @@ export default class ContentBank extends Base {
                             .prepend(`<div class="xapi alert-secondary px-2
                          rounded-pill">${M.util.get_string('xapicheck', 'ivplugin_contentbank')}</div>`);
                     }
-                    H5P.externalDispatcher.on('xAPI', function (event) {
+                    H5P.externalDispatcher.on('xAPI', function(event) {
                         if ((event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
                             || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered')
                             && event.data.statement.object.id.indexOf('subContentId') < 0) {
@@ -190,24 +190,22 @@ export default class ContentBank extends Base {
         };
 
         // Apply content.
-        const applyContent = (annotation) => {
-            this.render(annotation).then((data) => {
-                $message.find(`.modal-body`).html(data).attr('id', 'content').fadeIn(300);
-                if (!annotation.completed && annotation.completiontracking != 'manual') {
-                    xAPICheck(annotation);
-                }
-            });
+        const applyContent = async function(annotation) {
+            const data = await self.render(annotation);
+            $message.find(`.modal-body`).html(data).attr('id', 'content').fadeIn(300);
+            if (!annotation.completed && annotation.completiontracking != 'manual') {
+                xAPICheck(annotation);
+            }
         };
 
-        this.renderViewer(annotation).then(() => {
-            $message = this.renderContainer(annotation);
-            applyContent(annotation);
-        });
+        await this.renderViewer(annotation);
+        $message = this.renderContainer(annotation);
+        applyContent(annotation);
 
         this.enableManualCompletion();
 
         if (annotation.displayoptions == 'popup') {
-            $('#annotation-modal').on('shown.bs.modal', function () {
+            $('#annotation-modal').on('shown.bs.modal', function() {
                 self.setModalDraggable('#annotation-modal .modal-dialog');
             });
         }

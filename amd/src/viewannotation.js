@@ -23,7 +23,7 @@
 
 define([
     'jquery', 'core/event_dispatcher', 'core/toast', 'mod_interactivevideo/libraries/jquery-ui'
-], function ($, { dispatchEvent }, Toast) {
+], function ($, {dispatchEvent}, Toast) {
     let ctRenderer = {};
     let annotations, // Array of annotations.
         totaltime, // Video total time.
@@ -102,7 +102,7 @@ define([
         });
 
         render.then(() => {
-            dispatchEvent('annotationitemsrendered', { 'annotations': annos });
+            dispatchEvent('annotationitemsrendered', {'annotations': annos});
             $('.annolistinchapter').empty();
             const chapteritems = releventAnnotations.filter(x => x.type != 'skipsegment' && JSON.parse(x.prop).hascompletion);
             chapteritems.sort((a, b) => a.timestamp - b.timestamp);
@@ -123,7 +123,7 @@ define([
                 });
             });
         }).then(() => {
-            dispatchEvent('chapterrendered', { 'annotations': releventAnnotations });
+            dispatchEvent('chapterrendered', {'annotations': releventAnnotations});
         });
 
         $(document).on('annotationitemsrendered', function () {
@@ -546,7 +546,7 @@ define([
                         return;
                     }
 
-                    dispatchEvent('timeupdate', { 'time': t });
+                    dispatchEvent('timeupdate', {'time': t});
 
                     const time = Math.round(t);
 
@@ -911,7 +911,7 @@ define([
                 let qualities = quality.qualities;
                 qualities.forEach(q => {
                     $('#qualitieslist').append(`<a class="dropdown-item text-white changequality" data-quality="${q}"
-                         href="#"><i class="bi ${q == currentQuality ? 'bi-check': ''} fa-fw ml-n3"></i>${q}</a>`);
+                         href="#"><i class="bi ${q == currentQuality ? 'bi-check' : ''} fa-fw ml-n3"></i>${q}</a>`);
                 });
                 // Update the dropdown element.
                 $('#changequality').dropdown('update');

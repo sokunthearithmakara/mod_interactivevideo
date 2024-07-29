@@ -60,7 +60,6 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->setType('title', PARAM_TEXT);
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
-        $mform->hideIf('char1', 'displayoptions', 'eq', 0);
         $this->advanced_form_fields(false, true, true, true);
         $this->close_form();
     }
