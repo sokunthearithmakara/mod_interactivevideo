@@ -552,7 +552,7 @@ function interactivevideo_get_user_grades($moduleinstance, $userid = 0) {
 /**
  * Reset all user grades for the mod_interactivevideo module.
  *
- * @param stdClass $moduleinstance The module instance object.
+ * @param stdClass $data The module instance object.
  */
 function interactivevideo_reset_userdata($data) {
     global $DB;

@@ -302,6 +302,7 @@ class interactivevideo_util {
      * @param string $field
      * @param string $value
      * @param int $contextid
+     * @param int $olddraftitemid
      * @return stdClass
      */
     public static function quick_edit_field($id, $field, $value, $contextid, $olddraftitemid = 0) {

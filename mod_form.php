@@ -353,12 +353,12 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
 
     /**
      * Custom data should be added here
-     * @param array $default_values
+     * @param array $defaultvalues
      */
     public function data_preprocessing(&$defaultvalues) {
         if ($this->current->instance) {
             $text = $defaultvalues['endscreentext'];
-            $defaultvalues['endscreentext'] = array();
+            $defaultvalues['endscreentext'] = [];
             $draftitemid = file_get_submitted_draft_itemid('endscreentext');
             $defaultvalues['endscreentext']['format'] = FORMAT_HTML;
             $defaultvalues['endscreentext']['itemid'] = $draftitemid;

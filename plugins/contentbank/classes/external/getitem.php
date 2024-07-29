@@ -57,7 +57,9 @@ class getitem extends external_api {
     /**
      * Implementation of web service ivplugin_contentbank_getitem
      *
-     * @param mixed $param1
+     * @param int $id Content bank item id
+     * @param int $contextid Course context id
+     * @return array
      */
     public static function execute($id, $contextid) {
         // Parameter validation.

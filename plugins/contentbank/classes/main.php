@@ -44,6 +44,8 @@ class main extends \ivplugin_richtext\main {
 
     /**
      * Get the content.
+     * @param array $arg
+     * @return string
      */
     public function get_content($arg) {
         $id = $arg["contentid"];

@@ -141,8 +141,8 @@ class base extends \core_form\dynamic_form {
     /**
      * Validation
      *
-     * @param $data
-     * @param $files
+     * @param array $data array of ("fieldname"=>value) of submitted data
+     * @param array $files array of uploaded files "element_name"=>tmp_file_pathD
      * @return array
      */
     public function validation($data, $files) {
