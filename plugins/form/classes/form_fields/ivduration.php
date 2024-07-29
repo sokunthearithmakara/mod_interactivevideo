@@ -60,7 +60,7 @@ class MoodleQuickForm_ivduration extends MoodleQuickForm_duration {
      * @param  bool  $assoc  whether to return the value as associative array
      * @return array field name => value. The value is the time interval in seconds.
      */
-    public function exportValue(&$submitvalues, $assoc = false) {
+    public function exportvalue(&$submitvalues, $assoc = false) {
         // Get the values from all the child elements.
         $valuearray = [];
         foreach ($this->_elements as $element) {

@@ -60,12 +60,12 @@ class form extends \ivplugin_pdfviewer\form {
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
 
         // H5P upload.
-        $filemanageroptions = array(
+        $filemanageroptions = [
             'maxbytes'       => 0,
             'subdirs'        => 0,
             'maxfiles'       => 1,
             'accepted_types' => ['.html', '.h5p'],
-        );
+        ];
 
         $mform->addElement(
             'filemanager',

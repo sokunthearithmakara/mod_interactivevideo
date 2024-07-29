@@ -80,10 +80,10 @@ $PAGE->requires->strings_for_js(array_keys($strings), 'mod_interactivevideo');
 $PAGE->requires->jquery_plugin('ui-css');
 
 // Log view.
-$event = \mod_interactivevideo\event\course_module_viewed::create(array(
+$event = \mod_interactivevideo\event\course_module_viewed::create([
     'objectid' => $moduleinstance->id,
     'context' => $modulecontext,
-));
+]);
 $event->add_record_snapshot('course', $course);
 $event->add_record_snapshot('interactivevideo', $moduleinstance);
 $event->trigger();

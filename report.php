@@ -28,16 +28,16 @@ require_once(__DIR__ . '/locallib.php');
 $id = required_param('id', PARAM_INT); // Course_module ID.
 
 $cm = get_coursemodule_from_id('interactivevideo', $id,  0,  false,  MUST_EXIST);
-$moduleinstance = $DB->get_record('interactivevideo', array('id' => $cm->instance), '*', MUST_EXIST);
+$moduleinstance = $DB->get_record('interactivevideo', ['id' => $cm->instance], '*', MUST_EXIST);
 $group = optional_param('group', 0, PARAM_INT);
-$course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
+$course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
 
 $context = context_module::instance($cm->id);
 
 if (!has_capability('mod/interactivevideo:viewreport', $context)) {
     // Redirect to course view.
     redirect(
-        new moodle_url('/course/view.php', array('id' => $course->id)),
+        new moodle_url('/course/view.php', ['id' => $course->id]),
         get_string('notaccessreport', 'mod_interactivevideo'),
         5,
         \core\output\notification::NOTIFY_ERROR
@@ -49,7 +49,7 @@ require_login($course, true, $cm);
 // External css.
 $PAGE->requires->css(new moodle_url($CFG->wwwroot . '/mod/interactivevideo/libraries/DataTables/datatables.min.css'));
 
-$PAGE->set_url('/mod/interactivevideo/report.php', array('id' => $cm->id, 'group' => $group));
+$PAGE->set_url('/mod/interactivevideo/report.php', ['id' => $cm->id, 'group' => $group]);
 $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);

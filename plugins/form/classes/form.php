@@ -66,7 +66,7 @@ class form extends \mod_interactivevideo\form\base_form {
             'date_time_selector',
             'text1',
             '<i class="bi bi-calendar-check mr-2"></i>' . get_string('duedate', 'ivplugin_form'),
-            array('optional' => true)
+            ['optional' => true]
         );
 
         // Set default to next week.
@@ -74,14 +74,14 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->setType('text1', PARAM_RAW);
 
         // Include attachments and editable responses.
-        $elementarray = array();
+        $elementarray = [];
         $elementarray[] = $mform->createElement(
             'advcheckbox',
             'char2', // Editable responses.
             '',
             get_string('editableresponseuntilduedate', 'ivplugin_form'),
-            array("group" => 1),
-            array(0, 1)
+            ["group" => 1],
+            [0, 1]
         );
         $mform->setDefault('char2', $this->optional_param('char2', 0, PARAM_TEXT));
         $mform->addGroup($elementarray, '', '');

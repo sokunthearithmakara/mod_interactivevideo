@@ -660,14 +660,14 @@ class submitform_form extends \core_form\dynamic_form {
                         continue;
                     }
                     // Define the new file record for the copied file.
-                    $filerecord = array(
+                    $filerecord = [
                         'contextid' => $usercontext->id,
                         'component' => 'user',
                         'filearea'  => 'draft',
                         'itemid'    => $newdraftitemid, // Use the new draft item ID.
                         'filepath'  => $file->get_filepath(),
                         'filename'  => $fieldid . '_' . $file->get_filename(),
-                    );
+                    ];
 
                     // Copy the file to the new draft item ID.
                     if (!$fs->file_exists(

@@ -53,7 +53,7 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->addElement('html', '<label class="col-form-label pl-0"><i class="bi bi-signpost-split-fill mr-2"></i>'
             . get_string('destination', 'ivplugin_decision') . '</label><div id="destination-list" class="w-100 mb-3"></div>');
 
-        $mform->addElement('advcheckbox', 'char1', '', get_string('allowskip', 'ivplugin_decision'), array("group" => 1), array(0, 1));
+        $mform->addElement('advcheckbox', 'char1', '', get_string('allowskip', 'ivplugin_decision'), ["group" => 1], [0, 1]);
         $this->advanced_form_fields(false, true, true, true);
 
         $this->close_form();

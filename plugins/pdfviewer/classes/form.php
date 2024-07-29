@@ -82,12 +82,12 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
 
         // PDF upload.
-        $filemanageroptions = array(
+        $filemanageroptions = [
             'maxbytes'       => $PAGE->course->maxbytes,
             'subdirs'        => 0,
             'maxfiles'       => 1,
             'accepted_types' => ['.pdf'],
-        );
+        ];
 
         $mform->addElement(
             'filemanager',

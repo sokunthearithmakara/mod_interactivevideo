@@ -119,12 +119,12 @@ class video_upload_form extends \core_form\dynamic_form {
      */
     protected function get_options() {
         global $PAGE;
-        $filemanageroptions = array(
+        $filemanageroptions = [
             'maxbytes'       => $PAGE->course->maxbytes,
             'subdirs'        => 0,
             'maxfiles'       => 1,
             'accepted_types' => ['html_video'],
-        );
+        ];
         return $filemanageroptions;
     }
 

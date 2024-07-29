@@ -125,8 +125,8 @@ class form extends \mod_interactivevideo\form\base_form {
             'char1', // Require response before viewing others
             '',
             get_string('requireresponsebeforeviewingothers', 'ivplugin_discussion'),
-            array("group" => 1),
-            array(0, 1)
+            ["group" => 1],
+            [0, 1]
         );
         $mform->setType("char1", PARAM_INT);
         $mform->setDefault("char1", 1);
@@ -141,14 +141,14 @@ class form extends \mod_interactivevideo\form\base_form {
 
         $text = json_decode($this->optional_param('text1', null, PARAM_RAW));
 
-        $elementarray = array();
+        $elementarray = [];
         $elementarray[] = $mform->createElement(
             'advcheckbox',
             'respondtodiscussion',
             '',
             get_string('respondtodiscussion', 'ivplugin_discussion'),
-            array("group" => 1),
-            array(0, 1)
+            ["group" => 1],
+            [0, 1]
         );
         $mform->setDefault('completionrequirements[respondtodiscussion]', (int)$text->respondtodiscussion ?? 1);
         $elementarray[] = $mform->createElement(
@@ -156,8 +156,8 @@ class form extends \mod_interactivevideo\form\base_form {
             'replytoresponse',
             '',
             get_string('replytoresponse', 'ivplugin_discussion'),
-            array("group" => 1),
-            array(0, 1)
+            ["group" => 1],
+            [0, 1]
         );
         $mform->setDefault("completionrequirements[replytoresponse]", (int)$text->replytoresponse ?? 0);
         $elementarray[] = $mform->createElement(

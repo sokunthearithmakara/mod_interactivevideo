@@ -59,12 +59,12 @@ class form extends \ivplugin_pdfviewer\form {
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
 
         // HTML upload.
-        $filemanageroptions = array(
+        $filemanageroptions = [
             'maxbytes'       => $PAGE->course->maxbytes,
             'subdirs'        => 0,
             'maxfiles'       => 1,
             'accepted_types' => ['.html', '.htm', '.xhtml'],
-        );
+        ];
 
         $mform->addElement('filemanager', 'content', '<i class="bi bi-filetype-html mr-2"></i>' . get_string('htmlfile', 'ivplugin_htmlviewer'), null, $filemanageroptions);
         $mform->addRule('content', get_string('required'), 'required', null, 'client');

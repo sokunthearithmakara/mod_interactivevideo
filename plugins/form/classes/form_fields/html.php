@@ -51,7 +51,7 @@ class html extends base {
             'helptext' => false,
             'required' => false,
         ]);
-        $mform->addElement('editor', 'content', get_string('text', 'ivplugin_form'), array('rows' => 4), $this->editor_options());
+        $mform->addElement('editor', 'content', get_string('text', 'ivplugin_form'), ['rows' => 4], $this->editor_options());
         $mform->setType('content', PARAM_RAW);
         $mform->addRule('content', get_string('required'), 'required', null, 'client');
 
