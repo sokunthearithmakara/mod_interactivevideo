@@ -56,15 +56,15 @@ class MoodleQuickForm_ivduration extends MoodleQuickForm_duration {
      * Output a timestamp. Give it the name of the group.
      * Override of standard quickforms method.
      *
-     * @param  array $submitValues
+     * @param  array $submitvalues
      * @param  bool  $assoc  whether to return the value as associative array
      * @return array field name => value. The value is the time interval in seconds.
      */
-    public function exportValue(&$submitValues, $assoc = false) {
+    public function exportValue(&$submitvalues, $assoc = false) {
         // Get the values from all the child elements.
         $valuearray = [];
         foreach ($this->_elements as $element) {
-            $thisexport = $element->exportValue($submitValues[$this->getName()], true);
+            $thisexport = $element->exportValue($submitvalues[$this->getName()], true);
             if (!is_null($thisexport)) {
                 $valuearray += $thisexport;
             }

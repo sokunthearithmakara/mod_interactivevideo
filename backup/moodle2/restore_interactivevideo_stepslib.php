@@ -118,7 +118,8 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
                         $this->set_mapping('cbcontent', $data->contentid, $newcontentid, true, $data->cbcontextid);
                         $data->contentid = $newcontentid;
 
-                        // Note to younger self, add_related_files means the process will go through the files.xml in the backup file and restore the files that match the params provided.
+                        // Note to older self, add_related_files means the process will go through the files.xml
+                        // in the backup file and restore the files that match the params provided.
                         $this->add_related_files('contentbank', 'public', 'cbcontent', $data->cbcontextid);
                     }
                 }

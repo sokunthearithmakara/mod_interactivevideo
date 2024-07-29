@@ -35,3 +35,4 @@ $plugin->dependencies = [
     'ivplugin_richtext' => 2024071500,
     'ivplugin_iframe' => 2024071500,
 ];
+

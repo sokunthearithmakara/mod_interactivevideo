@@ -866,7 +866,7 @@ export default class InlineAnnotation extends Base {
                 return;
             }
             let iaform = new ModalForm({
-                formClass: "ivplugin_inlineannotation\\inlineannotation_children\\" + $(this).attr('data-type'),
+                formClass: "ivplugin_inlineannotation\\items\\" + $(this).attr('data-type'),
                 args: {
                     contextid: M.cfg.contextid,
                     id: 0,
@@ -945,7 +945,7 @@ export default class InlineAnnotation extends Base {
             formdata.annotationid = annnoid;
             formdata.type = type;
             let editform = new ModalForm({
-                formClass: "ivplugin_inlineannotation\\inlineannotation_children\\" +
+                formClass: "ivplugin_inlineannotation\\items\\" +
                     (type == 'image' || type == 'video' || type == 'audio' || type == 'file' ? 'media' : type),
                 args: item.properties,
                 modalConfig: {

@@ -22,15 +22,15 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+ defined('MOODLE_INTERNAL') || die();
 
-$plugin->component    = 'ivplugin_inlineannotation';
-$plugin->release      = '1.0';
-$plugin->version      = 2024071500;
-$plugin->requires     = 2022112800;
-$plugin->supported    = [401, 404];
-$plugin->maturity     = MATURITY_STABLE;
-$plugin->dependencies = [
-    'interactivevideo' => 2024042720,
-    'ivplugin_richtext' => 2024071500,
-];
+ $plugin->component    = 'ivplugin_inlineannotation';
+ $plugin->release      = '1.0';
+ $plugin->version      = 2024071500;
+ $plugin->requires     = 2022112800;
+ $plugin->supported    = [401, 404];
+ $plugin->maturity     = MATURITY_STABLE;
+ $plugin->dependencies = [
+     'interactivevideo' => 2024042720,
+     'ivplugin_richtext' => 2024071500,
+ ];

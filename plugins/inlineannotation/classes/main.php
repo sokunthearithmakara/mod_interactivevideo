@@ -104,3 +104,4 @@ class main extends \ivplugin_richtext\main {
         ]);
     }
 }
+
