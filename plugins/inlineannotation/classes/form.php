@@ -60,29 +60,6 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->setType('title', PARAM_TEXT);
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
-        $mform->addElement(
-            'advcheckbox',
-            'displayoptions',
-            '',
-            get_string('sticky', 'ivplugin_inlineannotation'),
-            ['group' => 1],
-            [0, 'sticky']
-        );
-        // Show until
-        $mform->addElement('text', 'char1', get_string('showuntil', 'ivplugin_inlineannotation'), [
-            'size' => 100,
-            'placeholder' => '00:00:00',
-            'class' => 'timestamp-field',
-        ]);
-        $mform->setType('char1', PARAM_TEXT);
-        $mform->setDefault('char1', '00:00:00');
-        $mform->addRule(
-            'char1',
-            get_string('invalidtimestamp', 'ivplugin_skipsegment'),
-            'regex',
-            '/^([0-5][0-9]):([0-5][0-9]):([0-5][0-9])$/',
-            'client'
-        );
         $mform->hideIf('char1', 'displayoptions', 'eq', 0);
         $this->advanced_form_fields(false, true, true, true);
         $this->close_form();

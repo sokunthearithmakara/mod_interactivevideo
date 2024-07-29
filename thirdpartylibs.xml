@@ -1,19 +1,33 @@
-<!-- <?xml version="1.0"?>
+<?xml version="1.0"?>
 <libraries>
     <library>
         <location>libraries/Datatables/datatables.min.css</location>
         <name>Datatables stylesheet</name>
         <version>1.13.5</version>
         <license>MIT</license>
-        <licenseversion></licenseversion>
+        <licenseversion>?</licenseversion>
+    </library>
+    <library>
+        <location>libraries/bootstrap-icons</location>
+        <name>Bootstrap Icons library</name>
+        <version>1.11.3</version>
+        <license>MIT</license>
+        <licenseversion>?</licenseversion>
+    </library>
+    <library>
+        <location>libraries/pdfjs</location>
+        <name>PDF JS library</name>
+        <version>4.5</version>
+        <license>Apache</license>
+        <licenseversion>2.0</licenseversion>
     </library>
     <library>
         <location>amd/src/libraries/buttons.bootstrap4.js</location>
-        <name>Datatables Buttons Extension - Bootstrap 4</name>
+        <name>Datatables Bootstrap4 Button Style</name>
         <version>2.4.1</version>
         <license>MIT</license>
-        <licenseversion></licenseversion>
-    </library>
+        <licenseversion>?</licenseversion>
+    </libraries>
     <library>
         <location>amd/src/libraries/buttons.html5.js</location>
         <name>Datatables HTML5 Export Extension</name>
@@ -36,11 +50,18 @@
         <licenseversion></licenseversion>
     </library>
     <library>
+        <location>amd/src/libraries/jquery-ui.js</location>
+        <name>JQuery UI Library</name>
+        <version>1.13</version>
+        <license>MIT</license>
+        <licenseversion>?</licenseversion>
+    </library>
+    <library>
         <location>amd/src/libraries/jquery.dataTables.js</location>
         <name>Datatables Library</name>
         <version>1.13.5</version>
         <license>MIT</license>
-        <licenseversion></licenseversion>
+        <licenseversion>?</licenseversion>
     </library>
     <library>
         <location>amd/src/libraries/jszip.js</location>
@@ -49,4 +70,4 @@
         <license>MIT</license>
         <licenseversion></licenseversion>
     </library>
-</libraries> -->
+</libraries>
