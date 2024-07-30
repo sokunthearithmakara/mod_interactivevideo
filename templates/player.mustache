@@ -6,7 +6,8 @@ hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 General Public License for more details. You should have received a copy of the
 GNU General Public License along with Moodle. If not, see
-<http: //www.gnu.org/licenses />. }} {{! @template mod_interactivevideo/player TODO
+<http: //www.gnu.org/licenses />. }}
+{{! @template mod_interactivevideo/player TODO
 describe template playeralt Example context (json): { } }} {{! This file is part
 of Moodle - http://moodle.org/ Moodle is free software: you can redistribute it
 and/or modify it under the terms of the GNU General Public License as published
@@ -99,7 +100,7 @@ title", "displayoptions": { "hidemainvideocontrols": "1",
                             <div class="mb-2 d-flex flex-column">
                                 <div class="metadata d-block d-md-none"></div>
                                 <h1 class="text-white font-weight-bold line-height-100">
-                                    {{{title}}}
+                                    {{title}}
                                 </h1>
                             </div>
                             <button class="btn bg-white rounded-circle d-none position-absolute" id="play"
@@ -117,7 +118,7 @@ title", "displayoptions": { "hidemainvideocontrols": "1",
                                 class="bg-secondary w-100 d-flex align-items-center justify-content-between p-3 overflow-hidden">
                                 <div class="d-flex flex-column justify-content-center">
                                     <div class="metadata d-block d-md-none"></div>
-                                    <h1 class="line-height-100 mb-0">{{{title}}}</h1>
+                                    <h1 class="line-height-100 mb-0">{{title}}</h1>
                                 </div>
 
                                 <button class="btn btn-danger rounded-circle" id="restart"
@@ -225,7 +226,7 @@ title", "displayoptions": { "hidemainvideocontrols": "1",
                 style="width: calc(100% - 15px)">
                 <div class="w-100 p-3 d-flex flex-column">
                     <div class="metadata"></div>
-                    <h4 class="mt-2 mb-0 text-truncate">{{{title}}}</h4>
+                    <h4 class="mt-2 mb-0 text-truncate">{{title}}</h4>
                 </div>
                 <ul data-region="chapterlists" class="list-group w-100 rounded-0"></ul>
             </div>

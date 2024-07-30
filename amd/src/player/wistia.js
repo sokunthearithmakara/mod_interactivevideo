@@ -37,12 +37,13 @@ class Wistia {
         var match = regex.exec(url);
         var videoId = match[1];
         this.videoId = videoId;
-        var playerIframe = `<iframe id="player" src="https://fast.wistia.net/embed/iframe/${videoId}?`;
-        playerIframe += `seo=false&videoFoam=false&controlsVisibleOnLoad=${showControls}`;
-        playerIframe += `&playButton=${showControls}${start > 0 ? `&time=${start}` : ''}&autoPlay=false&fullscreenButton=false" `;
-        playerIframe += `allow="autoplay;" allowtransparency="true" frameborder="0" scrolling="no" `;
-        playerIframe += `class="wistia_embed" name="wistia_embed" msallowfullscreen></iframe>`;
-        $("#player").replaceWith(playerIframe);
+        // var playerIframe = `<iframe id="player" src="https://fast.wistia.net/embed/iframe/${videoId}?`;
+        // playerIframe += `seo=false&videoFoam=false&controlsVisibleOnLoad=${showControls}`;
+        // playerIframe += `&playButton=${showControls}${start > 0 ? `&time=${start}` : ''}&autoPlay=false&fullscreenButton=false" `;
+        // playerIframe += `allow="autoplay;" allowtransparency="true" frameborder="0" scrolling="no" `;
+        // playerIframe += `class="wistia_embed" name="wistia_embed" msallowfullscreen></iframe>`;
+        // $("#player").replaceWith(playerIframe);
+        $("#player").html(`<div class="wistia_embed wistia_async_${videoId}" style="height:100%;width:100%"></div>`);
         var self = this;
         $.get('https://fast.wistia.com/oembed.json?url=' + url)
             .then(function(data) {
@@ -52,8 +53,7 @@ class Wistia {
         var wistiaOptions = {
             id: videoId,
             options: {
-                autoPlay: false,
-                time: start,
+                autoPlay: true,
                 fullscreenButton: false,
                 controlsVisibleOnLoad: showControls,
                 playButton: showControls,
@@ -65,12 +65,23 @@ class Wistia {
                 end = !end ? video.duration() : Math.min(end, video.duration());
                 video.mute();
                 if (start > 0) {
+                    window.console.log('start', start);
+                    video.play();
                     video.time(start);
                     video.pause();
+                    video.on("pause", () => {
+                        if (!ready) {
+                            console.log('ready');
+                            ready = true;
+                            dispatchEvent('iv:playerReady');
+                        }
+                    });
+
+                } else {
+                    ready = true;
+                    dispatchEvent('iv:playerReady');
                 }
                 video.unmute();
-                ready = true;
-                dispatchEvent('iv:playerReady');
 
                 video.on("pause", () => {
                     if (!ready) {
@@ -99,6 +110,9 @@ class Wistia {
                 });
 
                 video.on('timechange', (s) => {
+                    if (!ready) {
+                        return;
+                    }
                     if (s > end) {
                         dispatchEvent('iv:playerEnded');
                         video.time(start);
