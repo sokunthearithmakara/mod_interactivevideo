@@ -15,6 +15,7 @@
 
 /**
  * Wistia Player class
+ * Doc: https://docs.wistia.com/docs/javascript-player-api
  *
  * @module     mod_interactivevideo/player/wistia
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
@@ -30,20 +31,16 @@ class Wistia {
         this.start = start;
         this.frequency = 0.3;
         this.support = {
-            playbackrate: false,
-            quality: false,
+            playbackrate: true,
+            quality: true,
         };
         var regex = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^\/]+)/g;
         var match = regex.exec(url);
         var videoId = match[1];
         this.videoId = videoId;
-        // var playerIframe = `<iframe id="player" src="https://fast.wistia.net/embed/iframe/${videoId}?`;
-        // playerIframe += `seo=false&videoFoam=false&controlsVisibleOnLoad=${showControls}`;
-        // playerIframe += `&playButton=${showControls}${start > 0 ? `&time=${start}` : ''}&autoPlay=false&fullscreenButton=false" `;
-        // playerIframe += `allow="autoplay;" allowtransparency="true" frameborder="0" scrolling="no" `;
-        // playerIframe += `class="wistia_embed" name="wistia_embed" msallowfullscreen></iframe>`;
-        // $("#player").replaceWith(playerIframe);
-        $("#player").html(`<div class="wistia_embed wistia_async_${videoId}" style="height:100%;width:100%"></div>`);
+        $("#player").html(`<div class="wistia_embed wistia_async_${videoId} wmode=transparent
+             controlsVisibleOnLoad=${showControls} playButton=${showControls} videoFoam=true
+              fullscreenButton=false volume=0" style="height:100%;width:100%"></div>`);
         var self = this;
         $.get('https://fast.wistia.com/oembed.json?url=' + url)
             .then(function(data) {
@@ -52,26 +49,15 @@ class Wistia {
         var ready = false;
         var wistiaOptions = {
             id: videoId,
-            options: {
-                autoPlay: true,
-                fullscreenButton: false,
-                controlsVisibleOnLoad: showControls,
-                playButton: showControls,
-                playerColor: "#54bbff",
-                wmode: "transparent",
-            },
             onReady: function(video) {
                 player = video;
                 end = !end ? video.duration() : Math.min(end, video.duration());
-                video.mute();
                 if (start > 0) {
-                    window.console.log('start', start);
                     video.play();
                     video.time(start);
                     video.pause();
                     video.on("pause", () => {
                         if (!ready) {
-                            console.log('ready');
                             ready = true;
                             dispatchEvent('iv:playerReady');
                         }
@@ -81,7 +67,7 @@ class Wistia {
                     ready = true;
                     dispatchEvent('iv:playerReady');
                 }
-                video.unmute();
+                video.volume(1);
 
                 video.on("pause", () => {
                     if (!ready) {
@@ -123,6 +109,11 @@ class Wistia {
                 video.on("error", (e) => {
                     dispatchEvent('iv:playerError', {error: e});
                 });
+
+                video.on("playbackratechange", (e) => {
+                    dispatchEvent('iv:playerRateChange', {rate: e});
+                });
+
             },
             onError: function(e) {
                 dispatchEvent('iv:playerError', {error: e});
@@ -200,12 +191,12 @@ class Wistia {
         return player;
     }
     setQuality(quality) {
-        player.setQuality(quality);
+        player.videoQuality(quality);
         return quality;
     }
     getQualities() {
         return {
-            qualities: ['default', '360', '540', '720', '1080'],
+            qualities: ['default', '360', '540', '720', '1080', '2160'],
             currentQuality: player.videoQuality() == 'auto' ? 'default' : player.videoQuality(),
         };
     }
