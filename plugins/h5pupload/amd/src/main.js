@@ -25,47 +25,46 @@ import Base from 'mod_interactivevideo/type/base';
 export default class H5pUpload extends Base {
     renderContainer(annotation) {
         let $message = $(`#message[data-id='${annotation.id}']`);
-        if (annotation.completiontracking && annotation.completiontracking != 'manual') {
-            // Disable the mark-done and mark-undone buttons
-            let $completiontoggle = $message.find('#completiontoggle');
-            $completiontoggle.prop('disabled', true);
-            if (annotation.completed == true) {
-                $completiontoggle.find(`span`)
-                    .text(`${M.util.get_string('completioncompleted', 'ivplugin_contentbank')}`);
-            } else {
-                $completiontoggle.find(`span`)
-                    .text(`${M.util.get_string('completionincomplete', 'ivplugin_contentbank')}`);
-            }
-
-            switch (annotation.completiontracking) {
-                case 'complete':
-                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-                        data-trigger="hover"
-                         data-title="${M.util.get_string("completiononcomplete", "mod_interactivevideo")}"></i>`);
-                    break;
-                case 'completepass':
-                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-        data-trigger="hover"
-         data-title="${M.util.get_string("completiononcompletepass", "mod_interactivevideo")}"></i>`);
-                    break;
-                case 'completefull':
-                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-                data-trigger="hover" data-title="${M.util.get_string("completiononcompletefull", "mod_interactivevideo")}"></i>`);
-                    break;
-            }
-            $message.find('[data-toggle="tooltip"]').tooltip();
+        super.renderContainer(annotation);
+        let $completiontoggle = $message.find('#completiontoggle');
+        switch (annotation.completiontracking) {
+            case 'complete':
+                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+                    data-trigger="hover"
+                     data-title="${M.util.get_string("completiononcomplete", "mod_interactivevideo")}"></i>`);
+                break;
+            case 'completepass':
+                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+    data-trigger="hover"
+     data-title="${M.util.get_string("completiononcompletepass", "mod_interactivevideo")}"></i>`);
+                break;
+            case 'completefull':
+                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+            data-trigger="hover" data-title="${M.util.get_string("completiononcompletefull", "mod_interactivevideo")}"></i>`);
+                break;
         }
+        $message.find('[data-toggle="tooltip"]').tooltip();
         return $message;
     }
     postContentRender(annotation, callback) {
         $(`#message[data-id='${annotation.id}']`).addClass('hasiframe');
-        if (annotation.completiontracking
-            && (annotation.completiontracking != 'manual') && !annotation.completed) {
+        let interval = setInterval(() => {
+            if ($(`#message[data-id='${annotation.id}'] iframe`).length) {
+                clearInterval(interval);
+                const iframe = document.querySelector(`#message[data-id='${annotation.id}'] iframe`);
+                iframe.style.background = 'none';
+                let contentDocument = iframe.contentDocument;
+                let html = contentDocument.querySelector('html');
+                html.style.height = 'unset';
+            }
+        }, 1000);
+        if (annotation.hascompletion == 1 && annotation.completiontracking == 'manual'
+            && !annotation.completed && annotation.completiontracking != 'view') {
             return callback;
         }
         return true;
     }
-    runInteraction(annotation) {
+    async runInteraction(annotation) {
         this.player.pause();
 
         var annoid = annotation.id;
@@ -80,6 +79,7 @@ export default class H5pUpload extends Base {
                 }
 
                 if (typeof H5P !== 'undefined' && H5P !== null) {
+                    clearInterval(iframeinterval);
                     if (self.isEditMode()) {
                         $(`#message[data-id='${annotation.id}'] #title .xapi`).remove();
                         $(`#message[data-id='${annotation.id}'] #title .btns`)
@@ -116,35 +116,31 @@ export default class H5pUpload extends Base {
                             }
                         }
                     });
-
-                    clearInterval(iframeinterval);
                 }
-
             }, 1000);
         };
 
         // Apply content
-        const applyContent = (annotation) => {
-            this.render(annotation, 'html').then((data) => {
-                $(`#message[data-id='${annotation.id}'] .modal-body`).attr('id', 'content').html(data).fadeIn(300);
-                if (annotation.completed) {
-                    this.postContentRender(annotation);
-                } else {
-                    this.postContentRender(annotation, xAPICheck(annotation));
-                }
+        const applyContent = async (annotation) => {
+            const data = await this.render(annotation, 'html');
+            $(`#message[data-id='${annotation.id}'] .modal-body`).attr('id', 'content').html(data).fadeIn(300);
+            if (annotation.hascompletion == 0) {
                 return;
-            }).catch(() => {
-                // Do nothing.
-            });
+            }
+            if (!annotation.completed && annotation.completiontracking == 'view') {
+                this.toggleCompletion(annotation.id, 'mark-done', 'automatic');
+                return;
+            }
+            if (annotation.completed) {
+                this.postContentRender(annotation);
+            } else {
+                this.postContentRender(annotation, xAPICheck(annotation));
+            }
         };
 
-        this.renderViewer(annotation).then(() => {
-            this.renderContainer(annotation);
-            applyContent(annotation);
-            return;
-        }).catch(() => {
-            // Do nothing.
-        });
+        await this.renderViewer(annotation);
+        this.renderContainer(annotation);
+        applyContent(annotation);
 
         this.enableManualCompletion();
 

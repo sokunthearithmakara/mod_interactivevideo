@@ -145,6 +145,7 @@ export default class Iframe extends Base {
     }
     renderContainer(annotation) {
         $(`#message[data-id='${annotation.id}']`).addClass('hasiframe');
+        super.renderContainer(annotation);
     }
     postContentRender(annotation) {
         var interval = setInterval(() => {

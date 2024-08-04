@@ -60,7 +60,7 @@ define([
             });
         }
 
-        const completableAnno = releventAnnotations.filter(x => JSON.parse(x.prop).hascompletion);
+        const completableAnno = releventAnnotations.filter(x => x.hascompletion == 1);
         const actualAnnotationCounts = completableAnno.length;
 
         const xp = completableAnno.map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
@@ -104,7 +104,7 @@ define([
         await render;
         dispatchEvent('annotationitemsrendered', {'annotations': annos});
         $('.annolistinchapter').empty();
-        const chapteritems = releventAnnotations.filter(x => x.type != 'skipsegment' && JSON.parse(x.prop).hascompletion);
+        const chapteritems = releventAnnotations.filter(x => x.type != 'skipsegment' && x.hascompletion == 1);
         chapteritems.sort((a, b) => a.timestamp - b.timestamp);
         chapteritems.forEach((x) => {
             $('[data-region="chapterlists"] li').each(function() {
@@ -125,8 +125,8 @@ define([
         dispatchEvent('chapterrendered', {'annotations': releventAnnotations});
 
         $(document).on('annotationitemsrendered', function() {
-            $('#controler [data-toggle="tooltip"]').tooltip({
-                container: '#controler',
+            $('#wrapper [data-toggle="tooltip"]').tooltip({
+                container: '#wrapper',
                 boundary: 'window',
             });
             if (displayoptions.disableinteractionclickuntilcompleted == 1) {
@@ -238,7 +238,7 @@ define([
                             return !(x.timestamp > end || x.title < start);
                         }
 
-                        return x.timestamp >= start && x.timestamp <= end;
+                        return (x.timestamp >= start && x.timestamp <= end) || x.timestamp < 0;
                     });
 
                     const completedItems = progress.completeditems == '' ? [] : JSON.parse(progress.completeditems);
@@ -357,7 +357,7 @@ define([
                 if (preventskip) {
                     const theAnnotations = releventAnnotations
                         .filter(x => Number(x.timestamp) < Number(annotation.timestamp)
-                            && x.completed == false && JSON.parse(x.prop).hascompletion == true);
+                            && x.completed == false && x.hascompletion == 1);
                     if (theAnnotations.length > 0) {
                         const theAnnotation = theAnnotations[0];
                         player.pause();
@@ -401,10 +401,14 @@ define([
             const onReady = async () => {
                 if (player.support.playbackrate == false) {
                     $('#changerate').remove();
+                } else {
+                    $('#changerate').removeClass('d-none');
                 }
 
                 if (player.support.quality == false) {
                     $('#changequality').remove();
+                } else {
+                    $('#changequality').removeClass('d-none');
                 }
 
                 if (player.posterImage) {
@@ -509,6 +513,7 @@ define([
                 var percentage = (t - start) / (totaltime) * 100;
                 $('#currenttime').text(convertSecondsToHMS(t - start));
                 replaceProgressBars(percentage);
+                dispatchEvent('timeupdate', {'time': t});
             };
 
             let interval;
@@ -612,7 +617,7 @@ define([
                 const t = e.originalEvent.detail.time;
                 if (preventskip) {
                     const theAnnotations = releventAnnotations.filter(x => Number(x.timestamp) <= (t + player.frequency)
-                        && x.completed == false && JSON.parse(x.prop).hascompletion == true);
+                        && x.completed == false && x.hascompletion == 1);
                     if (theAnnotations.length > 0) {
                         const theAnnotation = theAnnotations[0];
                         player.pause();
@@ -674,6 +679,10 @@ define([
                 if (document.fullscreenElement) {
                     $('#wrapper, #interactivevideo-container').addClass('fullscreen');
                     $("#video-wrapper").css('padding-bottom', '0');
+                    $('#wrapper [data-toggle="tooltip"]').tooltip({
+                        container: '#wrapper',
+                        boundary: 'window',
+                    });
                 } else {
                     $('#wrapper, #interactivevideo-container').removeClass('fullscreen');
                     const ratio = await player.ratio();
@@ -690,7 +699,7 @@ define([
             });
 
             // Handle share this moment event.
-            $(document).on('click', '#controler #share', async function(e) {
+            $(document).on('click', '#controller #share', async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 const $this = $(this);
@@ -869,6 +878,7 @@ define([
                 }
             });
 
+            // Handle video control events:: mute/unmute
             $(document).on('click', '#mute', function(e) {
                 e.preventDefault();
                 $(this).tooltip('hide');
@@ -884,6 +894,7 @@ define([
                 $(this).tooltip('show');
             });
 
+            // Handle video control events:: playrate change
             $(document).on('click', '.changerate', function(e) {
                 e.preventDefault();
                 const rate = $(this).data('rate');
@@ -892,17 +903,21 @@ define([
                 $(this).find('i').addClass('bi-check');
             });
 
-            $(document).on('click', '#changequality', async function() {
+            // Handle video control:: Quality change
+            $("#changequality").on('shown.bs.dropdown', async function() {
                 let quality = await player.getQualities();
                 $('#qualitieslist').empty();
                 let currentQuality = quality.currentQuality;
+                if (currentQuality === null) {
+                    currentQuality = $(this).data('current');
+                }
                 let qualities = quality.qualities;
-                qualities.forEach(q => {
+                let qualitiesLabel = quality.qualitiesLabel;
+                qualities.forEach((q, i) => {
                     $('#qualitieslist').append(`<a class="dropdown-item text-white changequality" data-quality="${q}"
-                         href="#"><i class="bi ${q == currentQuality ? 'bi-check' : ''} fa-fw ml-n3"></i>${q}</a>`);
+                         href="#"><i class="bi ${q == currentQuality ? 'bi-check' : ''} fa-fw ml-n3"></i>${qualitiesLabel[i]}</a>`);
                 });
-                // Update the dropdown element.
-                $('#changequality').dropdown('update');
+                $(this).find('[data-toggle=dropdown]').dropdown('update');
             });
 
             $(document).on('click', '.changequality', function(e) {
@@ -955,6 +970,13 @@ define([
             $(document).on('iv:playerRateChange', function(e) {
                 $('.changerate').find('i').removeClass('bi-check');
                 $(`.changerate[data-rate="${e.originalEvent.detail.rate}"]`).find('i').addClass('bi-check');
+            });
+
+            $(document).on('iv:playerQualityChange', function(e) {
+                window.console.log(e);
+                $('#changequality').attr('data-current', e.originalEvent.detail.quality);
+                $('.changequality').find('i').removeClass('bi-check');
+                $(`.changequality[data-quality="${e.originalEvent.detail.quality}"]`).find('i').addClass('bi-check');
             });
         }
     };

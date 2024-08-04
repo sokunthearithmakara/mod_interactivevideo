@@ -16,6 +16,8 @@
 
 namespace ivplugin_h5pupload;
 
+use moodle_url;
+
 /**
  * Class main
  *
@@ -67,9 +69,10 @@ class main extends \ivplugin_richtext\main {
                 return '<div class="p-sm-3 p-1 w-100 h5p">'
                     . \core_h5p\player::display($url, new \stdClass) . '</div>';
             } else {
-                return '<iframe id="iframe" src="'
+                return '<iframe id="iframe" class="h5p-player" src="'
                     . $url->out()
-                    . '" style="width: 100%; height: 100%" frameborder="0" allow="autoplay" class="rounded-0"></iframe>';
+                    . '" style="width: 100%; height: 100%" frameborder="0" allow="autoplay" class="rounded-0"></iframe>'
+                    . '<script src="' . new moodle_url('plugins/h5pupload/h5p-resizer.js') . '"></script>';
             }
         }
         return 'No content found';

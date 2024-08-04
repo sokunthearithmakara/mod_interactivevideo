@@ -88,6 +88,7 @@ class Yt {
                     dispatchEvent('iv:playerError', {error: e.data});
                 },
                 onReady: function(e) {
+                    e.target.getOptions();
                     self.end = !self.end ? e.target.getDuration() : Math.min(self.end, e.target.getDuration());
                     // It's always good idea to play the video at the beginning to download some data.
                     // Otherwise, if user seek before start, they're gonna get blackscreen.
@@ -282,6 +283,24 @@ class Yt {
      */
     originalPlayer() {
         return player;
+    }
+    /**
+     * Set quality of the video
+     * @param {String} quality
+     */
+    setQuality(quality) {
+        player.setPlaybackQuality(quality);
+        return quality;
+    }
+    /**
+     * Get the available qualities of the video
+     */
+    getQualities() {
+        return {
+            qualities: ['auto', 'medium', 'large', 'hd720', 'hd1080', 'hd2160'],
+            qualitiesLabel: ['Auto', '360p', '540p', '720p', '1080p', '4k'],
+            currentQuality: null,
+        };
     }
 }
 

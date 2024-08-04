@@ -173,6 +173,7 @@ define(['jquery',
                                 if (count == contentTypes.length) {
                                     resolve(ctRenderer);
                                 }
+                                ctRenderer[x.name].init();
                             });
                         });
                     });
@@ -362,6 +363,7 @@ define(['jquery',
                 var percentage = (t - start) / (totaltime) * 100;
                 $('#scrollbar').css('left', percentage + '%');
                 $('#timeline #currenttime').text(convertSecondsToHMS(t, true));
+                dispatchEvent('timeupdate', {'time': t});
             };
 
             var onPlayingInterval;
@@ -388,6 +390,7 @@ define(['jquery',
                         onEnded();
                         return;
                     }
+                    dispatchEvent('timeupdate', {'time': thisTime});
                     $('#timeline #currenttime').text(convertSecondsToHMS(thisTime, true));
                     var percentage = (thisTime - start) / (totaltime) * 100;
                     $('#video-nav #progress').css('width', percentage + '%');
@@ -418,16 +421,16 @@ define(['jquery',
                         }, 2000);
                     }
 
-                    // If current time is within the skipsegment, seek to the end of the segment
-                    var skipsegments = annotations.filter((annotation) => annotation.type == 'skipsegment');
-                    var skip = skipsegments.find(x => Number(x.timestamp) < Number(thisTime)
-                        && Number(x.title) > Number(thisTime));
-                    if (skip) {
-                        await player.seek(Number(skip.title));
-                        // Replace the progress bar
-                        percentage = (skip.title - start) / totaltime * 100;
-                        replaceProgressBars(percentage);
-                    }
+                    // // If current time is within the skipsegment, seek to the end of the segment
+                    // var skipsegments = annotations.filter((annotation) => annotation.type == 'skipsegment');
+                    // var skip = skipsegments.find(x => Number(x.timestamp) < Number(thisTime)
+                    //     && Number(x.title) > Number(thisTime));
+                    // if (skip) {
+                    //     await player.seek(Number(skip.title));
+                    //     // Replace the progress bar
+                    //     percentage = (skip.title - start) / totaltime * 100;
+                    //     replaceProgressBars(percentage);
+                    // }
                 };
                 if (player.type == 'yt' || player.type == 'wistia') {
                     onPlayingInterval = setInterval(intervalFunction, 100);
@@ -521,12 +524,31 @@ define(['jquery',
                 e.preventDefault();
                 $('#addcontentdropdown a').removeClass('active');
                 $(this).addClass('active');
-                var contenttype = $(this).data('type');
+                let ctype = $(this).data('type');
                 player.pause();
                 var timestamp = currentTime || await player.getCurrentTime();
                 timestamp = Math.floor(timestamp);
+                var contenttype = contentTypes.find(x => x.name == ctype);
+                if (contenttype.hastimestamp) {
+                    if (annotations.find(x => x.timestamp == timestamp)) {
+                        addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
+                        return;
+                    }
+                    // Check skip segments
+                    const skipsegments = annotations.filter(x => x.type == 'skipsegment');
+                    const skip = skipsegments.find(x => Number(x.timestamp) < Number(currentTime)
+                        && Number(x.title) > Number(currentTime));
+                    if (skip) {
+                        addNotification(M.util.get_string('interactionisbetweentheskipsegment', 'mod_interactivevideo'), 'danger');
+                        return;
+                    }
+                }
+                if (!contenttype.allowmultiple && annotations.find(x => x.type == ctype)) {
+                    addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
+                    return;
+                }
                 currentTime = null;
-                ctRenderer[contenttype].addAnnotation(annotations, timestamp, coursemodule);
+                ctRenderer[ctype].addAnnotation(annotations, timestamp, coursemodule);
             });
 
             // Implement edit annotation
@@ -616,6 +638,16 @@ define(['jquery',
                 currentTime = Math.floor(percentage * totaltime) + start;
                 await player.seek(currentTime);
                 player.pause();
+                $("#addcontent").trigger('click');
+            });
+
+            $(document).on('contextmenu', '#scrollbar', async function(e) {
+                if (!playerReady) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                currentTime = await player.getCurrentTime();
                 $("#addcontent").trigger('click');
             });
 
@@ -836,7 +868,7 @@ define(['jquery',
 
             const appendTimestamp = (seconds) => {
                 var formattedTime = convertSecondsToHMS(seconds, true);
-                $('#scrollbar').append(`<div id="position" class="position-absolute bg-black text-white small rounded-sm p-1"
+                $('#scrollbar').append(`<div id="position" class="position-absolute bg-black text-white small rounded-sm py-0 px-1"
                      style="top: -30px;">${formattedTime}</div>`);
             };
 
@@ -869,7 +901,7 @@ define(['jquery',
                             timestamp = end;
                             $(this).css('left', '100%');
                         }
-                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                        $('#scrollbar').css('left', (timestamp - start) / totaltime * 100 + '%');
                         await player.seek(Math.round(timestamp));
                         player.pause();
                         $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
@@ -889,7 +921,7 @@ define(['jquery',
                             timestamp = end;
                             $(this).css('left', 'calc(100% - 5px)');
                         }
-                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                        $('#scrollbar').css('left', (timestamp - start) / totaltime * 100 + '%');
                         const id = $(this).data('id');
                         targetAnnotation = annotations.find(x => x.id == id);
                         const existingAnnotation = annotations.find(x => x.timestamp == Math.round(timestamp) && x.id != id);
@@ -909,7 +941,7 @@ define(['jquery',
                         });
                         await player.seek(Math.round(timestamp)); // Seek to the new position
                         player.pause();
-                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                        $('#scrollbar').css('left', (timestamp - start) / totaltime * 100 + '%');
                     }
                 });
 
@@ -933,7 +965,7 @@ define(['jquery',
                             timestamp = end;
                         }
 
-                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                        $('#scrollbar').css('left', (timestamp - start) / totaltime * 100 + '%');
                         await player.seek(Math.round(timestamp));
                         player.pause();
                         $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
@@ -986,7 +1018,7 @@ define(['jquery',
                         });
                         await player.seek(Math.round(timestamp)); // Seek to the new position
                         player.pause();
-                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                        $('#scrollbar').css('left', (timestamp - start) / totaltime * 100 + '%');
                     }
                 });
 
@@ -1009,7 +1041,7 @@ define(['jquery',
                         } else {
                             timestamp = ((ui.position.left + ui.size.width) / $('#video-timeline').width()) * totaltime + start;
                         }
-                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                        $('#scrollbar').css('left', (timestamp - start) / totaltime * 100 + '%');
                         await player.seek(Math.round(timestamp));
                         player.pause();
                         $('#scrollbar #position').text(convertSecondsToHMS(Math.round(timestamp), true));
@@ -1053,8 +1085,15 @@ define(['jquery',
                         });
                         await player.seek(Math.round(timestamp));
                         player.pause();
-                        $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                        $('#scrollbar').css('left', (timestamp - start) / totaltime * 100 + '%');
                     }
+                });
+
+                $('#video-timeline-wrapper .skipsegment').on('contextmenu', function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    const id = $(this).data('id');
+                    $(`tr.annotation[data-id="${id}"] .edit`).trigger('click');
                 });
 
                 $('#video-timeline-wrapper .skipsegment').on('click', async function(e) {
@@ -1095,9 +1134,38 @@ define(['jquery',
                     }, 200);
                     // Convert the position to percentage
                     let timestamp = ((ui.position.left) / $('#timeline-items').width()) * totaltime + start;
-                    $('#scrollbar').css('left', timestamp / end * 100 + '%');
+                    $('#scrollbar').css('left', (timestamp - start) / totaltime * 100 + '%');
                 }
             });
+
+            // Resize player
+            $('#separator').draggable({
+                'axis': 'x',
+                'containment': '#wrapper',
+                'grid': [1, 0],
+                'start': function() {
+                    $('#wrapper').addClass('no-pointer-events');
+                },
+                drag: function() {
+                    const parentOffset = $(this).offset();
+                    const width = parentOffset.left;
+                    $('#player-region').css('width', width + 'px');
+                    $('#content-region').css('width', 'calc(100% - ' + width + 'px)');
+                },
+                stop: function() {
+                    const width = $(this).offset().left;
+                    // Save this to local storage
+                    localStorage.setItem('player-width', width);
+                    $('#wrapper').removeClass('no-pointer-events');
+                }
+            });
+
+            const playerWidth = localStorage.getItem('player-width');
+            if (playerWidth && window.innerWidth > 992) {
+                $('#separator').css('left', playerWidth + 'px');
+                $('#player-region').css('width', playerWidth + 'px');
+                $('#content-region').css('width', 'calc(100% - ' + playerWidth + 'px)');
+            }
 
             // Seek bar functionalities
             $('#vseek, #video-timeline, #video-nav .annotation').on('mouseenter', function(e) {
@@ -1111,12 +1179,12 @@ define(['jquery',
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
 
-                $scrollbar.css('left', (relX + 4) + 'px');
+                $scrollbar.css('left', (relX + 5) + 'px');
                 $scrollbar.find('#scrollhead').remove();
                 var percentage = relX / $(this).width();
                 var time = Math.round(percentage * (totaltime) + start);
                 var formattedTime = convertSecondsToHMS(time, true);
-                $scrollbar.append(`<div id="position" class="position-absolute bg-dark text-white small rounded-sm p-1"
+                $scrollbar.append(`<div id="position" class="position-absolute bg-black text-white small rounded-sm p-1"
                      style="top: -30px;">${formattedTime}</div>`);
                 $('#timeline-items').append($scrollbar);
             });
@@ -1134,7 +1202,7 @@ define(['jquery',
                 var time = Math.round(percentage * (totaltime) + start);
                 var formattedTime = convertSecondsToHMS(time, true);
                 // Move the cursorbar
-                $('#cursorbar').css('left', (relX + 4) + 'px');
+                $('#cursorbar').css('left', (relX + 5) + 'px');
                 $('#cursorbar #position').text(formattedTime);
             });
 
@@ -1246,32 +1314,7 @@ define(['jquery',
                 if (!playerReady) {
                     return;
                 }
-                const currentTime = await player.getCurrentTime();
-                if (annotations.find(x => x.timestamp == currentTime)) {
-                    addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
-                    return;
-                }
-                // Check skip segments
-                const skipsegments = annotations.filter(x => x.type == 'skipsegment');
-                const skip = skipsegments.find(x => Number(x.timestamp) < Number(currentTime)
-                    && Number(x.title) > Number(currentTime));
-                if (skip) {
-                    addNotification(M.util.get_string('interactionisbetweentheskipsegment', 'mod_interactivevideo'), 'danger');
-                    return;
-                }
                 $('#contentmodal').modal('show');
-            });
-
-            $('#player-region').resizable({
-                'containment': 'parent',
-                'handles': 'e',
-                'grid': [10, 10],
-            });
-
-            $('#interaction-region').resizable({
-                'containment': 'parent',
-                'handles': 'e',
-                'grid': [10, 10],
             });
 
             window.addEventListener('beforeunload', (e) => {
@@ -1282,7 +1325,6 @@ define(['jquery',
                 }
                 return true;
             });
-
         }
     };
 });

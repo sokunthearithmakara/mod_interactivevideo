@@ -80,8 +80,8 @@ export default class ContentBank extends Base {
 
     postContentRender(annotation, callback) {
         $(`#message[data-id='${annotation.id}']`).addClass('hascontentbank');
-        if (annotation.completiontracking
-            && (annotation.completiontracking != 'manual') && !annotation.completed) {
+        if (annotation.hascompletion == 1
+            && annotation.completiontracking != 'manual' && !annotation.completed) {
             return callback;
         }
         return true;
@@ -93,37 +93,26 @@ export default class ContentBank extends Base {
      * @returns {void}
      */
     renderContainer(annotation) {
+        super.renderContainer(annotation);
         let $message = $(`#message[data-id='${annotation.id}']`);
-        if (annotation.completiontracking && annotation.completiontracking != 'manual') {
-            // Disable the mark-done and mark-undone buttons
-            let $completiontoggle = $message.find('#completiontoggle');
-            $completiontoggle.prop('disabled', true);
-            if (annotation.completed == true) {
-                $completiontoggle.find(`span`)
-                    .text(`${M.util.get_string('completioncompleted', 'ivplugin_contentbank')}`);
-            } else {
-                $completiontoggle.find(`span`)
-                    .text(`${M.util.get_string('completionincomplete', 'ivplugin_contentbank')}`);
-            }
-
-            switch (annotation.completiontracking) {
-                case 'complete':
-                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-                        data-trigger="hover"
-                         data-title="${M.util.get_string("completiononcomplete", "mod_interactivevideo")}"></i>`);
-                    break;
-                case 'completepass':
-                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-        data-trigger="hover"
-         data-title="${M.util.get_string("completiononcompletepass", "mod_interactivevideo")}"></i>`);
-                    break;
-                case 'completefull':
-                    $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-                data-trigger="hover" data-title="${M.util.get_string("completiononcompletefull", "mod_interactivevideo")}"></i>`);
-                    break;
-            }
-            $message.find('[data-toggle="tooltip"]').tooltip();
+        let $completiontoggle = $message.find('#completiontoggle');
+        switch (annotation.completiontracking) {
+            case 'complete':
+                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+                    data-trigger="hover"
+                     data-title="${M.util.get_string("completiononcomplete", "mod_interactivevideo")}"></i>`);
+                break;
+            case 'completepass':
+                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+    data-trigger="hover"
+     data-title="${M.util.get_string("completiononcompletepass", "mod_interactivevideo")}"></i>`);
+                break;
+            case 'completefull':
+                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
+            data-trigger="hover" data-title="${M.util.get_string("completiononcompletefull", "mod_interactivevideo")}"></i>`);
+                break;
         }
+        $message.find('[data-toggle="tooltip"]').tooltip();
         return $message;
     }
 
@@ -193,6 +182,12 @@ export default class ContentBank extends Base {
         const applyContent = async function(annotation) {
             const data = await self.render(annotation);
             $message.find(`.modal-body`).html(data).attr('id', 'content').fadeIn(300);
+            if (annotation.hascompletion != 1 || self.isEditMode()) {
+                return;
+            }
+            if (!annotation.completed && annotation.completiontracking == 'view') {
+                self.toggleCompletion(annoid, 'mark-done', 'automatic');
+            }
             if (!annotation.completed && annotation.completiontracking != 'manual') {
                 xAPICheck(annotation);
             }

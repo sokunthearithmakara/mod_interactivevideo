@@ -15,7 +15,7 @@
 
 /**
  * DailyMotion Player class
- *
+ * Documented at https://developers.dailymotion.com/sdk/player-sdk/web/
  * @module     mod_interactivevideo/player/dailymotion
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -32,7 +32,7 @@ class DailyMotion {
             playbackrate: true,
             quality: true,
         };
-        // Documented at https://developer.dailymotion.com/player#player-parameters.
+
         var reg = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^\/]+)/g;
         var match = reg.exec(url);
         var videoId = match[1];
@@ -128,6 +128,10 @@ class DailyMotion {
 
             player.on(dailymotion.events.PLAYER_PLAYBACKSPEEDCHANGE, function(e) {
                 dispatchEvent('iv:playerRateChange', {rate: e.playerPlaybackSpeed});
+            });
+
+            player.on(dailymotion.events.VIDEO_QUALITYCHANGE, function(e) {
+                dispatchEvent('iv:playerQualityChange', {quality: e.videoQuality});
             });
         };
 
@@ -234,6 +238,7 @@ class DailyMotion {
         let states = await this.getState();
         return {
             qualities: ['default', ...states.videoQualitiesList],
+            qualitiesLabel: ['Auto', ...states.videoQualitiesList],
             currentQuality: states.videoQuality == 'Auto' ? 'default' : states.videoQuality,
         };
     }

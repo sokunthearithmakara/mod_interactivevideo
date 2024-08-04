@@ -39,6 +39,23 @@ class form extends \mod_interactivevideo\form\base_form {
     }
 
     /**
+     * Pre-processes the form data
+     *
+     * @param mixed $data
+     * @return mixed
+     */
+    public function pre_processing_data($data) {
+        $data = parent::pre_processing_data($data);
+        if ($data->completiontracking == 'none') {
+            $data->xp = 0;
+            $data->hascompletion = 0;
+        } else {
+            $data->hascompletion = 1;
+        }
+        return $data;
+    }
+
+    /**
      * Form definition
      *
      * @return void
@@ -73,7 +90,13 @@ class form extends \mod_interactivevideo\form\base_form {
 
         $mform->addElement('html', '<div class="preview-iframe w-100 my-3 " ' . $padding . '>' . $iframe . '</div>');
 
+        $this->completion_tracking_field('none', [
+            'none' => get_string('completionnone', 'mod_interactivevideo'),
+            'manual' => get_string('completionmanual', 'mod_interactivevideo'),
+            'view' => get_string('completiononview', 'mod_interactivevideo'),
+        ]);
         $this->xp_form_field();
+        $mform->hideIf('xp', 'completiontracking', 'eq', 'none');
         $this->display_options_field();
         $this->advanced_form_fields(true, true, true, true);
         $this->close_form();

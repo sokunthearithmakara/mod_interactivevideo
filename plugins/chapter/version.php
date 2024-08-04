@@ -30,3 +30,7 @@ $plugin->version      = 2024071500;
 $plugin->requires     = 2022112800;
 $plugin->supported    = [401, 404];
 $plugin->maturity     = MATURITY_STABLE;
+$plugin->dependencies = [
+    'interactivevideo' => 2024042720,
+    'ivplugin_richtext' => 2024071500,
+];

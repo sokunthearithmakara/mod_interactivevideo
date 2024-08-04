@@ -202,7 +202,7 @@ class Base {
             .attr('data-timestamp', item.timestamp);
 
         listItem.find('.title').text(item.formattedtitle);
-        if (this.prop.hascompletion) {
+        if (item.hascompletion == 1) {
             listItem.find('.btn.xp span').text(item.xp);
             listItem.attr('data-xp', item.xp);
         } else {
@@ -468,7 +468,6 @@ class Base {
         annotation.timestampassist = timestampassist;
         annotation.start = this.convertSecondsToHMS(this.start);
         annotation.end = this.convertSecondsToHMS(this.end);
-        annotation.hascompletion = this.prop.hascompletion ? 1 : 0;
         annotation.contextid = M.cfg.contextid;
 
         const title = annotation.type === 'skipsegment'
@@ -632,9 +631,20 @@ class Base {
         }
         const percentage = ((Number(annotation.timestamp) - this.start) / this.totaltime) * 100;
         if (this.isVisible(annotation)) {
-            $("#video-nav ul").append(`<li class="annotation ${annotation.completed ? "completed" : ""}
-        ${annotation.type} ${this.isClickable(annotation) ? '' : 'no-pointer-events'} li-draggable
-         ${this.isSkipped(annotation.timestamp) ? 'skipped' : ''}"  data-timestamp="${annotation.timestamp}"
+            let classes = annotation.type + ' annotation li-draggable ';
+            if (annotation.completed) {
+                classes += 'completed ';
+            }
+            if (!this.isClickable(annotation)) {
+                classes += 'no-pointer-events ';
+            }
+            if (this.isSkipped(annotation.timestamp)) {
+                classes += 'skipped ';
+            }
+            if (annotation.hascompletion == 0) {
+                classes += 'no-completion ';
+            }
+            $("#video-nav ul").append(`<li class="${classes}"  data-timestamp="${annotation.timestamp}"
         data-id="${annotation.id}" style="left: calc(${percentage}% - 5px)">
         <div class="item" data-toggle="tooltip" data-container="#wrapper"
         data-trigger="hover" data-placement="top" data-html="true" data-original-title='<i class="${this.prop.icon} mr-1"></i>
@@ -655,9 +665,24 @@ class Base {
 
     /**
      * Render the container for the annotation
+     * @param  {Object} annotation The annotation object
      */
-    renderContainer() {
-        // Do nothing.
+    renderContainer(annotation) {
+        if (annotation.hascompletion == 0) {
+            return;
+        }
+        let $message = $(`#message[data-id='${annotation.id}']`);
+        if (annotation.completiontracking != 'manual') {
+            let $completiontoggle = $message.find('#completiontoggle');
+            $completiontoggle.prop('disabled', true);
+            if (annotation.completed == true) {
+                $completiontoggle.find(`span`)
+                    .text(`${M.util.get_string('completioncompleted', 'mod_interactivevideo')}`);
+            } else {
+                $completiontoggle.find(`span`)
+                    .text(`${M.util.get_string('completionincomplete', 'mod_interactivevideo')}`);
+            }
+        }
     }
 
     /**
@@ -713,12 +738,14 @@ class Base {
             // Play a popup sound.
             audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/point-awarded.mp3');
             audio.play();
+            $(`#message[data-id='${thisItem.id}'] #title .badge`).removeClass('badge-secondary').addClass('alert-success');
         } else if (action == 'mark-undone') {
             $toggleButton
                 .removeClass('btn-success mark-undone').addClass('btn-secondary mark-done');
             // Play a popup sound.
             audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
             audio.play();
+            $(`#message[data-id='${thisItem.id}'] #title .badge`).removeClass('alert-success').addClass('badge-secondary');
         }
 
         // Update the completion button.
@@ -865,15 +892,23 @@ class Base {
             let $message = $(`#message[data-id='${annotation.id}']`);
             $message.find(`.modal-body`).html(data);
             $message.find(`.modal-body`).attr('id', 'content');
-            this.postContentRender(annotation);
-            this.interactionRunEvent(annotation, data);
+            self.postContentRender(annotation);
+            self.interactionRunEvent(annotation, data);
+            if (annotation.completed) {
+                return;
+            }
+            if (annotation.hascompletion == 1 && annotation.completiontracking == 'view') {
+                self.toggleCompletion(annotation.id, 'mark-done', 'automatic');
+            }
         };
 
         await this.renderViewer(annotation);
         this.renderContainer(annotation);
         applyContent(annotation);
 
-        this.enableManualCompletion();
+        if (annotation.hascompletion == 1 && annotation.completiontracking == 'manual') {
+            this.enableManualCompletion();
+        }
 
         if (annotation.displayoptions == 'popup') {
             $('#annotation-modal').on('shown.bs.modal', function() {

@@ -86,22 +86,34 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->setDefault('char2', $this->optional_param('char2', 0, PARAM_TEXT));
         $mform->addGroup($elementarray, '', '');
 
+        $this->completion_tracking_field('complete', [
+            'none' => get_string('completionnone', 'mod_interactivevideo'),
+            'manual' => get_string('completionmanual', 'mod_interactivevideo'),
+            'complete' => get_string('completiononformsubmit', 'ivplugin_form'),
+        ]);
         $this->xp_form_field();
-
-        $mform->addElement(
-            'select',
-            'completiontracking',
-            '<i class="bi bi-check2-square mr-2"></i>'
-                . get_string('completiontracking', 'mod_interactivevideo'),
-            [
-                'manual' => get_string('completionmanual', 'mod_interactivevideo'),
-                'complete' => get_string('completiononformsubmit', 'ivplugin_form'),
-            ]
-        );
-        $mform->setType('completiontracking', PARAM_TEXT);
+        $mform->hideIf('xp', 'completiontracking', 'eq', 'none');
 
         $this->display_options_field();
         $this->advanced_form_fields(true, true, true, true);
         $this->close_form();
+    }
+
+    /**
+     * Pre-processes the form data
+     *
+     * @param mixed $data
+     * @return mixed
+     */
+    public function pre_processing_data($data) {
+        $data = parent::pre_processing_data($data);
+        if ($data->completiontracking == 'none') {
+            $data->xp = 0;
+            $data->hascompletion = 0;
+        } else {
+            $data->hascompletion = 1;
+        };
+
+        return $data;
     }
 };

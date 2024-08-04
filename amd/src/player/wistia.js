@@ -39,7 +39,7 @@ class Wistia {
         var videoId = match[1];
         this.videoId = videoId;
         $("#player").html(`<div class="wistia_embed wistia_async_${videoId} wmode=transparent
-             controlsVisibleOnLoad=${showControls} playButton=${showControls} videoFoam=true
+             controlsVisibleOnLoad=${showControls} playButton=${showControls} videoFoam=false
               fullscreenButton=false volume=0" style="height:100%;width:100%"></div>`);
         var self = this;
         $.get('https://fast.wistia.com/oembed.json?url=' + url)
@@ -148,7 +148,9 @@ class Wistia {
         player.time(starttime);
     }
     seek(time) {
-        return player.time(time);
+        player.time(time);
+        dispatchEvent('iv:playerSeek', {time: time});
+        return time;
     }
     getCurrentTime() {
         return player.time();
@@ -192,12 +194,14 @@ class Wistia {
     }
     setQuality(quality) {
         player.videoQuality(quality);
+        dispatchEvent('iv:playerQualityChange', {quality: quality});
         return quality;
     }
     getQualities() {
         return {
-            qualities: ['default', '360', '540', '720', '1080', '2160'],
-            currentQuality: player.videoQuality() == 'auto' ? 'default' : player.videoQuality(),
+            qualities: ['auto', '360', '540', '720', '1080', '2160'],
+            qualitiesLabel: ['Auto', '360p', '540p', '720p', '1080p', '4k'],
+            currentQuality: player.videoQuality() == 'auto' ? 0 : player.videoQuality(),
         };
     }
 }

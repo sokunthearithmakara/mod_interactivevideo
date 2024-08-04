@@ -45,6 +45,7 @@ if (!has_capability('mod/interactivevideo:viewreport', $context)) {
 }
 
 require_login($course, true, $cm);
+$PAGE->force_theme('boost');
 
 // External css.
 $PAGE->requires->css(new moodle_url($CFG->wwwroot . '/mod/interactivevideo/libraries/DataTables/datatables.min.css'));
@@ -68,7 +69,7 @@ $strings = $stringman->load_component_strings('mod_interactivevideo', current_la
 $PAGE->requires->strings_for_js(array_keys($strings), 'mod_interactivevideo');
 
 // Get all interactions for moduleid.
-$items = interactivevideo_util::get_items($moduleinstance->id, $context->id);
+$items = interactivevideo_util::get_items($moduleinstance->id, $context->id, true);
 
 // Get all enabled content types.
 $contenttypes = interactivevideo_util::get_all_activitytypes();

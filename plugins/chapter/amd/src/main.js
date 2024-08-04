@@ -29,6 +29,9 @@ export default class Chapter extends Base {
      * @returns {void}
      */
     init() {
+        if (this.isEditMode()) {
+            return;
+        }
         let self = this;
         let chapters = this.annotations.filter((annotation) => annotation.type == 'chapter');
 
@@ -152,9 +155,17 @@ export default class Chapter extends Base {
         }
         const percentage = ((Number(annotation.timestamp) - this.start) / this.totaltime) * 100;
         if (this.isVisible(annotation)) {
-            $("#video-nav ul").append(`<li class="annotation ${annotation.type}
-             ${this.isClickable(annotation) ? '' : 'no-pointer-events'} li-draggable
-              ${this.isSkipped(annotation.timestamp) ? 'skipped' : ''}" data-timestamp="${annotation.timestamp}"
+            let classes = annotation.type + ' annotation li-draggable ';
+            if (annotation.completed) {
+                classes += 'completed ';
+            }
+            if (!this.isClickable(annotation)) {
+                classes += 'no-pointer-events ';
+            }
+            if (this.isSkipped(annotation.timestamp)) {
+                classes += 'skipped ';
+            }
+            $("#video-nav ul").append(`<li class="${classes}" data-timestamp="${annotation.timestamp}"
               data-id="${annotation.id}" style="left: calc(${percentage}% - 5px)">
         <div class="item" data-toggle="tooltip" data-container="#wrapper" data-trigger="hover" data-html="true"
         data-original-title='<i class="${this.prop.icon} mr-1"></i>${annotation.formattedtitle}'></div></li>`);

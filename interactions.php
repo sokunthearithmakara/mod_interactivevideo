@@ -42,7 +42,7 @@ if ($id) {
 }
 
 require_login($course, true, $cm);
-
+$PAGE->force_theme('boost');
 $modulecontext = context_module::instance($cm->id);
 
 // Check if the user has capability to edit the interactions.

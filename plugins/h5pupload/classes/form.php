@@ -45,6 +45,24 @@ class form extends \ivplugin_pdfviewer\form {
     }
 
     /**
+     * Pre-processes the form data
+     *
+     * @param mixed $data
+     * @return mixed
+     */
+    public function pre_processing_data($data) {
+        $data = parent::pre_processing_data($data);
+        if ($data->completiontracking == 'none') {
+            $data->xp = 0;
+            $data->hascompletion = 0;
+        } else {
+            $data->hascompletion = 1;
+        };
+
+        return $data;
+    }
+
+    /**
      * Form definition
      *
      * @return void
@@ -75,8 +93,16 @@ class form extends \ivplugin_pdfviewer\form {
             $filemanageroptions
         );
         $mform->addRule('content', get_string('required'), 'required', null, 'client');
+        $this->completion_tracking_field('complete', [
+            'none' => get_string('completionnone', 'mod_interactivevideo'),
+            'manual' => get_string('completionmanual', 'mod_interactivevideo'),
+            'view' => get_string('completiononview', 'mod_interactivevideo'),
+            'complete' => get_string('completiononcomplete', 'mod_interactivevideo'),
+            'completepass' => get_string('completiononcompletepass', 'mod_interactivevideo'),
+            'completefull' => get_string('completiononcompletefull', 'mod_interactivevideo'),
+        ]);
         $this->xp_form_field();
-        $this->completion_tracking_field();
+        $mform->hideIf('xp', 'completiontracking', 'eq', 'none');
         $this->display_options_field();
         $this->advanced_form_fields(true, true, true, true);
         $this->close_form();

@@ -1,35 +1,34 @@
-{{! This file is part of Moodle - http://moodle.org/ Moodle is free software:
-you can redistribute it and/or modify it under the terms of the GNU General
-Public License as published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version. Moodle is distributed in the
-hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-General Public License for more details. You should have received a copy of the
-GNU General Public License along with Moodle. If not, see
-<http: //www.gnu.org/licenses />. }}
-{{! @template mod_interactivevideo/player TODO
-describe template playeralt Example context (json): { } }} {{! This file is part
-of Moodle - http://moodle.org/ Moodle is free software: you can redistribute it
-and/or modify it under the terms of the GNU General Public License as published
-by the Free Software Foundation, either version 3 of the License, or (at your
-option) any later version. Moodle is distributed in the hope that it will be
-useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
-License for more details. You should have received a copy of the GNU General
-Public License along with Moodle. If not, see
-<http: //www.gnu.org/licenses />.
-}} {{! @template mod_interactivevideo/player TODO describe template player
-Example context (json): { "darkmode": "1", "displayasstartscreen": "1",
-"hasintro": false, "intro": "Intro html text", "hasendscreentext":false,
-"endscreentext": "End screen text", "html5": true, "title": "Interactive video
-title", "displayoptions": { "hidemainvideocontrols": "1",
-"disablechapternavigation": "1", }, } }}
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle. If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_interactivevideo/player
+
+    TODO describe template player
+
+    Example context (json):
+    {
+    }
+}}
 <div id="interactivevideo-container"
-    class="container-fluid {{#darkmode}}p-sm-3{{/darkmode}} {{^darkmode}}p-sm-3{{/darkmode}} alternative">
+    class="container-fluid {{#darkmode}}p-sm-3{{/darkmode}} {{^darkmode}}p-sm-3{{/darkmode}} alternative position-absolute">
     <div class="row justify-content-center mx-0">
         <div class="col-lg-12 col-xl-8 px-0">
             <div id="wrapper" class="position-relative">
-                <div id="video-wrapper" class="d-flex align-items-center justify-content-center bg-dark">
+                <div id="video-wrapper" class="d-flex align-items-center justify-content-center bg-black">
                     {{#displayoptions.hidemainvideocontrols}}
                     <span
                         class="rotatex-360 btn border-0 btn-sm btn-control btn-secondary rounded-circle position-absolute"
@@ -93,10 +92,7 @@ title", "displayoptions": { "hidemainvideocontrols": "1",
                         </div>
                         <div id="video-info"
                             class="p-3 text-white w-100 h-100 position-absolute align-items-start flex-column justify-content-between d-none"
-                            style="
-                z-index: 4;
-                background: linear-gradient(135deg, black, transparent);
-              ">
+                            style="z-index: 4;background: linear-gradient(135deg, black, transparent);">
                             <div class="mb-2 d-flex flex-column">
                                 <div class="metadata d-block d-md-none"></div>
                                 <h1 class="text-white font-weight-bold line-height-100">
@@ -134,13 +130,14 @@ title", "displayoptions": { "hidemainvideocontrols": "1",
                             {{/hasendscreentext}}
                         </div>
                     </div>
-                    {{#html5}}<video id="player"></video>{{/html5}} {{^html5}}
-                    <div id="player" class="p-0"></div>
-                    {{/html5}}
+                    <div id="annotation-canvas">
+                    {{#html5}}<video id="player"></video>{{/html5}}
+                    {{^html5}}<div id="player" class="p-0"></div>{{/html5}}
+                    </div>
                 </div>
                 {{^displayoptions.hidemainvideocontrols}}
                 <div class="rounded-lg w-100 mt-0 mt-md-2 bg-dark d-flex flex-column p-0 justify-content-center"
-                    id="controler" style="height: 55px">
+                    id="controller" style="height: 55px">
                     <div id="taskinfo" class="d-flex align-items-center justify-content-end w-100 px-3 bg-transparent">
                         <div id="video-nav"
                             class="bg-gray rounded-lg align-items-center {{^darkmode}}mb-1{{/darkmode}} {{#darkmode}}mb-2{{/darkmode}} mt-2 position-relative">
@@ -175,8 +172,8 @@ title", "displayoptions": { "hidemainvideocontrols": "1",
                                 class="btn border-0 btn-sm btn-control text-white bg-transparent py-0 px-1 mx-1"
                                 data-toggle="tooltip" data-trigger="focus"
                                 title="{{#str}}mute,mod_interactivevideo{{/str}}"><i class="bi bi-volume-up"></i></span>
-                            <div class="btn-group dropup">
-                                <span id="changerate" role="button" data-toggle="dropdown" aria-haspopup="true"
+                            <div class="btn-group dropup d-none" id="changerate">
+                                <span role="button" data-toggle="dropdown" aria-haspopup="true"
                                     aria-expanded="false"
                                     class="btn border-0 btn-sm btn-control text-white bg-transparent py-0 px-1 mx-1"><i
                                         class="bi bi-speedometer2" data-toggle="tooltip" data-trigger="focus"
@@ -193,8 +190,8 @@ title", "displayoptions": { "hidemainvideocontrols": "1",
                                 </div>
                             </div>
 
-                            <div class="btn-group dropup">
-                                <span id="changequality" role="button" data-toggle="dropdown" aria-haspopup="true"
+                            <div class="d-none btn-group dropup" id="changequality" data-current="">
+                                <span role="button" data-toggle="dropdown" aria-haspopup="true"
                                     aria-expanded="false"
                                     class="btn border-0 btn-sm btn-control text-white bg-transparent py-0 px-1 mx-1"><i
                                         class="bi bi-gear" data-toggle="tooltip" data-trigger="focus"

@@ -126,11 +126,9 @@ class Vimeo {
         player.setCurrentTime(starttime);
         player.pause();
     }
-    seek(time) {
-        return new Promise((resolve) => {
-            player.setCurrentTime(time);
-            resolve();
-        });
+    async seek(time) {
+        await player.setCurrentTime(time);
+        return time;
     }
     async getCurrentTime() {
         const time = await player.getCurrentTime();
@@ -179,13 +177,6 @@ class Vimeo {
     }
     originalPlayer() {
         return player;
-    }
-    setQuality(quality) {
-        player.setQuality(quality);
-        return quality;
-    }
-    getQuality() {
-        return player.getQualities();
     }
 }
 

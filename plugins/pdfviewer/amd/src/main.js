@@ -26,17 +26,7 @@ export default class PdfViewer extends Iframe {
     renderContainer(annotation) {
         let $message = $(`#message[data-id='${annotation.id}']`);
         $message.addClass("hasiframe");
-        if (annotation.completiontracking && annotation.completiontracking == 'scrolltolastpage') {
-            // Disable the mark-done and mark-undone buttons
-            $message.find(`#completiontoggle`).prop('disabled', true);
-            if (annotation.completed == true) {
-                $message.find(`#completiontoggle span`)
-                    .text(`${M.util.get_string('completioncompleted', 'mod_interactivevideo')}`);
-            } else {
-                $message.find(`#completiontoggle span`)
-                    .text(`${M.util.get_string('completionincomplete', 'mod_interactivevideo')}`);
-            }
-        }
+        super.renderContainer(annotation);
     }
     postContentRenderEditor(modal) {
         var modalbody = modal.getRoot();
@@ -86,9 +76,16 @@ export default class PdfViewer extends Iframe {
         const applyContent = async (annotation) => {
             const data = await this.render(annotation, 'html');
             $(`#message[data-id='${annotation.id}'] .modal-body`).attr('id', 'content').html(data).fadeIn(300);
-            if (annotation.completed) {
+            if (annotation.hascompletion == 0 || annotation.completed) {
                 this.postContentRender(annotation);
-            } else if (annotation.completiontracking == 'scrolltolastpage' && annotation.completed == false) {
+                return;
+            }
+            if (annotation.completiontracking == 'view') {
+                this.postContentRender(annotation);
+                this.toggleCompletion(annotation.id, "mark-done", "automatic");
+                return;
+            }
+            if (annotation.completiontracking == 'scrolltolastpage') {
                 this.postContentRender(annotation, pdfCheck(annotation));
             }
         };
@@ -97,12 +94,14 @@ export default class PdfViewer extends Iframe {
         this.renderContainer(annotation);
         applyContent(annotation);
 
-        this.enableManualCompletion();
-
         if (annotation.displayoptions == 'popup') {
             $('#annotation-modal').on('shown.bs.modal', function() {
                 self.setModalDraggable('#annotation-modal .modal-dialog');
             });
+        }
+
+        if (annotation.completiontracking == 'manual') {
+            this.enableManualCompletion();
         }
     }
 }

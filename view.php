@@ -93,6 +93,7 @@ $completionview = new completion_info($course);
 $completionview->set_module_viewed($cm);
 $completionstate = $completionview->internal_get_state($cm, $USER->id, true);
 
+$PAGE->force_theme('boost');
 // Add body class to display editor view vs student view.
 if (has_capability('mod/interactivevideo:edit', $modulecontext)) {
     $PAGE->add_body_class('editorview');

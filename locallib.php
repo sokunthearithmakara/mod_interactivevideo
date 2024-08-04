@@ -30,10 +30,14 @@ class interactivevideo_util {
      * @param int $contextid
      * @return array
      */
-    public static function get_items($interactivevideo, $contextid) {
+    public static function get_items($interactivevideo, $contextid, $hascompletion = false) {
         global $DB, $PAGE;
         $PAGE->set_context(context::instance_by_id($contextid));
-        $records = $DB->get_records('interactivevideo_items', ['annotationid' => $interactivevideo]);
+        $filter = ['annotationid' => $interactivevideo];
+        if ($hascompletion) {
+            $filter['hascompletion'] = 1;
+        }
+        $records = $DB->get_records('interactivevideo_items', $filter);
         foreach ($records as $key => $record) {
             $records[$key]->formattedtitle = format_string($records[$key]->title);
         }

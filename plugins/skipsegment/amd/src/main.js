@@ -22,7 +22,8 @@
  */
 import $ from 'jquery';
 import Base from 'mod_interactivevideo/type/base';
-
+import {dispatchEvent} from 'core/event_dispatcher';
+import Ajax from 'core/ajax';
 export default class SkipSegment extends Base {
     init() {
         var self = this;
@@ -48,6 +49,43 @@ export default class SkipSegment extends Base {
                             ${M.util.get_string('skipped', 'ivplugin_skipsegment')}</span>`);
         }
         return listItem;
+    }
+
+    async addAnnotation(annotations, timestamp, coursemodule) {
+        let self = this;
+        let data = {
+            title: timestamp + 5,
+            timestamp: timestamp,
+            contextid: M.cfg.contextid,
+            type: self.prop.name,
+            courseid: self.course,
+            cmid: coursemodule,
+            annotationid: self.interaction,
+            hascompletion: self.prop.hascompletion ? 1 : 0,
+            advanced: JSON.stringify({
+                "visiblebeforecompleted": "1",
+                "visibleaftercompleted": null,
+                "clickablebeforecompleted": "1",
+                "clickableaftercompleted": null,
+                "replaybehavior": "1",
+            }),
+        };
+        let ajax = await Ajax.call([{
+            methodname: 'ivplugin_skipsegment_add_skip',
+            args: {
+                skipdata: JSON.stringify(data),
+            },
+            contextid: M.cfg.contextid,
+        }])[0];
+
+        let newAnnotation = JSON.parse(ajax.data);
+        dispatchEvent('annotationupdated', {
+            annotation: newAnnotation,
+            action: 'add'
+        });
+
+        $('#contentmodal').modal('hide');
+
     }
 
     onEditFormLoaded(form, event) {

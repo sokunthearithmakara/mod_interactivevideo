@@ -72,11 +72,11 @@ const defaultDisplayContent = async function(annotation, player) {
     }
 
     let completionbutton = "";
-    if (annotation.xp > 0) {
+    if (annotation.hascompletion == 1 && annotation.xp > 0) {
         completionbutton += `<span class="badge
          ${annotation.completed ? 'alert-success' : 'badge-secondary'} mr-2">${annotation.xp} XP</span>`;
     }
-    if (JSON.parse(annotation.prop).hascompletion) {
+    if (annotation.hascompletion == 1) {
         if (annotation.completed) {
             completionbutton += `<button id="completiontoggle" class="btn mark-undone btn-success btn-sm"
              data-id="${annotation.id}"><i class="bi bi-check2"></i>
@@ -102,7 +102,7 @@ const defaultDisplayContent = async function(annotation, player) {
     <i class="${JSON.parse(annotation.prop).icon} mr-2 d-none d-md-inline"></i>${annotation.formattedtitle}</h5>
                             <div class="btns d-flex align-items-center">
                             ${completionbutton}
-                            <button class="btn mx-2 p-0 close" aria-label="Close" data-dismiss="modal">
+                            <button class="btn mx-2 p-0" id="close-${annotation.id}" aria-label="Close" >
                             <i class="bi bi-x-lg fa-fw fs-25px"></i>
                             </button>
                             </div>`;
@@ -110,7 +110,8 @@ const defaultDisplayContent = async function(annotation, player) {
     $('#annotation-modal').modal('hide');
 
     // Handle annotation close event:: when user click on the close button of the annotation
-    $(document).on('click', `#message[data-id='${annotation.id}'] #title .close`, async function(e) {
+    $(document).on('click', `#title #close-${annotation.id}`, async function(e) {
+        window.console.log('annotation close event');
         e.preventDefault();
         $(this).closest("#annotation-modal").modal('hide');
         const targetMessage = $(this).closest("#message");

@@ -51,6 +51,24 @@ class form extends \mod_interactivevideo\form\base_form {
     }
 
     /**
+     * Pre-processes the form data
+     *
+     * @param mixed $data
+     * @return mixed
+     */
+    public function pre_processing_data($data) {
+        $data = parent::pre_processing_data($data);
+        if ($data->completiontracking == 'none') {
+            $data->xp = 0;
+            $data->hascompletion = 0;
+        } else {
+            $data->hascompletion = 1;
+        }
+
+        return $data;
+    }
+
+    /**
      * Process dynamic submission
      *
      * @return void
@@ -59,6 +77,7 @@ class form extends \mod_interactivevideo\form\base_form {
         global $DB;
         // We're going to submit the data to database. If id is not 0, we're updating an existing record.
         $fromform = $this->get_data();
+        $fromform = $this->pre_processing_data($fromform);
         $fromform->advanced = $this->process_advanced_settings($fromform);
         if ($fromform->id > 0) {
             $fromform->timemodified = time();
@@ -111,7 +130,13 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->setType('content', PARAM_RAW);
         $mform->addRule('content', get_string('required'), 'required', null, 'client');
 
+        $this->completion_tracking_field('none', [
+            'none' => get_string('completionnone', 'mod_interactivevideo'),
+            'manual' => get_string('completionmanual', 'mod_interactivevideo'),
+            'view' => get_string('completiononview', 'mod_interactivevideo'),
+        ]);
         $this->xp_form_field();
+        $mform->hideIf('xp', 'completiontracking', 'eq', 'none');
         $this->display_options_field();
         $this->advanced_form_fields(true, true, true, true);
         $this->close_form();

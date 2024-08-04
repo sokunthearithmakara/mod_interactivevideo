@@ -14,6 +14,7 @@
     --ivlight: #f8f9fa;
     --ivdark: #343a40;
     --ivblack: #000;
+    --ivdarker: #263238;
 }
 
 html:has(.path-mod-interactivevideo) {
@@ -63,6 +64,10 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo .bg-white {
     background-color: var(--ivwhite) !important;
+}
+
+.path-mod-interactivevideo .bg-darker {
+    background-color: var(--ivdarker) !important;
 }
 
 .path-mod-interactivevideo .bg-black {
@@ -271,6 +276,7 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo .fullscreen #player {
     border-radius: 0;
     padding-bottom: 0 !important;
+    position: unset !important;
 }
 
 .path-mod-interactivevideo #video-wrapper #fullscreen {
@@ -291,7 +297,6 @@ html:has(.path-mod-interactivevideo) {
     margin: 0;
     min-height: 200px;
     max-height: 300px;
-    background-color: #f0f0f0;
     border-radius: 0 0 0.5rem 0.5rem;
     overflow: auto;
 }
@@ -328,9 +333,17 @@ html:has(.path-mod-interactivevideo) {
     height: calc(100% - 65px);
 }
 
-@media (max-width: 1199.98px) {
+@media (max-width: 992px) {
     .path-mod-interactivevideo #contentblock {
         position: relative !important;
+    }
+}
+
+@media (max-width: 992px) {
+
+    .path-mod-interactivevideo #content-region,
+    .path-mod-interactivevideo #player-region {
+        width: 100% !important;
     }
 }
 
@@ -407,17 +420,9 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo #video-nav li:not(.chapter) .item:hover {
     transform: scale(1.75);
-    box-shadow:
-        0 0 10px #399be2,
-        0 0 20px #399be2,
-        0 0 30px #399be2,
-        0 0 40px #399be2,
-        0 0 50px #399be2,
-        0 0 60px #399be2,
-        0 0 70px #399be2,
-        0 0 80px #399be2,
-        0 0 90px #399be2,
-        0 0 100px #399be2;
+    box-shadow: 0 0 10px #399be2, 0 0 20px #399be2, 0 0 30px #399be2,
+        0 0 40px #399be2, 0 0 50px #399be2, 0 0 60px #399be2, 0 0 70px #399be2,
+        0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
     transition: all ease-in-out 300ms;
 }
 
@@ -427,17 +432,9 @@ html:has(.path-mod-interactivevideo) {
     height: 10px;
     width: 10px;
     transition: transform ease-in-out 300ms;
-    box-shadow:
-        0 0 10px #399be2,
-        0 0 20px #399be2,
-        0 0 30px #399be2,
-        0 0 40px #399be2,
-        0 0 50px #399be2,
-        0 0 60px #399be2,
-        0 0 70px #399be2,
-        0 0 80px #399be2,
-        0 0 90px #399be2,
-        0 0 100px #399be2;
+    box-shadow: 0 0 10px #399be2, 0 0 20px #399be2, 0 0 30px #399be2,
+        0 0 40px #399be2, 0 0 50px #399be2, 0 0 60px #399be2, 0 0 70px #399be2,
+        0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
 }
 
 .path-mod-interactivevideo #video-nav li.completed .item {
@@ -496,7 +493,7 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo #start-screen,
 .path-mod-interactivevideo #end-screen {
-    z-index: 4;
+    z-index: 500;
 }
 
 .path-mod-interactivevideo #start-screen .intro-content,
@@ -589,17 +586,9 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo #taskinfo .bg-translucent:hover {
-    box-shadow:
-        0 0 10px #399be2,
-        0 0 20px #399be2,
-        0 0 30px #399be2,
-        0 0 40px #399be2,
-        0 0 50px #399be2,
-        0 0 60px #399be2,
-        0 0 70px #399be2,
-        0 0 80px #399be2,
-        0 0 90px #399be2,
-        0 0 100px #399be2;
+    box-shadow: 0 0 10px #399be2, 0 0 20px #399be2, 0 0 30px #399be2,
+        0 0 40px #399be2, 0 0 50px #399be2, 0 0 60px #399be2, 0 0 70px #399be2,
+        0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
     transition: all ease-in-out 300ms;
 }
 
@@ -610,7 +599,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo #wrapper.fullscreen #content .no-overflow,
-.path-mod-interactivevideo #wrapper.fullscreen #content > .h5p,
+.path-mod-interactivevideo #wrapper.fullscreen #content>.h5p,
 .path-mod-interactivevideo #wrapper.fullscreen #form-preview,
 .path-mod-interactivevideo #wrapper.fullscreen #start-screen .no-overflow,
 .path-mod-interactivevideo #wrapper.fullscreen #end-screen .no-overflow,
@@ -678,10 +667,7 @@ html:has(.path-mod-interactivevideo) {
     padding-left: 0.25rem;
 }
 
-.path-mod-interactivevideo
-.contentbank
-.contentbank-item
-.contentbank-item-details {
+.path-mod-interactivevideo .contentbank .contentbank-item .contentbank-item-details {
     cursor: pointer;
     width: 100%;
 }
@@ -691,9 +677,7 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo .hasiframe iframe,
 .path-mod-interactivevideo .modalhasiframe iframe,
 .path-mod-interactivevideo .loader {
-    background:
-        url([[pix:mod_interactivevideo|loader]]) center / 90px auto
-        no-repeat;
+    background: url([[pix:mod_interactivevideo|loader]]) center / 90px auto no-repeat;
     background-color: #fff;
     min-height: 15px;
 }
@@ -718,7 +702,7 @@ html:has(.path-mod-interactivevideo) {
     overflow: hidden;
 }
 
-#page-mod-interactivevideo-report th.rotate > div {
+#page-mod-interactivevideo-report th.rotate>div {
     transform: rotate3d(0, 0, 1, -90deg);
     width: 30px;
     display: flex;
@@ -726,7 +710,7 @@ html:has(.path-mod-interactivevideo) {
     justify-content: start;
 }
 
-#page-mod-interactivevideo-report th.rotate > div > a {
+#page-mod-interactivevideo-report th.rotate>div>a {
     padding: 5px 10px;
 }
 
@@ -888,7 +872,7 @@ html:has(.path-mod-interactivevideo) {
     height: 30px;
 }
 
-.path-mod-interactivevideo #wrapper.fullscreen #controler {
+.path-mod-interactivevideo #wrapper.fullscreen #controller {
     position: fixed;
     bottom: 0;
     margin: 0;
@@ -896,9 +880,7 @@ html:has(.path-mod-interactivevideo) {
     z-index: 5;
 }
 
-.path-mod-interactivevideo
-[data-region="chapterlists"]
-.chapter.active-chapter > div {
+.path-mod-interactivevideo [data-region="chapterlists"] .chapter.active-chapter>div {
     color: #fff;
     background: var(--ivprimary);
 }
@@ -907,15 +889,11 @@ html:has(.path-mod-interactivevideo) {
     left: -100%;
 }
 
-.path-mod-interactivevideo
-#interactivevideo-container
-#chapter-container-right {
+.path-mod-interactivevideo #interactivevideo-container #chapter-container-right {
     display: none;
 }
 
-.path-mod-interactivevideo
-#interactivevideo-container.chapter-open
-#chapter-container-right {
+.path-mod-interactivevideo #interactivevideo-container.chapter-open #chapter-container-right {
     display: block;
     left: 0;
 
@@ -925,9 +903,7 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo
-#interactivevideo-container.chapter-open
-#chapter-container-left {
+.path-mod-interactivevideo #interactivevideo-container.chapter-open #chapter-container-left {
     left: -100%;
 
     @media (max-width: 1199.98px) {
@@ -936,12 +912,8 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo
-#interactivevideo-container.chapter-open.fullscreen
-#chapter-container-left,
-.path-mod-interactivevideo
-#interactivevideo-container.chapter-open.fullscreen
-#chapter-container-right {
+.path-mod-interactivevideo #interactivevideo-container.chapter-open.fullscreen #chapter-container-left,
+.path-mod-interactivevideo #interactivevideo-container.chapter-open.fullscreen #chapter-container-right {
     display: block;
     left: 0;
 }
@@ -962,9 +934,7 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo
-.show-drawer-right
-#interactivevideo-container.chapter-open {
+.path-mod-interactivevideo .show-drawer-right #interactivevideo-container.chapter-open {
     #chapter-container-left {
         display: block;
         left: 0;
@@ -983,9 +953,7 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo
-.show-drawer-left
-#interactivevideo-container.chapter-open {
+.path-mod-interactivevideo .show-drawer-left #interactivevideo-container.chapter-open {
     #chapter-container-left {
         display: block;
         left: 0;
@@ -1010,7 +978,7 @@ html:has(.path-mod-interactivevideo) {
         z-index: 10;
     }
 
-    [data-region] > div {
+    [data-region]>div {
         position: sticky;
         top: 0;
         z-index: 10;
@@ -1140,68 +1108,60 @@ html:has(.path-mod-interactivevideo) {
     position: absolute;
 }
 
-.path-mod-interactivevideo #message .annotation-wrapper {
+.path-mod-interactivevideo #canvas {
+    height: 100%;
+    width: 100%;
+    top: 0;
+}
+
+.path-mod-interactivevideo #canvas .annotation-wrapper {
     width: 30%;
     position: absolute;
     z-index: 5;
 }
 
-.path-mod-interactivevideo #message .annotation-wrapper.resizable {
+.path-mod-interactivevideo #canvas .annotation-wrapper.resizable {
     cursor: move;
 }
 
-.path-mod-interactivevideo
-#message
-.annotation-wrapper[data-type="video"]
-.playpause {
+.path-mod-interactivevideo #canvas .annotation-wrapper[data-type="video"] .playpause {
     display: none;
 }
 
-#page-mod-interactivevideo-view
-#message
-.annotation-wrapper[data-type="video"]:hover
-.playpause {
+#page-mod-interactivevideo-view #canvas .annotation-wrapper[data-type="video"]:hover .playpause {
     display: block;
 }
 
-#page-mod-interactivevideo-view
-#message
-.annotation-wrapper[data-type="video"]:not(.resizable) {
+#page-mod-interactivevideo-view #canvas .annotation-wrapper[data-type="video"]:not(.resizable) {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-#page-mod-interactivevideo-view
-#message
-.annotation-wrapper[data-type="video"]:hover {
+#page-mod-interactivevideo-view #canvas .annotation-wrapper[data-type="video"]:hover {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-#page-mod-interactivevideo-interactions #message .annotation-wrapper.active {
+#page-mod-interactivevideo-interactions #canvas .annotation-wrapper.active {
     outline: 2px dotted var(--ivdanger);
 }
 
-#page-mod-interactivevideo-interactions
-#message
-.annotation-wrapper.active:focus-visible,
-#page-mod-interactivevideo-interactions
-#message
-.annotation-wrapper.active:focus {
+#page-mod-interactivevideo-interactions #canvas .annotation-wrapper.active:focus-visible,
+#page-mod-interactivevideo-interactions #canvas .annotation-wrapper.active:focus {
     outline: 2px dotted var(--ivdanger);
 }
 
-.path-mod-interactivevideo #message .annotation-wrapper {
+.path-mod-interactivevideo #canvas .annotation-wrapper {
     outline: 2px dotted transparent;
 }
 
-#page-mod-interactivevideo-view #message .annotation-wrapper.resizable:hover {
+#page-mod-interactivevideo-view #canvas .annotation-wrapper.resizable:hover {
     outline-color: #ddd;
 }
 
-.path-mod-interactivevideo #message .annotation-wrapper .annotation-content {
+.path-mod-interactivevideo #canvas .annotation-wrapper .annotation-content {
     width: 100%;
 }
 
@@ -1264,12 +1224,12 @@ html:has(.path-mod-interactivevideo) {
     height: 2px;
 }
 
-#page-mod-interactivevideo-interactions #message .annotation-wrapper .handle {
+#page-mod-interactivevideo-interactions #canvas .annotation-wrapper .handle {
     display: flex;
     align-items: center;
 }
 
-#page-mod-interactivevideo-view #message .annotation-wrapper .handle {
+#page-mod-interactivevideo-view #canvas .annotation-wrapper .handle {
     display: none;
 }
 
@@ -1358,7 +1318,7 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo .modal-fullscreen > .modal-dialog {
+.path-mod-interactivevideo .modal-fullscreen>.modal-dialog {
     max-width: 100% !important;
     width: 100% !important;
     justify-content: start;
@@ -1367,7 +1327,7 @@ html:has(.path-mod-interactivevideo) {
     margin: 0;
 }
 
-.path-mod-interactivevideo .modal-fullscreen > .modal-dialog {
+.path-mod-interactivevideo .modal-fullscreen>.modal-dialog {
     .modal-content {
         border-radius: 0 !important;
     }
@@ -1379,20 +1339,14 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo
-#form-preview
-.mform.full-width-labels
-.fitem.row:not([data-groupname="buttonar"]) {
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:not([data-groupname="buttonar"]) {
     padding: 0.5rem 1rem 1rem;
     border: 1px solid var(--ivsecondary);
     border-radius: 0.75rem;
     background-color: #fff;
 }
 
-.path-mod-interactivevideo
-#form-preview
-.mform.full-width-labels
-.fitem.row:has(.form-control-static) {
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:has(.form-control-static) {
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -1407,10 +1361,7 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo
-#form-preview
-.mform.full-width-labels
-.fitem.row.field-highlight,
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row.field-highlight,
 .path-mod-interactivevideo #form-preview .field-highlight {
     border-left: 3px solid var(--ivprimary);
     padding-left: 1rem;
@@ -1445,26 +1396,14 @@ html:has(.path-mod-interactivevideo) {
     display: none;
 }
 
-.path-mod-interactivevideo
-#form-preview
-.mform.full-width-labels
-h3
-.field-actions {
+.path-mod-interactivevideo #form-preview .mform.full-width-labels h3 .field-actions {
     position: relative;
     top: 0;
     background-color: transparent;
 }
 
-.path-mod-interactivevideo
-#form-preview
-.mform.full-width-labels
-.fitem.row:hover
-.field-actions,
-.path-mod-interactivevideo
-#form-preview
-.mform.full-width-labels
-h3
-.field-actions {
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:hover .field-actions,
+.path-mod-interactivevideo #form-preview .mform.full-width-labels h3 .field-actions {
     display: flex;
 }
 
@@ -1473,6 +1412,7 @@ h3
 }
 
 .path-mod-interactivevideo #form-preview form.reviewing {
+
     .form-control:disabled,
     .custom-select:disabled {
         background-color: #fff;
@@ -1574,7 +1514,7 @@ h3
         }
     }
 
-    .path-mod-interactivevideo #controler {
+    .path-mod-interactivevideo #controller {
         margin-top: 0 !important;
         border-radius: 0 !important;
     }
@@ -1614,12 +1554,12 @@ h3
     padding: 0;
 }
 
-.path-mod-interactivevideo
-[type="checkbox"]:not(.custom-control-input):not(:checked):before {
+.path-mod-interactivevideo [type="checkbox"]:not(.custom-control-input):not(:checked):before {
     background-image: url(/theme/image.php/boost_moeys/theme/1707118612/checkbox-unchecked);
 }
 
 .path-mod-interactivevideo {
+
     [type="checkbox"]:not(.custom-control-input),
     [type="radio"]:not(.custom-control-input) {
         appearance: none;
@@ -1681,29 +1621,6 @@ h3
     transition: all ease-in-out 300ms;
 }
 
-.path-mod-interactivevideo #scrollbar {
-    cursor: col-resize;
-    top: -5px !important;
-}
-
-.path-mod-interactivevideo #timeline-items #vseek {
-    height: 10px;
-    top: -5px;
-    display: flex;
-    align-items: center;
-}
-
-.path-mod-interactivevideo #timeline-items #vseek div {
-    height: 3px;
-    cursor: pointer;
-    background-color: var(--ivgray);
-    transition: all ease-in-out 300ms;
-}
-
-.path-mod-interactivevideo #timeline-items #vseek:hover div {
-    height: 10px;
-}
-
 .path-mod-interactivevideo .skipsegment .ui-resizable-e {
     right: -7px;
     background-color: var(--ivlight);
@@ -1741,22 +1658,6 @@ h3
     }
 }
 
-.path-mod-interactivevideo #timeline-items .minute {
-    top: 0;
-    color: #aaa;
-    font-size: x-small;
-    text-align: center;
-    border-left: 1px dotted #aaa;
-    height: 100%;
-    z-index: -1;
-
-    .minute-label {
-        position: absolute;
-        top: -10px;
-        left: 0;
-    }
-}
-
 .path-mod-interactivevideo .delete-skipsegment {
     top: -100%;
     cursor: pointer;
@@ -1786,6 +1687,7 @@ h3
     display: flex;
     align-items: center;
     flex-direction: column;
+    top: 50%;
 }
 
 .path-mod-interactivevideo #video-nav #timelabel {
@@ -1797,4 +1699,145 @@ h3
     padding: 3px 10px;
     border-radius: 2px;
     z-index: 4;
+}
+
+#page-mod-interactivevideo-interactions #timeline {
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    background-color: var(--ivdarker);
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    height: 125px;
+    scrollbar-width: thin;
+    overflow: scroll;
+    z-index: 1;
+
+    #timeline-btns {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        color: #fff;
+        left: 0;
+        position: sticky;
+        top: 0;
+        justify-content: space-between;
+    }
+
+    #timeline-items-wrapper {
+        width: 100%;
+        min-width: 100%;
+        height: 100%;
+    }
+
+    #timeline-items {
+        height: 100%;
+        width: 100%;
+        position: relative;
+        margin: 0 auto;
+    }
+
+    #scrollbar,
+    #cursorbar {
+        top: -5px !important;
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        align-items: center;
+        left: 0;
+        margin: 0 -5px;
+        z-index: 2;
+        height: calc(100% + 5px);
+    }
+
+    #cursorbar {
+        pointer-events: none;
+    }
+
+    #scrollbar {
+        cursor: col-resize;
+    }
+
+    #scrollhead {
+        width: 10px;
+        height: 10px;
+        background: #fff;
+        border-radius: 50%;
+    }
+
+    #scrollline {
+        width: 1px;
+        background: #fff;
+        height: 100%;
+        z-index: 1;
+        position: absolute;
+    }
+
+    #interaction-timeline {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 0;
+        height: 25px;
+        width: 100%;
+        position: relative;
+        margin: 0 auto;
+    }
+
+    #video-nav {
+        align-items: center;
+        height: 0;
+        background-color: transparent;
+    }
+
+    #video-timeline-wrapper {
+        width: 100%;
+        position: relative;
+        align-items: center;
+        height: 20px;
+    }
+
+    #video-timeline {
+        width: 100%;
+        position: absolute;
+        height: 20px;
+        background-color: var(--ivprimary);
+    }
+
+    #vseek {
+        height: 10px;
+        top: -5px;
+        display: flex;
+        align-items: center;
+        position: absolute;
+        width: 100%;
+        z-index: 1;
+    }
+
+    #vseek div {
+        height: 3px;
+        cursor: pointer;
+        background-color: var(--ivgray);
+        transition: all ease-in-out 300ms;
+    }
+
+    #vseek:hover div {
+        height: 10px;
+    }
+
+    #timeline-items .minute {
+        top: -5px;
+        color: #aaa;
+        font-size: x-small;
+        text-align: center;
+        border-left: 1px dotted #aaa;
+        height: 100%;
+        z-index: -1;
+
+        .minute-label {
+            position: absolute;
+            top: -10px;
+            left: 0;
+        }
+    }
 }

@@ -73,7 +73,7 @@ class base_form extends \core_form\dynamic_form {
         $data->displayoptions = $this->optional_param('displayoptions', 'popup', PARAM_TEXT);
         $data->type = $this->optional_param('type', 'richtext', PARAM_TEXT);
         $data->contentid = $this->optional_param('contentid', null, PARAM_INT);
-        $data->completiontracking = $this->optional_param('completiontracking', 'manual', PARAM_TEXT);
+        $data->completiontracking = $this->optional_param('completiontracking', null, PARAM_TEXT);
         $data->xp = $this->optional_param('xp', null, PARAM_INT);
         $data->start = $this->optional_param('start', '00:00:00', PARAM_TEXT);
         $data->end = $this->optional_param('end', '00:00:00', PARAM_TEXT);
@@ -101,6 +101,16 @@ class base_form extends \core_form\dynamic_form {
     }
 
     /**
+     * Pre processing data before saving to database
+     *
+     * @param \stdClass $data
+     * @return \stdClass
+     */
+    public function pre_processing_data($data) {
+        return $data;
+    }
+
+    /**
      * Process dynamic submission
      *
      * @return \stdClass
@@ -109,6 +119,7 @@ class base_form extends \core_form\dynamic_form {
         global $DB;
         // We're going to submit the data to database. If id is not 0, we're updating an existing record.
         $fromform = $this->get_data();
+        $fromform = $this->pre_processing_data($fromform);
         $fromform->advanced = $this->process_advanced_settings($fromform);
         if ($fromform->id > 0) {
             $fromform->timemodified = time();
@@ -216,18 +227,20 @@ class base_form extends \core_form\dynamic_form {
      * @param string $default
      * @return void
      */
-    public function completion_tracking_field($default = 'manual') {
+    public function completion_tracking_field($default, $options = []) {
         $mform = &$this->_form;
+        if (empty($options)) {
+            $options = [
+                'none' => get_string('completionnone', 'mod_interactivevideo'),
+                'manual' => get_string('completionmanual', 'mod_interactivevideo'),
+                'view' => get_string('completiononview', 'mod_interactivevideo'),
+            ];
+        }
         $mform->addElement(
             'select',
             'completiontracking',
             '<i class="bi bi-check2-square mr-2"></i>' . get_string('completiontracking', 'mod_interactivevideo'),
-            [
-                'manual' => get_string('completionmanual', 'mod_interactivevideo'),
-                'complete' => get_string('completiononcomplete', 'mod_interactivevideo'),
-                'completepass' => get_string('completiononpass', 'mod_interactivevideo'),
-                'completefull' => get_string('completiononcompletefull', 'mod_interactivevideo'),
-            ]
+            $options
         );
         $mform->setType('completiontracking', PARAM_TEXT);
         $mform->setDefault('completiontracking', $default);
@@ -266,7 +279,6 @@ class base_form extends \core_form\dynamic_form {
         $mform = &$this->_form;
         $mform->addElement('text', 'xp', '<i class="bi bi-star mr-2"></i>' . get_string('xp', 'mod_interactivevideo'));
         $mform->setType('xp', PARAM_INT);
-        $mform->addRule('xp', get_string('required'), 'required', null, 'client');
         $mform->addRule('xp', null, 'numeric', null, 'client');
         $mform->setDefault('xp', $xp);
     }
