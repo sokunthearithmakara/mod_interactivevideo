@@ -49,8 +49,10 @@ class get_log extends external_api {
     /**
      * Implementation of web service ivplugin_form_get_log
      *
-     * @param int $id Form id
-     * @param int $contextid Course context id
+     * @param int $userid User id
+     * @param int $cmid Course module id
+     * @param int $contextid Module context id
+     * @param int $annotationid Annotation id
      * @return array
      */
     public static function execute($userid, $cmid, $contextid, $annotationid): array {

@@ -225,6 +225,7 @@ class base_form extends \core_form\dynamic_form {
      * Standard ompletion tracking field
      *
      * @param string $default
+     * @param array $options
      * @return void
      */
     public function completion_tracking_field($default, $options = []) {

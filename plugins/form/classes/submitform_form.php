@@ -1102,7 +1102,7 @@ class submitform_form extends \core_form\dynamic_form {
 
     /**
      * Returns editor options
-     *
+     * @param bool $allowfiles
      * @return array
      */
     public function editor_options($allowfiles = true) {

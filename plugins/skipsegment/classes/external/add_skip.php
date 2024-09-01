@@ -34,7 +34,7 @@ require_once($CFG->libdir . '/externallib.php');
 class add_skip extends external_api {
 
     /**
-     * Describes the parameters for ivplugin_contentbank_getitem
+     * Describes the parameters for ivplugin_skipsegment_add_skip
      *
      * @return external_function_parameters
      */
@@ -45,10 +45,8 @@ class add_skip extends external_api {
     }
 
     /**
-     * Implementation of web service ivplugin_contentbank_getitem
-     *
-     * @param int $id Content bank item id
-     * @param int $contextid Course context id
+     * Implementation of web service ivplugin_skipsegment_add_skip
+     * @param string $skipdata The data of the skip segment
      * @return array
      */
     public static function execute($skipdata) {

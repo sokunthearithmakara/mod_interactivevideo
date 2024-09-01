@@ -46,8 +46,7 @@ class add extends external_api {
     /**
      * Implementation of web service ivplugin_annotation_add
      *
-     * @param int $id Annotation id
-     * @param int $contextid Course context id
+     * @param string $annotationdata The data of the annotation
      * @return array
      */
     public static function execute($annotationdata) {

@@ -28,6 +28,7 @@ class interactivevideo_util {
      *
      * @param int $interactivevideo
      * @param int $contextid
+     * @param bool $hascompletion
      * @return array
      */
     public static function get_items($interactivevideo, $contextid, $hascompletion = false) {
