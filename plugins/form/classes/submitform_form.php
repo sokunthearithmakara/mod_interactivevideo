@@ -664,8 +664,8 @@ class submitform_form extends \core_form\dynamic_form {
                                 $filename = urldecode($filename);
                                 // Remove the fieldid prefix from the filename.
                                 $filename = str_replace($field->fieldid . '_', '', $filename);
-                                $html .= '<li><i class="bi bi-file-earmark-arrow-down mr-2"></i><a target="_blank" href="' . $file . '">'
-                                    . $filename . '</a></li>';
+                                $html .= '<li><i class="bi bi-file-earmark-arrow-down mr-2"></i><a target="_blank" href="'
+                                    . $file . '">' . $filename . '</a></li>';
                             }
                             $html .= '</ul>';
                         }
@@ -743,8 +743,9 @@ class submitform_form extends \core_form\dynamic_form {
                     $mform->disabledIf($field->fieldid, 'reviewing', 'eq', 1);
                     break;
                 case 'range':
-                    $label .= '<span class="float-right">' . get_string('currentvalue', 'ivplugin_form') . ': <span class="selected-value">'
-                        .  ($field->default ?? '-') . '</span></span>';
+                    $label .= '<span class="float-right">' . get_string('currentvalue', 'ivplugin_form')
+                        . ': <span class="selected-value">'
+                        . ($field->default ?? '-') . '</span></span>';
                     $mform->addElement('text', $field->fieldid, $label, [
                         'size' => 100,
                         'id' => $field->fieldid,

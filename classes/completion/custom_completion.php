@@ -42,7 +42,7 @@ class custom_completion extends activity_custom_completion {
         $cm = $this->cm;
         $completionpercentage = $cm->customdata['customcompletionrules']['completionpercentage'];
         // We must take into account the start and end times of the video as well.
-        // Interactions that are outside of the video's start and end times OR within the skipped segment should not be considered for completion.
+        // Interactions outside of start and end times OR skipped should not be considered for completion.
         $startendtimes = explode("-", $cm->customdata['startendtime']);
         $start = $startendtimes[0];
         $end = $startendtimes[1];

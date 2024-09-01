@@ -25,7 +25,7 @@
 define('AJAX_SCRIPT', true);
 require_once('../../../../config.php');
 $action = required_param('action', PARAM_TEXT);
-
+require_login();
 switch ($action) {
     case 'getoembedinfo':
         $url = required_param('url', PARAM_URL);

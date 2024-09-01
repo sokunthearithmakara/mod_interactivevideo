@@ -58,8 +58,8 @@ class mobile {
             'templates' => [
                 [
                     'id' => 'main',
-                    'html' => '<iframe src="' . $url->out(false) . '" width="100%" height="100%" '
-                        . ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"'
+                    'html' => '<iframe src="' . $url->out(false) . '" width="100%" height="100%" allow="accelerometer; '
+                        . 'autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"'
                         . ' referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
                 ],
             ],
@@ -100,7 +100,7 @@ class mobile {
             'shortname' => MOODLE_OFFICIAL_MOBILE_SERVICE,
             'token' => $token,
         ])) {
-            // Check if the user is logged in; if not, try login
+            // Check if the user is logged in; if not, try login.
             if (!isloggedin()) {
                 complete_user_login($user);
             }

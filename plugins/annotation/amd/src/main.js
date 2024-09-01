@@ -51,7 +51,7 @@ export default class Annotation extends Base {
             if (!item || item.content == '') {
                 return;
             }
-            const updateAspectRatio = async (video, reset) => {
+            const updateAspectRatio = async(video, reset) => {
                 let elem = video ? $('#player') : $(`#annotation-canvas[data-id='${item.id}']`);
                 if ($("#wrapper").hasClass('fullscreen')) {
                     let ratio = await this.player.ratio();
@@ -324,7 +324,7 @@ export default class Annotation extends Base {
          * @param {Array} elements array of elements to render
          * @param {Number} activeids array of ids of active elements
          */
-        const renderTimelineItems = async (elements, activeids) => {
+        const renderTimelineItems = async(elements, activeids) => {
             const currentTime = self.roundToTwo(await self.player.getCurrentTime());
             if (activeids === null) {
                 activeids = [];
@@ -573,7 +573,7 @@ export default class Annotation extends Base {
          * @param {Array} actives ids of active element
          * @param {Boolean} update first render or updating items
          */
-        const renderItems = async (elements, actives, update) => {
+        const renderItems = async(elements, actives, update) => {
             const currentTime = await self.player.getCurrentTime();
             if (!update) { // Clear the annotation-canvas if it is a new start.
                 $videoWrapper.find(`.annotation-wrapper`).remove();
@@ -599,7 +599,7 @@ export default class Annotation extends Base {
             });
 
             let count = 0;
-            elements.forEach(async (item) => {
+            elements.forEach(async(item) => {
                 let prop = item.properties;
                 let type = item.type;
                 let id = item.id;

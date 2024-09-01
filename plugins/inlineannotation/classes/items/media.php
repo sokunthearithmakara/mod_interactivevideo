@@ -62,7 +62,8 @@ class media extends \core_form\dynamic_form {
         $data->alttext = $this->optional_param('alttext', null, PARAM_TEXT);
         $data->resizable = $this->optional_param('resizable', 0, PARAM_INT);
         require_once($CFG->libdir . '/filelib.php');
-        // At least one file exists in draft area already. we need to copy it to new draft area separately from other files of the same draft area.
+        // At least one file exists in draft area already.
+        // We need to copy it to new draft area separately from other files of the same draft area.
         if ($data->url != '') {
             $urls = extract_draft_file_urls_from_text($data->url, false, $usercontextid, 'user', 'draft');
             $url = reset($urls);

@@ -122,7 +122,7 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->addRule('content', get_string('required'), 'required', null, 'client');
         $mform->addElement(
             'advcheckbox',
-            'char1', // Require response before viewing others
+            'char1', // Require response before viewing others.
             '',
             get_string('requireresponsebeforeviewingothers', 'ivplugin_discussion'),
             ["group" => 1],
@@ -133,10 +133,15 @@ class form extends \mod_interactivevideo\form\base_form {
 
         $this->xp_form_field(0);
 
-        $mform->addElement('select', 'completiontracking', '<i class="bi bi-check2-square mr-2"></i>' . get_string('completiontracking', 'mod_interactivevideo'), [
-            'manual' => get_string('completionmanual', 'mod_interactivevideo'),
-            'complete' => get_string('completiononrequirementmet', 'ivplugin_discussion'),
-        ]);
+        $mform->addElement(
+            'select',
+            'completiontracking',
+            '<i class="bi bi-check2-square mr-2"></i>' . get_string('completiontracking', 'mod_interactivevideo'),
+            [
+                'manual' => get_string('completionmanual', 'mod_interactivevideo'),
+                'complete' => get_string('completiononrequirementmet', 'ivplugin_discussion'),
+            ]
+        );
         $mform->setType('completiontracking', PARAM_TEXT);
 
         $text = json_decode($this->optional_param('text1', null, PARAM_RAW));
@@ -167,7 +172,10 @@ class form extends \mod_interactivevideo\form\base_form {
             ['size' => 5]
         );
         $mform->setType('completionrequirements[numberofresponses]', PARAM_INT);
-        $mform->setDefault('completionrequirements[numberofresponses]', (int)($text->numberofresponses) > 0 ? (int)($text->numberofresponses) : 1);
+        $mform->setDefault(
+            'completionrequirements[numberofresponses]',
+            (int)($text->numberofresponses) > 0 ? (int)($text->numberofresponses) : 1
+        );
         $mform->hideIf('completionrequirements[numberofresponses]', 'completionrequirements[replytoresponse]', 'eq', 0);
         $mform->addGroup($elementarray, 'completionrequirements', get_string('completionrequirements', 'ivplugin_discussion'));
         $mform->hideIf('completionrequirements', 'completiontracking', 'eq', 'manual');

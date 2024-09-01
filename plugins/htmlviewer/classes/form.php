@@ -83,7 +83,13 @@ class form extends \ivplugin_pdfviewer\form {
             'accepted_types' => ['.html', '.htm', '.xhtml'],
         ];
 
-        $mform->addElement('filemanager', 'content', '<i class="bi bi-filetype-html mr-2"></i>' . get_string('htmlfile', 'ivplugin_htmlviewer'), null, $filemanageroptions);
+        $mform->addElement(
+            'filemanager',
+            'content',
+            '<i class="bi bi-filetype-html mr-2"></i>' . get_string('htmlfile', 'ivplugin_htmlviewer'),
+            null,
+            $filemanageroptions
+        );
         $mform->addRule('content', get_string('required'), 'required', null, 'client');
 
         $mform->addRule('content', get_string('required'), 'required', null, 'client');

@@ -44,7 +44,11 @@ class form extends \mod_interactivevideo\form\base_form {
 
         $this->standard_elements();
 
-        $mform->addElement('text', 'title', '<i class="bi bi-question mr-2"></i>' . get_string('destquestion', 'ivplugin_decision'));
+        $mform->addElement(
+            'text',
+            'title',
+            '<i class="bi bi-question mr-2"></i>' . get_string('destquestion', 'ivplugin_decision')
+        );
         $mform->setType('title', PARAM_TEXT);
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');

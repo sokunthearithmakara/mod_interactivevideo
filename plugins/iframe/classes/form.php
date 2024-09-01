@@ -70,13 +70,22 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
 
-        $mform->addElement('text', 'iframeurl', '<i class="bi bi-link-45deg mr-2"></i>' . get_string('iframeurl', 'ivplugin_iframe'));
+        $mform->addElement(
+            'text',
+            'iframeurl',
+            '<i class="bi bi-link-45deg mr-2"></i>' . get_string('iframeurl', 'ivplugin_iframe')
+        );
         $mform->setType('iframeurl', PARAM_TEXT);
 
         $mform->addElement('hidden', 'char1');
         $mform->setType('char1', PARAM_TEXT);
 
-        $mform->addElement('textarea', 'content', '<i class="bi bi-code-slash mr-2"></i>' . get_string('embedcode', 'ivplugin_iframe'), ['rows' => 5]);
+        $mform->addElement(
+            'textarea',
+            'content',
+            '<i class="bi bi-code-slash mr-2"></i>' . get_string('embedcode', 'ivplugin_iframe'),
+            ['rows' => 5]
+        );
         $mform->setType('content', PARAM_RAW);
         $mform->addRule('content', get_string('required'), 'required', null, 'client');
 
