@@ -25,12 +25,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['edit'] = 'Edit';
-$string['pluginname'] = 'Contentbank Item';
-$string['preview'] = 'Preview';
-$string['privacy:metadata'] = 'The Contentbank plugin doesn\'t store any personal data.';
-$string['xapicheck'] = 'xAPI check';
-$string['xapieventdetected'] = 'xAPI complete event detected';
 $string['add'] = 'Add';
 $string['completioncompleted'] = 'Completed';
 $string['completionincomplete'] = 'Incomplete';
@@ -38,8 +32,14 @@ $string['contentbankcontent'] = 'Content bank item';
 $string['contentbankdescription'] = 'Add content from the course\'s content bank.';
 $string['contentuploaded'] = 'Content uploaded successfully.';
 $string['contentuploaderror'] = 'Error uploading content';
+$string['edit'] = 'Edit';
 $string['nocontentfound'] = 'No contents found.';
+$string['pluginname'] = 'Contentbank Item';
+$string['preview'] = 'Preview';
+$string['privacy:metadata'] = 'The Contentbank plugin doesn\'t store any personal data.';
 $string['resync'] = 'Resync content from content bank';
 $string['selectoruploadcontent'] = 'Select a content from the list or create one';
 $string['upload'] = 'Upload';
 $string['uploadcontent'] = 'Upload content';
+$string['xapicheck'] = 'xAPI check';
+$string['xapieventdetected'] = 'xAPI complete event detected';

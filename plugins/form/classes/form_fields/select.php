@@ -22,7 +22,7 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
- namespace ivplugin_form\form_fields;
+namespace ivplugin_form\form_fields;
 
 /**
  * Configuration form for adding/editing form element "select"
@@ -37,10 +37,18 @@ class select extends base {
      */
     public function set_data_for_dynamic_submission(): void {
         $data = $this->set_data_default();
-        $data->default = $this->optional_param('default', null, PARAM_TEXT);
+        $defaults = $this->optional_param('default', null, PARAM_RAW);
+        if (is_array($defaults)) {
+            $defaultstrings = implode(',', array_keys($defaults));
+        } else {
+            $defaultstrings = $defaults;
+        }
+        $data->default = $defaultstrings;
         $data->options = $this->optional_param('options', null, PARAM_TEXT);
         $data->multiple = $this->optional_param('multiple', null, PARAM_INT);
         $data->useautocomplete = $this->optional_param('useautocomplete', null, PARAM_INT);
+        $data->minselection = $this->optional_param('minselection', null, PARAM_INT);
+        $data->maxselection = $this->optional_param('maxselection', null, PARAM_INT);
         $this->set_data($data);
     }
 
@@ -63,20 +71,79 @@ class select extends base {
             [
                 'rows' => 4,
                 'oninput' => 'this.style.height = "";this.style.height = this.scrollHeight + 3 + "px"',
-                'placeholder' => 'key1=Value 1',
+                'placeholder' => 'key 1=Display value 1',
+                'data-id' => 'options',
+                'data-type' => 'keyvalue',
             ]
         );
         $mform->setType('options', PARAM_RAW);
         $mform->addRule('options', get_string('required'), 'required', null, 'client');
+        $mform->addHelpButton('options', 'optionsfield', 'ivplugin_form');
 
         // Default.
-        $mform->addElement('text', 'default', get_string('default', 'ivplugin_form'));
+        $mform->addElement(
+            'hidden',
+            'default',
+            null,
+            ['data-id' => 'options', 'data-type' => 'default']
+        );
         $mform->setType('default', PARAM_TEXT);
 
         // Multiple.
         $mform->addElement('advcheckbox', 'multiple', '', get_string('multiple', 'ivplugin_form'));
+
+        // Min.
+        $mform->addElement('text', 'minselection', get_string('minselection', 'ivplugin_form'));
+        $mform->setType('minselection', PARAM_INT);
+        $mform->addRule('minselection', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client', true);
+        $mform->setDefault('minselection', 0);
+        $mform->hideIf('minselection', 'multiple', 'notchecked');
+
+        // Max.
+        $mform->addElement('text', 'maxselection', get_string('maxselection', 'ivplugin_form'));
+        $mform->setType('maxselection', PARAM_INT);
+        $mform->addRule('maxselection', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client', true);
+        $mform->setDefault('maxselection', 0);
+        $mform->hideIf('maxselection', 'multiple', 'notchecked');
+
         // Use autocomplete.
         $mform->addElement('advcheckbox', 'useautocomplete', '', get_string('useautocomplete', 'ivplugin_form'));
         $this->set_display_vertical();
+    }
+
+    /**
+     * Validation
+     *
+     * @param array $data
+     * @param array $files
+     * @return array
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        $options = $data['options'];
+        $options = explode("\n", $options);
+        if (count($options) < 2) {
+            $errors['options'] = get_string('optionsmustbeatleasttwo', 'ivplugin_form');
+        }
+
+        if ($data['minselection'] > $data['maxselection'] && ($data['maxselection'] > 0 || $data['minselection'] > 0)) {
+            $errors['minselection'] = get_string('minvaluemustbelessthanmaxvalue', 'ivplugin_form', $data['maxselection']);
+        }
+
+        if ($data['minselection'] > count($options)) {
+            $errors['minselection'] = get_string('minvaluemustbelessthanoption', 'ivplugin_form', count($options));
+        }
+
+        if ($data['maxselection'] > count($options)) {
+            $errors['maxselection'] = get_string('maxvaluemustbelessthanoption', 'ivplugin_form', count($options));
+        }
+
+        $defaultcount = count(explode(',', $data['default']));
+        if (!$data['multiple'] && $defaultcount > 1) {
+            $errors['options'] = get_string('defaultmustbeoneorallowmultipleresponse', 'ivplugin_form');
+        }
+
+        return $errors;
     }
 }

@@ -178,6 +178,22 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         $mform->setType('endscreentext', PARAM_RAW);
 
         $mform->addElement('header', 'videodisplayoptions', get_string('videodisplayoptions', 'mod_interactivevideo'));
+        // Set theme.
+        $themeobjects = get_list_of_themes();
+        $themes = [];
+        $themes[''] = get_string('forceno');
+        foreach ($themeobjects as $key => $theme) {
+            if (empty($theme->hidefromselector)) {
+                $themes[$key] = get_string('pluginname', 'theme_' . $theme->name);
+            }
+        }
+        $mform->addElement('select', 'theme', get_string('forcetheme'), $themes);
+
+        $mform->addElement(
+            'html',
+            '<div class="form-group row fitem"><div class="col-md-12 col-form-label d-flex pb-0 pr-md-0">'
+                . get_string('appearanceandbehaviorsettings', 'mod_interactivevideo') . '</div></div>',
+        );
 
         // Dark mode.
         $mform->addElement(
@@ -383,6 +399,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'disableinteractionclick',
             'disableinteractionclickuntilcompleted',
             'hideinteractions',
+            'theme',
         ];
         if (empty($defaultvalues['displayoptions'])) {
             $defaultvalues['displayoptions'] = json_encode(array_fill_keys($displayoptions, 0));

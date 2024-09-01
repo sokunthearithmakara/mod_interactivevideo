@@ -25,12 +25,12 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['endtime'] = 'End time';
+$string['invalidtimestampformat'] = 'Invalid timestamp format.';
 $string['pluginname'] = 'Skipped Segment';
 $string['privacy:metadata'] = 'The Skipped Segment plugin doesn\'t store any personal data.';
 $string['skipped'] = 'Skipped';
 $string['skipsegmentcontent'] = 'Skipped segment';
 $string['skipsegmentdescription'] = 'Skip a segment of the video.';
-$string['invalidtimestampformat'] = 'Invalid timestamp format.';
 $string['untiltimemustbegreaterthantimestamp'] = 'End time must be greater than the start time.';
-$string['endtime'] = 'End time';
 

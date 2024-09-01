@@ -197,7 +197,7 @@ export default class ContentBank extends Base {
         $message = this.renderContainer(annotation);
         applyContent(annotation);
 
-        this.enableManualCompletion();
+        this.enableManualCompletion(annotation);
 
         if (annotation.displayoptions == 'popup') {
             $('#annotation-modal').on('shown.bs.modal', function() {

@@ -25,10 +25,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['h5ppackage'] = 'H5P package';
+$string['h5puploadcontent'] = 'H5P viewer';
+$string['h5puploaddescription'] = 'Upload an H5P package in .html or .h5p format.';
 $string['pluginname'] = 'H5P Upload';
 $string['privacy:metadata'] = 'The H5P Upload plugin doesn\'t store any personal data.';
 $string['xapicheck'] = 'xAPI check';
 $string['xapieventdetected'] = 'xAPI complete event detected';
-$string['h5ppackage'] = 'H5P package';
-$string['h5puploadcontent'] = 'H5P viewer';
-$string['h5puploaddescription'] = 'Upload an H5P package in .html or .h5p format.';

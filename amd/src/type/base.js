@@ -138,10 +138,16 @@ class Base {
      * @returns {void}
      */
     enableColorPicker() {
-        $(document).on('change', 'input[type="color"]', function() {
+        $(document).on('input', 'input[type="color"]', function() {
             const color = $(this).val();
             $(this).closest('.color-picker').css('background-color', color);
             $(this).closest('.fitem').find('input[type="text"]').val(color);
+        });
+        $(document).on('change', 'input[type="color"]', function() {
+            $('.modal-backdrop').removeClass('opacity-0');
+        });
+        $(document).on('click', '.modal input[type="color"]', function() {
+            $('.modal-backdrop').addClass('opacity-0');
         });
     }
 
@@ -359,6 +365,7 @@ class Base {
             id: 0,
             timestamp: timestamp > 0 ? timestamp : self.start,
             timestampassist: timestampHMS,
+            title: self.prop.title,
             start: startHMS,
             end: endHMS,
             contextid: M.cfg.contextid,
@@ -401,6 +408,7 @@ class Base {
         });
 
         form.addEventListener(form.events.FORM_SUBMITTED, (e) => {
+            e.stopImmediatePropagation();
             $.ajax({
                 url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
                 method: "POST",
@@ -502,6 +510,7 @@ class Base {
         });
 
         form.addEventListener(form.events.FORM_SUBMITTED, (e) => {
+            e.stopImmediatePropagation();
             this.annotations = this.annotations.filter(x => x.id != id);
             $.ajax({
                 url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
@@ -644,11 +653,18 @@ class Base {
             if (annotation.hascompletion == 0) {
                 classes += 'no-completion ';
             }
-            $("#video-nav ul").append(`<li class="${classes}"  data-timestamp="${annotation.timestamp}"
+            if (this.isEditMode()) {
+                $("#video-nav ul").append(`<li class="${classes}"  data-timestamp="${annotation.timestamp}"
         data-id="${annotation.id}" style="left: calc(${percentage}% - 5px)">
         <div class="item" data-toggle="tooltip" data-container="#wrapper"
         data-trigger="hover" data-placement="top" data-html="true" data-original-title='<i class="${this.prop.icon} mr-1"></i>
         ${annotation.formattedtitle}'></div></li>`);
+            } else {
+                $("#interactions-nav ul").append(`<li class="${classes}"  data-timestamp="${annotation.timestamp}"
+                    data-id="${annotation.id}" style="left: calc(${percentage}% - 5px)"><div class="item" data-toggle="tooltip"
+                     data-container="#wrapper" data-trigger="hover" data-placement="top" data-html="true"
+                      data-original-title='<i class="${this.prop.icon} mr-1"></i>${annotation.formattedtitle}'></div></li>`);
+            }
         }
     }
 
@@ -862,11 +878,13 @@ class Base {
 
     /**
      * Enable manual completion of item
+     * @param {Object} annotation The annotation object
      * @returns {void}
      */
-    enableManualCompletion() {
+    enableManualCompletion(annotation) {
         var self = this;
-        $(document).on('click', '#message button#completiontoggle', function(e) {
+        const $message = $(`#message[data-id=${annotation.id}]`);
+        $message.on('click', 'button#completiontoggle', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(this).attr('disabled', true);
@@ -907,7 +925,7 @@ class Base {
         applyContent(annotation);
 
         if (annotation.hascompletion == 1 && annotation.completiontracking == 'manual') {
-            this.enableManualCompletion();
+            this.enableManualCompletion(annotation);
         }
 
         if (annotation.displayoptions == 'popup') {
@@ -952,6 +970,7 @@ class Base {
      */
     getLogs(annotation, userids) {
         let self = this;
+        userids = userids.join(',');
         return new Promise((resolve) => {
             $.ajax({
                 url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',

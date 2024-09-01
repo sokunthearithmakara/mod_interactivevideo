@@ -126,7 +126,7 @@ export default class Discussion extends Base {
             applyContent(annotation);
         });
 
-        this.enableManualCompletion();
+        this.enableManualCompletion(annotation);
 
         if (annotation.displayoptions == 'popup') {
             let self = this;

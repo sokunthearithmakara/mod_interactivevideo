@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * TODO describe module main
+ * Main class for the iframe plugin
  *
  * @module     ivplugin_iframe/main
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
@@ -55,7 +55,6 @@ export default class Iframe extends Base {
                     sesskey: M.cfg.sesskey,
                 },
                 success: function(data) {
-                    window.console.log(data);
                     var providers = data;
                     var url = $('[name="iframeurl"]').val();
                     // Format the url to match the provider_url
@@ -143,10 +142,22 @@ export default class Iframe extends Base {
         });
         return {form, event};
     }
+
+    /**
+     * Override the renderContainer method
+     * @param {Object} annotation The annotation object
+     * @return {void}
+     */
     renderContainer(annotation) {
         $(`#message[data-id='${annotation.id}']`).addClass('hasiframe');
         super.renderContainer(annotation);
     }
+
+    /**
+     * Override the postContentRender method
+     * @param {Object} annotation The annotation object
+     * @return {void}
+     */
     postContentRender(annotation) {
         var interval = setInterval(() => {
             if ($(`#message[data-id='${annotation.id}'] iframe`).length > 0) {
@@ -159,6 +170,12 @@ export default class Iframe extends Base {
         }, 1000);
 
     }
+
+    /**
+     * Override the postContentRenderEditor method
+     * @param {Object} modal The modal object
+     * @return {void}
+     */
     postContentRenderEditor(modal) {
         var modalbody = modal.getRoot();
         modalbody.addClass('modalhasiframe editor-iframe');
@@ -174,6 +191,11 @@ export default class Iframe extends Base {
 
     }
 
+    /**
+     * Override the displayReportView method
+     * @param {Object} annotation The annotation object
+     * @return {void}
+     */
     async displayReportView(annotation) {
         const data = await this.render(annotation, 'html');
         let $message = $(`#message[data-id='${annotation.id}']`);

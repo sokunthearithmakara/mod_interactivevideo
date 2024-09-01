@@ -93,7 +93,6 @@ $completionview = new completion_info($course);
 $completionview->set_module_viewed($cm);
 $completionstate = $completionview->internal_get_state($cm, $USER->id, true);
 
-$PAGE->force_theme('boost');
 // Add body class to display editor view vs student view.
 if (has_capability('mod/interactivevideo:edit', $modulecontext)) {
     $PAGE->add_body_class('editorview');
@@ -107,10 +106,22 @@ if ($iframe) {
     $PAGE->add_body_class($class = 'iframe mobiletheme');
 }
 
+if (isset($moduleinstance->displayoptions['theme']) && $moduleinstance->displayoptions['theme'] != '') {
+    $PAGE->force_theme($moduleinstance->displayoptions['theme']);
+}
 $completion = null;
 $completiondetails = \core_completion\cm_completion_details::get_instance($PAGE->cm, $USER->id);
-$activitydates = \core\activity_dates::get_dates_for_module($PAGE->cm, $USER->id);
-$completion = $OUTPUT->activity_information($PAGE->cm, $completiondetails, $activitydates);
+// If moodle version is 4.4 or below, use new completion information.
+if ($CFG->version < 2024081000) {
+    $completion = $OUTPUT->activity_information($PAGE->cm, $completiondetails, []);
+} else {
+    $activitycompletion = new \core_course\output\activity_completion($PAGE->cm, $completiondetails);
+    $output = $PAGE->get_renderer('core');
+    $activitycompletiondata = (array) $activitycompletion->export_for_template($output);
+    if ($activitycompletiondata["hascompletion"]) {
+        $completion = $OUTPUT->render_from_template('core_course/activity_info', $activitycompletiondata);
+    }
+}
 
 $PAGE->activityheader->disable();
 $PAGE->set_url('/mod/interactivevideo/view.php', [
@@ -188,6 +199,10 @@ if (empty($url)) {
     die;
 }
 
+$primary = new core\navigation\output\primary($PAGE);
+$renderer = $PAGE->get_renderer('core');
+$primarymenu = $primary->export_for_template($renderer);
+
 // Display page navigation.
 if (!$iframe) {
     $datafortemplate = [
@@ -202,7 +217,7 @@ if (!$iframe) {
             ? new moodle_url('/mod/interactivevideo/report.php', ['id' => $cm->id]) : '',
         "interactionsurl" => has_capability('mod/interactivevideo:edit', $modulecontext)
             ? new moodle_url('/mod/interactivevideo/interactions.php', ['id' => $cm->id]) : '',
-        "useravatar" => $OUTPUT->user_picture($USER, ['class' => 'userpicture ml-2', 'size' => 35]),
+        "useravatar" => $primarymenu['user'],
         "completed" => $completionstate > COMPLETION_INCOMPLETE,
         "completedpass" => $completionstate == COMPLETION_COMPLETE_PASS || $completionstate == COMPLETION_COMPLETE,
         "completedfail" => $completionstate == COMPLETION_COMPLETE_FAIL,

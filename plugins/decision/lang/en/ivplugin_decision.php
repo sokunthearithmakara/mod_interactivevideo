@@ -25,12 +25,12 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'Decision';
-$string['privacy:metadata'] = 'The Decision plugin doesn\'t store any personal data.';
-$string['skip'] = 'Skip';
-$string['destination'] = 'Destination';
-$string['destquestion'] = 'Question';
 $string['allowskip'] = 'Allow skipping';
 $string['decisioncontent'] = 'Decision';
 $string['decisiondescription'] = 'Add a crossroad to the video.';
+$string['destination'] = 'Destination';
+$string['destquestion'] = 'Question';
+$string['pluginname'] = 'Decision';
+$string['privacy:metadata'] = 'The Decision plugin doesn\'t store any personal data.';
 $string['requireresponsebeforeviewingothers'] = 'Require response before viewing others';
+$string['skip'] = 'Skip';

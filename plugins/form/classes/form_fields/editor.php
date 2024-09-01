@@ -22,7 +22,7 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
- namespace ivplugin_form\form_fields;
+namespace ivplugin_form\form_fields;
 
 /**
  * Configuration form for adding/editing form element "editor"
@@ -38,6 +38,8 @@ class editor extends base {
     public function set_data_for_dynamic_submission(): void {
         $data = $this->set_data_default();
         $data->default = $this->optional_param('default', null, PARAM_RAW);
+        $data->height = $this->optional_param('height', null, PARAM_INT);
+        $data->allowfiles = $this->optional_param('allowfiles', null, PARAM_INT);
         $this->set_data($data);
     }
 
@@ -56,16 +58,58 @@ class editor extends base {
         $mform->addElement('editor', 'default', get_string('default', 'ivplugin_form'), ['rows' => 4], $this->editor_options());
         $mform->setType('default', PARAM_RAW);
 
+        // Height.
+        $mform->addElement('text', 'height', get_string('height', 'ivplugin_form'));
+        $mform->setType('height', PARAM_INT);
+        $mform->setDefault('height', 10);
+        $mform->addRule(
+            'height',
+            get_string('mustbegreaterthan', 'ivplugin_form', 10),
+            'regex',
+            '/^[5-9]|[1-9][0-9]+$/i',
+            'client',
+            true
+        );
+        $mform->addRule(
+            'height',
+            get_string('required'),
+            'required',
+            null,
+            'client',
+            true
+        );
+
+        $mform->addElement('advcheckbox', 'allowfiles', '', get_string('allowfiles', 'ivplugin_form'));
+        $mform->setDefault('allowfiles', 1);
+        $mform->setType('allowfiles', PARAM_INT);
+
         // Min length.
-        $mform->addElement('text', 'minlength', get_string('minlength', 'ivplugin_form'));
+        $mform->addElement('text', 'minlength', get_string('minwords', 'ivplugin_form'));
         $mform->setType('minlength', PARAM_INT);
         $mform->addRule('minlength', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client', true);
 
         // Max length.
-        $mform->addElement('text', 'maxlength', get_string('maxlength', 'ivplugin_form'));
+        $mform->addElement('text', 'maxlength', get_string('maxwords', 'ivplugin_form'));
         $mform->setType('maxlength', PARAM_INT);
         $mform->addRule('maxlength', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client', true);
 
         $this->set_display_vertical();
+    }
+
+    /**
+     * Validation
+     *
+     * @param array $data
+     * @param array $files
+     * @return array
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        if ($data['minlength'] > $data['maxlength'] && ($data['maxlength'] > 0 || $data['minlength'] > 0)) {
+            $errors['minlength'] = get_string('minvaluemustbelessthanmaxvalue', 'ivplugin_form', $data['maxlength']);
+        }
+
+        return $errors;
     }
 }

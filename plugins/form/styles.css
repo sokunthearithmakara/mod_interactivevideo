@@ -1,0 +1,205 @@
+.path-mod-interactivevideo .radio-vertical fieldset div,
+.path-mod-interactivevideo .checkbox-vertical fieldset div {
+    flex-direction: column;
+    align-items: flex-start !important;
+
+    input[type="text"] {
+        margin-top: 0.5rem;
+    }
+}
+
+.path-mod-interactivevideo .clear-radio {
+    margin-left: auto !important;
+}
+
+.path-mod-interactivevideo #form-preview .row.fitem.ui-sortable-handle::before,
+.path-mod-interactivevideo #form-preview fieldset.collapsible.ui-sortable-handle::before {
+    content: "\f3fd";
+    justify-content: center;
+    margin: auto;
+    color: var(--ivsecondary);
+    font-family: 'bootstrap-icons';
+    cursor: move;
+    left: 50%;
+    top: 0;
+    position: absolute;
+    height: 10px;
+}
+
+.path-mod-interactivevideo #form-preview .fcontainer.empty-container {
+    min-height: 100px;
+}
+
+.path-mod-interactivevideo #form-preview .ui-state-highlight {
+    height: 50px;
+    margin: 1rem 0;
+}
+
+.path-mod-interactivevideo #message #form-preview .mform fieldset.collapsible,
+.path-mod-interactivevideo [data-name="interaction-form"] fieldset.collapsible,
+.path-mod-interactivevideo #form-preview .row.fitem.ui-sortable-handle {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.path-mod-interactivevideo #wrapper.fullscreen #form-preview,
+.path-mod-interactivevideo .tab-content #form-preview {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:not([data-groupname="buttonar"]) {
+    padding: 0.5rem 1rem 1rem;
+    border: 1px solid var(--ivsecondary);
+    border-radius: 0.75rem;
+    background-color: #fff;
+}
+
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:has(.form-control-static) {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+
+    .form-control-static {
+        width: 100%;
+    }
+
+    .field-label {
+        display: none;
+    }
+}
+
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row.field-highlight,
+.path-mod-interactivevideo #form-preview .field-highlight {
+    border-left: 3px solid var(--ivprimary);
+    padding-left: 1rem;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    transition: border ease-in-out 300ms;
+}
+
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row.field-active {
+    border: 3px solid var(--ivprimary);
+    transition: border ease-in-out 300ms;
+}
+
+.path-mod-interactivevideo #form-preview .field-actions {
+    display: none;
+    top: -23px;
+    right: 0;
+    position: absolute;
+    z-index: 1;
+    background-color: #fff;
+}
+
+.path-mod-interactivevideo #form-preview .fp-restrictions {
+    display: none;
+}
+
+.path-mod-interactivevideo #form-preview .mform.full-width-labels h3 .field-actions {
+    position: relative;
+    top: 0;
+    background-color: transparent;
+}
+
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:hover .field-actions,
+.path-mod-interactivevideo #form-preview .mform.full-width-labels h3 .field-actions {
+    display: flex;
+}
+
+.path-mod-interactivevideo #form-preview form.reviewing {
+
+    .form-control:disabled,
+    .custom-select:disabled {
+        background-color: #fff;
+        color: #000;
+    }
+
+    textarea {
+        height: auto;
+    }
+
+    select:-internal-list-box:disabled option:checked {
+        color: #fff;
+        background-color: var(--ivprimary);
+    }
+}
+
+.path-mod-interactivevideo #form-preview .col-form-label label {
+    width: 100%;
+}
+
+.path-mod-interactivevideo #message #form-preview .mform fieldset.collapsible {
+    border-radius: 0.5rem;
+    padding: 1rem 1rem 0.5rem 1rem;
+    background-color: var(--ivlight);
+}
+
+.path-mod-interactivevideo #responseview {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    right: 0;
+    max-width: 900px;
+    background: #fff;
+    transition: width ease-in-out 300ms;
+
+    #form-preview {
+        padding: 1rem;
+    }
+}
+
+.path-mod-interactivevideo #responseview.show {
+    width: 100%;
+    transition: width ease-in-out 300ms;
+}
+
+.path-mod-interactivevideo .tab-content #submitform-submit {
+    display: none;
+}
+
+.path-mod-interactivevideo #form-preview .field-warning {
+    border: 3px solid var(--ivwarning) !important;
+    background-color: var(--ivwarning) !important;
+}
+
+.path-mod-interactivevideo #form-preview .mform.full-width-labels:not(.editing) .fitem.row.fhtml  {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+}
+
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row.fhtml .col-form-label {
+    display: none!important;
+}
+
+#page-mod-interactivevideo-interactions #form-btns {
+    width: 100%;
+    padding: 0 0.5rem;
+    height: 40px;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-direction: row-reverse;
+}
+
+#page-mod-interactivevideo-interactions #form-btns .btn {
+    height: 40px;
+    transition: all ease-in-out 300ms;
+}
+
+#page-mod-interactivevideo-interactions #form-btns .btn.active {
+    border-bottom: 3px solid var(--ivprimary);
+    padding-bottom: 0.5rem;
+    color: var(--ivprimary);
+}
+
+#page-mod-interactivevideo-interactions #form-btns .btn:hover {
+    border-bottom: 3px solid var(--ivdark);
+    padding-bottom: 0.5rem;
+    color: var(--ivprimary);
+}

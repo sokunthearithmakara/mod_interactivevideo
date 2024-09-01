@@ -45,8 +45,14 @@ if (!has_capability('mod/interactivevideo:viewreport', $context)) {
 }
 
 require_login($course, true, $cm);
-$PAGE->force_theme('boost');
-
+if ($moduleinstance->displayoptions) {
+    $moduleinstance->displayoptions = json_decode($moduleinstance->displayoptions, true);
+} else {
+    $moduleinstance->displayoptions = [];
+}
+if (isset($moduleinstance->displayoptions['theme']) && $moduleinstance->displayoptions['theme'] != '') {
+    $PAGE->force_theme($moduleinstance->displayoptions['theme']);
+}
 // External css.
 $PAGE->requires->css(new moodle_url($CFG->wwwroot . '/mod/interactivevideo/libraries/DataTables/datatables.min.css'));
 
@@ -140,6 +146,9 @@ $itemids = array_map(function ($item) {
 $PAGE->requires->css(new moodle_url('/mod/interactivevideo/libraries/bootstrap-icons/bootstrap-icons.min.css'));
 
 echo $OUTPUT->header();
+$primary = new core\navigation\output\primary($PAGE);
+$renderer = $PAGE->get_renderer('core');
+$primarymenu = $primary->export_for_template($renderer);
 $datafortemplate = [
     "returnurl" => new moodle_url('/course/view.php', ['id' => $course->id]),
     "settingurl" => has_capability('mod/interactivevideo:edit', $context)
@@ -147,7 +156,7 @@ $datafortemplate = [
     "reporturl" => '',
     "interactionsurl" => has_capability('mod/interactivevideo:edit', $context)
         ? new moodle_url('/mod/interactivevideo/interactions.php', ['id' => $cm->id]) : '',
-    "useravatar" => $OUTPUT->user_picture($USER, ['class' => 'userpicture ml-2', 'size' => 35]),
+    "useravatar" => $primarymenu['user'],
     "viewurl" => new moodle_url('/mod/interactivevideo/view.php', ['id' => $cm->id]),
     "backupurl" => has_capability('moodle/backup:backupactivity', $context) ? new moodle_url(
         '/backup/backup.php',
@@ -168,7 +177,7 @@ $totalxp = array_reduce($items, function ($carry, $item) {
     return $carry + $item->xp;
 }, 0);
 
-echo '<div id="reporttable" class="p-3">';
+echo '<div id="reporttable" class="p-3" style="margin-top: 70px;">';
 echo html_writer::start_tag('table', [
     'id' => 'completiontable',
     'class' => 'table table-sm table-bordered table-striped w-100',

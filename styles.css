@@ -25,9 +25,15 @@ html:has(.path-mod-interactivevideo) {
     opacity: 0 !important;
 }
 
-.path-mod-interactivevideo.darkmode .modal-header .btn-outline-secondary {
-    color: #fff;
-    border: 1px solid #fff;
+.path-mod-interactivevideo.darkmode .navbar {
+    .dropdown-toggle::after {
+        color: #fff;
+    }
+
+    .btn-outline-secondary {
+        color: #fff;
+        border: 1px solid #fff;
+    }
 }
 
 .path-mod-interactivevideo .bg-dark {
@@ -220,6 +226,11 @@ html:has(.path-mod-interactivevideo) {
     opacity: 0.8;
 }
 
+.path-mod-interactivevideo .no-pointer,
+.path-mod-interactivevideo .no-click {
+    pointer-events: none;
+}
+
 .path-mod-interactivevideo i.bi {
     display: inline-block;
     font-size: 16px;
@@ -356,9 +367,20 @@ html:has(.path-mod-interactivevideo) {
     display: flex;
     overflow-y: visible;
     padding: 0;
+    justify-content: center;
+    margin: 10px 0;
 }
 
-.path-mod-interactivevideo #video-nav ul {
+.path-mod-interactivevideo #interactions-nav {
+    width: 100%;
+    position: relative;
+    display: flex;
+    padding: 0;
+    justify-content: center;
+}
+
+.path-mod-interactivevideo #video-nav ul,
+.path-mod-interactivevideo #interactions-nav ul {
     padding: 0;
     width: 100%;
     position: relative;
@@ -373,10 +395,8 @@ html:has(.path-mod-interactivevideo) {
     position: absolute;
     left: 0;
     height: 4px;
-    border-radius: 2px;
     background-color: var(--ivdanger);
     display: flex;
-    transition: width linear 100ms;
 }
 
 .path-mod-interactivevideo #video-nav .annotation.skipsegment {
@@ -386,7 +406,8 @@ html:has(.path-mod-interactivevideo) {
     transition: height ease-in-out 300ms, opacity ease-in-out 300ms;
 }
 
-.path-mod-interactivevideo #video-nav li {
+.path-mod-interactivevideo #video-nav li,
+.path-mod-interactivevideo #interactions-nav li {
     list-style: none;
     display: flex;
     position: absolute;
@@ -395,19 +416,18 @@ html:has(.path-mod-interactivevideo) {
     height: 10px;
     align-items: center;
     justify-content: center;
+    color: #fff;
 }
 
-#page-mod-interactivevideo-view #video-nav li.decision {
-    top: -10px;
-}
-
-.path-mod-interactivevideo #video-nav li .item {
+.path-mod-interactivevideo #video-nav li .item,
+.path-mod-interactivevideo #interactions-nav li .item {
     border-radius: 50%;
     width: 5px;
     height: 5px;
     border: 1px solid #000;
     background-color: #fff;
     transition: transform ease-in-out 300ms;
+    cursor: pointer;
 }
 
 .path-mod-interactivevideo #video-nav li.dragging {
@@ -418,16 +438,20 @@ html:has(.path-mod-interactivevideo) {
     display: none;
 }
 
-.path-mod-interactivevideo #video-nav li:not(.chapter) .item:hover {
+.path-mod-interactivevideo #video-nav .item:hover,
+.path-mod-interactivevideo #interactions-nav .item:hover,
+.path-mod-interactivevideo #interactions-nav .item.active {
     transform: scale(1.75);
     box-shadow: 0 0 10px #399be2, 0 0 20px #399be2, 0 0 30px #399be2,
         0 0 40px #399be2, 0 0 50px #399be2, 0 0 60px #399be2, 0 0 70px #399be2,
         0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
     transition: all ease-in-out 300ms;
+    opacity: 1;
 }
 
 .path-mod-interactivevideo #video-nav #seekhead:hover,
 .path-mod-interactivevideo #timeline #scrollhead:hover,
+.path-mod-interactivevideo #scrollhead-top:hover,
 .path-mod-interactivevideo #video-nav #seekhead.active {
     height: 10px;
     width: 10px;
@@ -437,9 +461,15 @@ html:has(.path-mod-interactivevideo) {
         0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
 }
 
-.path-mod-interactivevideo #video-nav li.completed .item {
+.path-mod-interactivevideo #interactions-nav li.completed .item {
     border: 1px solid #fff;
     background-color: #357a32;
+}
+
+.path-mod-interactivevideo #interactions-nav li.no-completion .item,
+.path-mod-interactivevideo #video-nav li.no-completion .item {
+    border: 1px solid #aaa;
+    background-color: #aaa;
 }
 
 .path-mod-interactivevideo #video-wrapper #message,
@@ -558,13 +588,6 @@ html:has(.path-mod-interactivevideo) {
     border-radius: 1rem;
 }
 
-.path-mod-interactivevideo #wrapper #taskinfo {
-    height: 30px;
-    margin: 1rem 0;
-    border-radius: 1rem;
-    background: var(--ivinfo);
-}
-
 .path-mod-interactivevideo #wrapper.fullscreen #video-wrapper,
 .path-mod-interactivevideo #wrapper.fullscreen .video-block {
     position: absolute;
@@ -581,17 +604,6 @@ html:has(.path-mod-interactivevideo) {
     height: calc(100vh);
 }
 
-.path-mod-interactivevideo #taskinfo .bg-translucent {
-    background-color: rgba(255, 255, 255, 0);
-}
-
-.path-mod-interactivevideo #taskinfo .bg-translucent:hover {
-    box-shadow: 0 0 10px #399be2, 0 0 20px #399be2, 0 0 30px #399be2,
-        0 0 40px #399be2, 0 0 50px #399be2, 0 0 60px #399be2, 0 0 70px #399be2,
-        0 0 80px #399be2, 0 0 90px #399be2, 0 0 100px #399be2;
-    transition: all ease-in-out 300ms;
-}
-
 .path-mod-interactivevideo #taskinfo .btn-control {
     height: 25px;
     width: 25px;
@@ -600,10 +612,8 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo #wrapper.fullscreen #content .no-overflow,
 .path-mod-interactivevideo #wrapper.fullscreen #content>.h5p,
-.path-mod-interactivevideo #wrapper.fullscreen #form-preview,
 .path-mod-interactivevideo #wrapper.fullscreen #start-screen .no-overflow,
-.path-mod-interactivevideo #wrapper.fullscreen #end-screen .no-overflow,
-.path-mod-interactivevideo .tab-content #form-preview {
+.path-mod-interactivevideo #wrapper.fullscreen #end-screen .no-overflow {
     max-width: 1000px;
     margin: 0 auto;
 }
@@ -700,18 +710,20 @@ html:has(.path-mod-interactivevideo) {
     height: 140px;
     white-space: nowrap;
     overflow: hidden;
+    position: relative;
 }
 
 #page-mod-interactivevideo-report th.rotate>div {
     transform: rotate3d(0, 0, 1, -90deg);
     width: 30px;
     display: flex;
-    align-items: center;
     justify-content: start;
+    left: calc(50% - 16px);
+    position: relative;
 }
 
 #page-mod-interactivevideo-report th.rotate>div>a {
-    padding: 5px 10px;
+    margin-left: 0.25rem;
 }
 
 #page-mod-interactivevideo-report th:not(.rotate) {
@@ -820,13 +832,34 @@ html:has(.path-mod-interactivevideo) {
     overflow: auto;
 }
 
-.path-mod-interactivevideo #video-nav li.chapter .item {
-    border-radius: 0;
-    width: 3px;
-    height: 10px;
-    border: 1px dotted #ccc;
-    background-color: #ccc;
-    transition: all ease-in-out 300ms;
+.path-mod-interactivevideo.darkmode {
+    #chapter-container-right [data-region="chapterwrapper"] {
+        background: rgba(0, 0, 0, 0.15);
+        color: #fff;
+    }
+
+    #chapter-container-left [data-region="chapterwrapper"] {
+        background: rgba(0, 0, 0, 0.95);
+        color: #fff;
+    }
+}
+
+.path-mod-interactivevideo #video-nav li.chapter {
+    background: var(--ivdark);
+    border-radius: 50%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .item {
+        border-radius: 50%;
+        width: 6px;
+        height: 6px;
+        border: 1.5px solid #fff;
+        background-color: var(--ivdark);
+        transition: all ease-in-out 300ms;
+    }
 }
 
 .path-mod-interactivevideo .cursor-pointer {
@@ -872,12 +905,14 @@ html:has(.path-mod-interactivevideo) {
     height: 30px;
 }
 
-.path-mod-interactivevideo #wrapper.fullscreen #controller {
+.path-mod-interactivevideo #wrapper.fullscreen #controller,
+.path-mod-interactivevideo:not(.iframe) #wrapper #controller {
     position: fixed;
     bottom: 0;
     margin: 0;
+    left: 0;
     border-radius: 0 !important;
-    z-index: 5;
+    z-index: 1001;
 }
 
 .path-mod-interactivevideo [data-region="chapterlists"] .chapter.active-chapter>div {
@@ -993,8 +1028,8 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo.no-original-controls {
-    video::-webkit-media-controls-panel {
-        display: none;
+    video::-webkit-media-controls-panel, .w-bottom-bar {
+        display: none!important;
     }
 }
 
@@ -1076,142 +1111,10 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo #message.chapter {
-    background: linear-gradient(180deg, black, transparent);
-    z-index: 5;
-    color: #fff;
-
-    span {
-        border-left: 5px solid var(--ivwarning);
-        padding-left: 0.75rem;
-        top: -40px;
-        position: absolute;
-        transition: all ease-in-out 300ms;
-    }
-
-    #chapterprogress {
-        height: 5px;
-        bottom: 0;
-        left: 0;
-        background-color: var(--ivdark);
-    }
-
-    #chapterprogress .progress-bar {
-        width: 0;
-        background-color: #fff;
-    }
-}
-
 .path-mod-interactivevideo #video-nav li.annotation.decision i {
     font-size: 10px;
     color: #fff;
     position: absolute;
-}
-
-.path-mod-interactivevideo #canvas {
-    height: 100%;
-    width: 100%;
-    top: 0;
-}
-
-.path-mod-interactivevideo #canvas .annotation-wrapper {
-    width: 30%;
-    position: absolute;
-    z-index: 5;
-}
-
-.path-mod-interactivevideo #canvas .annotation-wrapper.resizable {
-    cursor: move;
-}
-
-.path-mod-interactivevideo #canvas .annotation-wrapper[data-type="video"] .playpause {
-    display: none;
-}
-
-#page-mod-interactivevideo-view #canvas .annotation-wrapper[data-type="video"]:hover .playpause {
-    display: block;
-}
-
-#page-mod-interactivevideo-view #canvas .annotation-wrapper[data-type="video"]:not(.resizable) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#page-mod-interactivevideo-view #canvas .annotation-wrapper[data-type="video"]:hover {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#page-mod-interactivevideo-interactions #canvas .annotation-wrapper.active {
-    outline: 2px dotted var(--ivdanger);
-}
-
-#page-mod-interactivevideo-interactions #canvas .annotation-wrapper.active:focus-visible,
-#page-mod-interactivevideo-interactions #canvas .annotation-wrapper.active:focus {
-    outline: 2px dotted var(--ivdanger);
-}
-
-.path-mod-interactivevideo #canvas .annotation-wrapper {
-    outline: 2px dotted transparent;
-}
-
-#page-mod-interactivevideo-view #canvas .annotation-wrapper.resizable:hover {
-    outline-color: #ddd;
-}
-
-.path-mod-interactivevideo #canvas .annotation-wrapper .annotation-content {
-    width: 100%;
-}
-
-#page-mod-interactivevideo-interactions #inlineannotation-btns {
-    position: fixed;
-    top: 15px;
-    right: 0;
-    width: 100%;
-    text-align: right;
-    padding: 0 0.5rem;
-    background: #fff;
-    height: 40px;
-    left: 0;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-direction: row-reverse;
-    z-index: 1021;
-}
-
-#page-mod-interactivevideo-interactions #form-btns {
-    width: 100%;
-    padding: 0 0.5rem;
-    height: 40px;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-direction: row-reverse;
-}
-
-#page-mod-interactivevideo-interactions #inlineannotation-btns .btn,
-#page-mod-interactivevideo-interactions #form-btns .btn {
-    height: 40px;
-    transition: all ease-in-out 300ms;
-}
-
-#page-mod-interactivevideo-interactions #inlineannotation-btns .btn.active,
-#page-mod-interactivevideo-interactions #form-btns .btn.active {
-    border-bottom: 3px solid var(--ivprimary);
-    padding-bottom: 0.5rem;
-    color: var(--ivprimary);
-}
-
-#page-mod-interactivevideo-interactions #inlineannotation-btns .btn:hover,
-#page-mod-interactivevideo-interactions #form-btns .btn:hover {
-    border-bottom: 3px solid var(--ivdark);
-    padding-bottom: 0.5rem;
-    color: var(--ivprimary);
 }
 
 .path-mod-interactivevideo .ui-icon-gripsmall-diagonal-se {
@@ -1222,15 +1125,6 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo .ui-resizable-se {
     width: 2px;
     height: 2px;
-}
-
-#page-mod-interactivevideo-interactions #canvas .annotation-wrapper .handle {
-    display: flex;
-    align-items: center;
-}
-
-#page-mod-interactivevideo-view #canvas .annotation-wrapper .handle {
-    display: none;
 }
 
 .path-mod-interactivevideo .text-shadow {
@@ -1278,31 +1172,6 @@ html:has(.path-mod-interactivevideo) {
     transition: transform ease-in-out 1s;
 }
 
-.path-mod-interactivevideo .inlineannotation-popover {
-    color: #000;
-    max-width: 500px;
-    width: max-content;
-
-    .popover-body {
-        max-height: 500px;
-        height: max-content;
-        overflow: auto;
-    }
-
-    .mediaplugin {
-        min-width: 300px;
-    }
-
-    ul,
-    ol {
-        padding-left: 1rem;
-    }
-
-    @media screen and (max-width: 500px) {
-        max-width: 100%;
-    }
-}
-
 .path-mod-interactivevideo #form-modal {
     .modal-dialog {
         max-width: 100%;
@@ -1339,37 +1208,6 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:not([data-groupname="buttonar"]) {
-    padding: 0.5rem 1rem 1rem;
-    border: 1px solid var(--ivsecondary);
-    border-radius: 0.75rem;
-    background-color: #fff;
-}
-
-.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:has(.form-control-static) {
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background-color: transparent;
-
-    .form-control-static {
-        width: 100%;
-    }
-
-    .field-label {
-        display: none;
-    }
-}
-
-.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row.field-highlight,
-.path-mod-interactivevideo #form-preview .field-highlight {
-    border-left: 3px solid var(--ivprimary);
-    padding-left: 1rem;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    transition: all ease-in-out 300ms;
-}
-
 .path-mod-interactivevideo #form-field-list .list-group-item {
     background-color: transparent;
 }
@@ -1383,61 +1221,14 @@ html:has(.path-mod-interactivevideo) {
     color: #fff;
 }
 
-.path-mod-interactivevideo #form-preview .field-actions {
-    display: none;
-    top: -23px;
-    right: 0;
-    position: absolute;
-    z-index: 1;
-    background-color: #fff;
-}
-
-.path-mod-interactivevideo #form-preview .fp-restrictions {
-    display: none;
-}
-
-.path-mod-interactivevideo #form-preview .mform.full-width-labels h3 .field-actions {
-    position: relative;
-    top: 0;
-    background-color: transparent;
-}
-
-.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:hover .field-actions,
-.path-mod-interactivevideo #form-preview .mform.full-width-labels h3 .field-actions {
-    display: flex;
-}
-
 .path-mod-interactivevideo [data-name="fieldform-form"] {
     min-height: 100%;
 }
 
-.path-mod-interactivevideo #form-preview form.reviewing {
-
-    .form-control:disabled,
-    .custom-select:disabled {
-        background-color: #fff;
-        color: #000;
-    }
-
-    textarea {
-        height: auto;
-    }
-
-    select:-internal-list-box:disabled option:checked {
-        color: #fff;
-        background-color: var(--ivprimary);
-    }
-}
-
-.path-mod-interactivevideo #message #form-preview .mform fieldset.collapsible,
 .path-mod-interactivevideo [data-name="interaction-form"] fieldset.collapsible {
     border-radius: 0.5rem;
     padding: 1rem 1rem 0.5rem 1rem;
     background-color: var(--ivlight);
-}
-
-.path-mod-interactivevideo #form-preview .col-form-label label {
-    width: 100%;
 }
 
 .path-mod .activity-information .completion-info {
@@ -1456,30 +1247,6 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo .fs-25px {
     font-size: 25px !important;
     line-height: 25px !important;
-}
-
-.path-mod-interactivevideo #responseview {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    width: 0;
-    right: 0;
-    max-width: 900px;
-    background: #fff;
-    transition: width ease-in-out 300ms;
-
-    #form-preview {
-        padding: 1rem;
-    }
-}
-
-.path-mod-interactivevideo #responseview.show {
-    width: 100%;
-    transition: width ease-in-out 300ms;
-}
-
-.path-mod-interactivevideo .tab-content #submitform-submit {
-    display: none;
 }
 
 .path-mod-interactivevideo #maincontent {
@@ -1525,19 +1292,17 @@ html:has(.path-mod-interactivevideo) {
     transition: all ease-in-out 300ms;
 }
 
-.path-mod-interactivevideo #seek:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
 .path-mod-interactivevideo .alternative {
     #wrapper #taskinfo {
-        height: unset;
+        height: 25px;
         margin: 0;
+        border-top: 1px dotted #fff;
+        display: flex;
     }
+}
 
-    #video-nav #progress {
-        background-color: var(--ivdanger);
-    }
+.path-mod-interactivevideo:not(.iframe) .alternative {
+    padding-bottom: calc(55px + 1rem) !important;
 }
 
 .path-mod-interactivevideo .modal-header.ui-draggable-handle {
@@ -1613,61 +1378,6 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo .inlineannotation [data-timestamp]:hover {
-    transform: scale(1.05);
-}
-
-.path-mod-interactivevideo .inlineannotation [data-timestamp] {
-    transition: all ease-in-out 300ms;
-}
-
-.path-mod-interactivevideo .skipsegment .ui-resizable-e {
-    right: -7px;
-    background-color: var(--ivlight);
-    border-bottom-right-radius: 0.15rem;
-    border-top-right-radius: 0.15rem;
-}
-
-.path-mod-interactivevideo .skipsegment .ui-resizable-w {
-    left: -7px;
-    background-color: var(--ivlight);
-    border-bottom-left-radius: 0.15rem;
-    border-top-left-radius: 0.15rem;
-}
-
-.path-mod-interactivevideo .skipsegment .ui-resizable-w::before,
-.path-mod-interactivevideo .skipsegment .ui-resizable-e::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 2px;
-    height: 10px;
-    background-color: #000;
-    border-radius: 1px;
-}
-
-.path-mod-interactivevideo #video-nav li.skipped {
-    .item {
-        background-color: var(--ivgray);
-    }
-
-    i {
-        color: var(--ivgray);
-    }
-}
-
-.path-mod-interactivevideo .delete-skipsegment {
-    top: -100%;
-    cursor: pointer;
-    display: none;
-}
-
-.path-mod-interactivevideo .skipsegment:hover .delete-skipsegment {
-    display: block;
-}
-
 .path-mod-interactivevideo #video-nav #seekhead {
     position: absolute;
     margin-left: -5px;
@@ -1687,7 +1397,32 @@ html:has(.path-mod-interactivevideo) {
     display: flex;
     align-items: center;
     flex-direction: column;
-    top: 50%;
+    width: 1px;
+    height: 100%;
+    background-color: #fff;
+    pointer-events: none;
+}
+
+.path-mod-interactivevideo #vseek #position-marker {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    height: 100%;
+    border-left: 1px dotted #fff;
+    pointer-events: none;
+    z-index: 1;
+
+    #position {
+        background-color: #000;
+        position: absolute;
+        font-size: small;
+        padding: 3px 10px;
+        border-radius: 2px;
+        z-index: 600;
+        pointer-events: none;
+        color: #fff;
+    }
 }
 
 .path-mod-interactivevideo #video-nav #timelabel {
@@ -1698,10 +1433,19 @@ html:has(.path-mod-interactivevideo) {
     top: -24px;
     padding: 3px 10px;
     border-radius: 2px;
-    z-index: 4;
+    z-index: 600;
+    pointer-events: none;
 }
 
-#page-mod-interactivevideo-interactions #timeline {
+#page-mod-interactivevideo-interactions #separator:hover {
+    width: 5px;
+    transition: background-color ease-in-out 300ms;
+    background-color: #328cdb;
+    z-index: 105;
+    margin-left: -2.5px;
+}
+
+#page-mod-interactivevideo-interactions #timeline-wrapper {
     width: 100%;
     position: fixed;
     bottom: 0;
@@ -1710,11 +1454,23 @@ html:has(.path-mod-interactivevideo) {
     flex-direction: column;
     justify-content: start;
     height: 125px;
-    scrollbar-width: thin;
-    overflow: scroll;
-    z-index: 1;
+    z-index: 100;
+    scrollbar-color: hsl(0, 0%, 67%) rgba(0, 0, 0, 0.1);
+
+    #timeline {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: start;
+        scrollbar-width: thin;
+        overflow: scroll;
+        z-index: 1;
+        height: calc(100% - 45px);
+        border-top: 1px solid #788389;
+    }
 
     #timeline-btns {
+        background: #34454e;
         display: flex;
         width: 100%;
         align-items: center;
@@ -1723,6 +1479,7 @@ html:has(.path-mod-interactivevideo) {
         position: sticky;
         top: 0;
         justify-content: space-between;
+        height: 45px;
     }
 
     #timeline-items-wrapper {
@@ -1755,20 +1512,22 @@ html:has(.path-mod-interactivevideo) {
         pointer-events: none;
     }
 
-    #scrollbar {
+    #scrollbar, #scrollhead {
         cursor: col-resize;
     }
 
+    #scrollhead-top,
     #scrollhead {
         width: 10px;
         height: 10px;
         background: #fff;
         border-radius: 50%;
+        cursor: pointer;
+        z-index: 105;
     }
 
     #scrollline {
-        width: 1px;
-        background: #fff;
+        border-left: 1px solid #fff;
         height: 100%;
         z-index: 1;
         position: absolute;
@@ -1787,7 +1546,9 @@ html:has(.path-mod-interactivevideo) {
     #video-nav {
         align-items: center;
         height: 0;
+        border-top: 1px dotted #ddd;
         background-color: transparent;
+        z-index: 5;
     }
 
     #video-timeline-wrapper {
@@ -1806,7 +1567,6 @@ html:has(.path-mod-interactivevideo) {
 
     #vseek {
         height: 10px;
-        top: -5px;
         display: flex;
         align-items: center;
         position: absolute;
@@ -1814,15 +1574,16 @@ html:has(.path-mod-interactivevideo) {
         z-index: 1;
     }
 
-    #vseek div {
-        height: 3px;
+    #vseek #bar {
+        height: 10px;
+        opacity: 0.8;
         cursor: pointer;
         background-color: var(--ivgray);
         transition: all ease-in-out 300ms;
     }
 
-    #vseek:hover div {
-        height: 10px;
+    #vseek:hover #bar {
+        opacity: 1;
     }
 
     #timeline-items .minute {
@@ -1833,11 +1594,28 @@ html:has(.path-mod-interactivevideo) {
         border-left: 1px dotted #aaa;
         height: 100%;
         z-index: -1;
+        position: absolute;
 
         .minute-label {
             position: absolute;
             top: -10px;
             left: 0;
         }
+    }
+
+    .minute-marker {
+        border-left: 1px dotted #fff;
+        padding-left: 3px;
+        height: 100%;
+    }
+
+    #annotation-timeline {
+        position: relative;
+    }
+
+    >.ui-resizable-handle:hover {
+        transition: all ease-in-out 300ms;
+        background-color: #328cdb;
+        z-index: 105;
     }
 }

@@ -26,22 +26,41 @@ Example context (json):
 }}
 <div id="annotation-btns" data-id="{{id}}">
         <div id="save-close" class="d-flex align-items-center">
+                <button class="btn btn-sm rounded-0 text-primary" id="undo" disabled="disabled"
+                        title="{{#str}}undo,mod_interactivevideo{{/str}}"><i class="bi bi-arrow-90deg-left fs-25px"></i></button>
+                <button class="btn btn-sm rounded-0 text-primary" id="redo" disabled="disabled"
+                        title="{{#str}}redo,mod_interactivevideo{{/str}}"><i class="bi bi-arrow-90deg-right fs-25px"></i></button>
                 <button class="btn btn-sm rounded-0 text-primary" id="save"
                         title="{{#str}}save,mod_interactivevideo{{/str}}"><i class="bi bi-floppy fs-25px"></i></button>
                 <button class="btn btn-sm rounded-0" id="closetoolbar" title="{{#str}}close,mod_interactivevideo{{/str}}"><i
                                 class="bi bi-x-lg fs-25px"></i></button>
         </div>
         <div id="edit-btns" data-active="5" class="align-items-center d-none">
-                <span class="btn-sm rounded-0 mr-1 small d-none d-lg-flex align-items-center" id="position" title="Position"></span>
-                <button class="btn btn-sm rounded-0" id="up" title="{{#str}}layer-up,mod_interactivevideo{{/str}}"><i
+                <span class="btn-sm rounded-0 mr-1 small d-none align-items-center" id="position" title="Position">
+                <i class="bi-bounding-box-circles bi mr-1"></i>
+                    x: <span id="x-position" class="mr-2" ></span>
+                    y: <span id="y-position" class="mr-2"></span>
+                    z: <span id="z-position" class="mr-2"></span>
+                    w: <span id="w-position" class="mr-2"></span>
+                    h: <span id="h-position" class="mr-2"></span>
+                <i class="bi-stopwatch bi ml-2 mr-1"></i>
+                <span id="s-position" class="mr-1"></span>
+                -<span id="e-position" class="mx-1"></span>
+                </span>
+                <button class="btn btn-sm rounded-0" disabled="disabled" id="group" title="{{#str}}group,ivplugin_annotation{{/str}}"><i
+                class="bi bi-union"></i></button>
+                <button class="btn btn-sm rounded-0" disabled="disabled" id="ungroup" title="{{#str}}ungroup,ivplugin_annotation{{/str}}"><i
+                class="bi bi-subtract"></i></button>
+                <button class="btn btn-sm rounded-0" id="up" title="{{#str}}layer-up,ivplugin_annotation{{/str}}"><i
                                 class="bi bi-arrow-bar-up"></i></button>
                 <button class="btn btn-sm rounded-0" id="down"
-                        title="{{#str}}layer-down,mod_interactivevideo{{/str}}"><i
+                        title="{{#str}}layer-down,ivplugin_annotation{{/str}}"><i
                                 class="bi bi-arrow-bar-down"></i></button>
                 <button class="btn btn-sm rounded-0" id="edit" title="{{#str}}edit,mod_interactivevideo{{/str}}"><i
                                 class="bi bi-pencil-square"></i></button>
                 <button class="btn btn-sm rounded-0" id="copy" title="{{#str}}clone,mod_interactivevideo{{/str}}"><i
                                 class="bi bi-copy"></i></button>
+
                 <button class="btn btn-sm rounded-0 text-danger" id="delete"
                         title="{{#str}}delete,mod_interactivevideo{{/str}}"><i class="bi bi-trash3"></i></button>
         </div>

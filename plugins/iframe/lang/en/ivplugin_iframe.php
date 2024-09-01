@@ -25,9 +25,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'Iframe';
-$string['privacy:metadata'] = 'The Iframe plugin doesn\'t store any personal data.';
+$string['embedcode'] = 'Embed code';
 $string['iframecontent'] = 'External content';
 $string['iframedescription'] = 'Embed an external content in the video.';
 $string['iframeurl'] = 'Iframe URL or enter the embed code';
-$string['embedcode'] = 'Embed code';
+$string['pluginname'] = 'Iframe';
+$string['privacy:metadata'] = 'The Iframe plugin doesn\'t store any personal data.';

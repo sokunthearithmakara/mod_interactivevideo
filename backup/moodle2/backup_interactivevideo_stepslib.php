@@ -52,7 +52,7 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
         ]);
 
         $items = new backup_nested_element('items');
-        $item = new backup_nested_element('item', ["id", "contentid"], [
+        $item = new backup_nested_element('item', ["id"], [
             "timecreated",
             "timemodified",
             "courseid",

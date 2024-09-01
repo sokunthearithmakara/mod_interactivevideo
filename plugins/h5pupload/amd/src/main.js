@@ -142,7 +142,7 @@ export default class H5pUpload extends Base {
         this.renderContainer(annotation);
         applyContent(annotation);
 
-        this.enableManualCompletion();
+        this.enableManualCompletion(annotation);
 
         if (annotation.displayoptions == 'popup') {
             $('#annotation-modal').on('shown.bs.modal', function() {

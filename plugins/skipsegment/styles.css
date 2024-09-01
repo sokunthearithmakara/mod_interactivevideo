@@ -1,0 +1,46 @@
+.path-mod-interactivevideo .skipsegment .ui-resizable-e {
+    right: -7px;
+    background-color: var(--ivlight);
+    border-bottom-right-radius: 0.15rem;
+    border-top-right-radius: 0.15rem;
+}
+
+.path-mod-interactivevideo .skipsegment .ui-resizable-w {
+    left: -7px;
+    background-color: var(--ivlight);
+    border-bottom-left-radius: 0.15rem;
+    border-top-left-radius: 0.15rem;
+}
+
+.path-mod-interactivevideo .skipsegment .ui-resizable-w::before,
+.path-mod-interactivevideo .skipsegment .ui-resizable-e::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 10px;
+    background-color: #000;
+    border-radius: 1px;
+}
+
+.path-mod-interactivevideo #video-nav li.skipped {
+    .item {
+        background-color: var(--ivgray);
+    }
+
+    i {
+        color: var(--ivgray);
+    }
+}
+
+.path-mod-interactivevideo .delete-skipsegment {
+    top: -100%;
+    cursor: pointer;
+    display: none;
+}
+
+.path-mod-interactivevideo .skipsegment:hover .delete-skipsegment {
+    display: block;
+}

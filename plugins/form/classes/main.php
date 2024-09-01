@@ -54,7 +54,7 @@ class main extends \ivplugin_richtext\main {
         global $CFG;
         $content = $arg['content'];
         if ($arg['text1'] > 0) {
-            $duedate = userdate($arg['text1'], get_string('strftimedatetime'));
+            $duedate = userdate($arg['text1'], get_string('strftimedatetime', 'langconfig'));
         }
         $id = $arg['id'];
         $contextid = $arg['contextid'];

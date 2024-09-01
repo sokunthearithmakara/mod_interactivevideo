@@ -63,7 +63,7 @@ class add extends external_api {
         $record['timemodified'] = time();
         $id = $DB->insert_record('interactivevideo_items', (object)$record);
         $data = $DB->get_record('interactivevideo_items', ['id' => $id]);
-
+        $data->formattedtitle = get_string('pluginname', 'ivplugin_annotation');
         return [
             'data' => json_encode($data),
         ];

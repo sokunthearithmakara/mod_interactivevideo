@@ -35,15 +35,23 @@ define([
         player;
 
     const $videoNav = $('#video-nav');
+    const $interactionNav = $('#interactions-nav');
 
     const convertSecondsToMinutes = (seconds) => {
-        if (seconds < 60) {
-            return seconds + 's';
-        } else {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            return minutes + 'm ' + remainingSeconds + 's';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = seconds % 60;
+        let string = '';
+        if (hours > 0) {
+            string += hours + 'h ';
         }
+        if (minutes > 0) {
+            string += minutes + 'm ';
+        }
+        if (remainingSeconds > 0) {
+            string += remainingSeconds + 's';
+        }
+        return string;
     };
 
     const renderAnnotationItems = async (annos, start, totaltime) => {
@@ -77,7 +85,7 @@ define([
         <i class="bi bi-bullseye mr-2"></i>${completedAnnos.length} / ${actualAnnotationCounts}</span>
         <span class="d-inline-block"><i class="bi bi-star mr-2"></i>${xpEarned} / ${xp}</span>`);
 
-        $("#video-nav ul").empty();
+        $("#interactions-nav ul").empty();
 
         if (annos.length == 0) {
             return;
@@ -123,23 +131,6 @@ define([
             });
         });
         dispatchEvent('chapterrendered', {'annotations': releventAnnotations});
-
-        $(document).on('annotationitemsrendered', function() {
-            $('#wrapper [data-toggle="tooltip"]').tooltip({
-                container: '#wrapper',
-                boundary: 'window',
-            });
-            if (displayoptions.disableinteractionclickuntilcompleted == 1) {
-                $videoNav.find('ul li:not(.completed):not(.chapter)').addClass('no-click');
-            }
-            if (displayoptions.disableinteractionclick == 1) {
-                $videoNav.find('ul li:not(.chapter)').addClass('no-click');
-            }
-            if (displayoptions.preventseeking == 1) {
-                $videoNav.find('ul li').addClass('no-click');
-                $videoNav.addClass('no-click');
-            }
-        });
     };
 
     return {
@@ -481,10 +472,12 @@ define([
                         runInteraction(theAnnotation);
                     }
                     // Toggle the tooltip to show the title.
-                    $videoNav.find('.annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('show');
+                    $interactionNav.find('.annotation[data-id="' + theAnnotation.id + '"] .item').trigger('mouseover')
+                        .addClass('active');
                     // Hide the tooltip after 2 seconds.
                     setTimeout(function() {
-                        $videoNav.find('.annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('hide');
+                        $interactionNav.find('.annotation[data-id="' + theAnnotation.id + '"] .item').trigger('mouseout')
+                            .removeClass('active');
                     }, 2000);
                 }
 
@@ -565,12 +558,14 @@ define([
                         const theAnnotation = releventAnnotations.find(x => (((t - player.frequency) <= x.timestamp
                             && (t + player.frequency) >= x.timestamp) || time == x.timestamp) && x.id != 0);
                         if (theAnnotation) {
-                            if (theAnnotation.completed && !theAnnotation.rerunnable) {
-                                $('#video-nav .annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('show');
-                                setTimeout(function() {
-                                    $('#video-nav .annotation[data-id="' + theAnnotation.id + '"] .item').tooltip('hide');
-                                }, 2000);
-                            } else {
+                            $('#interactions-nav .annotation[data-id="' + theAnnotation.id + '"] .item').trigger('mouseover')
+                                .addClass('active');
+
+                            setTimeout(function() {
+                                $('#interactions-nav .annotation[data-id="' + theAnnotation.id + '"] .item')
+                                    .trigger('mouseout').removeClass('active');
+                            }, 2000);
+                            if (!theAnnotation.completed || theAnnotation.rerunnable) {
                                 player.pause();
                                 $('#video-nav #progress')
                                     .css('width', (theAnnotation.timestamp - start) / totaltime * 100 + '%');
@@ -729,7 +724,7 @@ define([
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
 
-                $position.css('left', (relX + 3) + 'px');
+                $position.css('left', (relX) + 'px');
                 var percentage = relX / $(this).width();
                 var time = Math.round(percentage * end);
                 var formattedTime = convertSecondsToHMS(time);
@@ -745,7 +740,7 @@ define([
                 var percentage = relX / $(this).width();
                 var time = Math.round(percentage * end);
                 var formattedTime = convertSecondsToHMS(time);
-                $('#position').css('left', (relX + 3) + 'px');
+                $('#position').css('left', (relX) + 'px');
                 $('#position #timelabel').text(formattedTime);
             });
 
@@ -754,7 +749,7 @@ define([
             });
 
             // Handle annotation click event:: when user click on the annotation on the progress bar
-            $(document).on('click', '#video-nav .annotation', async function(e) {
+            $(document).on('click', '#interactions-nav .annotation, #video-nav .annotation', async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if ($(this).hasClass('no-click')) {
@@ -778,13 +773,13 @@ define([
             });
 
             // Handle seeking event:: when user click on the progress bar
-            $(document).on('click', '#video-nav', async function(e) {
+            $(document).on('click', '#seek', async function(e) {
                 if (!playerReady) {
                     return;
                 }
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                if ($(this).hasClass('no-click')) {
+                if ($('#video-nav').hasClass('no-click')) {
                     // Add a tooltip that seeking is disabled.
                     Toast.add(M.util.get_string('seekingdisabled', 'mod_interactivevideo'), {
                         type: 'danger'
@@ -805,7 +800,6 @@ define([
                 await player.seek((percentage * totaltime) + start);
                 replaceProgressBars(percentage * 100);
                 player.play();
-
             });
 
             // Handle video control events:: play
@@ -814,7 +808,6 @@ define([
                 $('#start-screen').fadeOut(300);
                 $(this).addClass('d-none');
                 $videoNav.removeClass('d-none');
-                await player.seek(start);
                 player.play();
             });
 
@@ -973,10 +966,26 @@ define([
             });
 
             $(document).on('iv:playerQualityChange', function(e) {
-                window.console.log(e);
                 $('#changequality').attr('data-current', e.originalEvent.detail.quality);
                 $('.changequality').find('i').removeClass('bi-check');
                 $(`.changequality[data-quality="${e.originalEvent.detail.quality}"]`).find('i').addClass('bi-check');
+            });
+
+            $(document).on('annotationitemsrendered', function() {
+                $('#wrapper [data-toggle="tooltip"]').tooltip({
+                    container: '#wrapper',
+                    boundary: 'window',
+                });
+                if (displayoptions.disableinteractionclickuntilcompleted == 1) {
+                    $interactionNav.find('li:not(.completed)').addClass('no-click');
+                }
+                if (displayoptions.disableinteractionclick == 1) {
+                    $interactionNav.find('li').addClass('no-click');
+                }
+                if (displayoptions.preventseeking == 1) {
+                    $interactionNav.find('li').addClass('no-click');
+                    $videoNav.addClass('no-click');
+                }
             });
         }
     };

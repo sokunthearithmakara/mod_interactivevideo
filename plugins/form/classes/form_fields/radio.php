@@ -22,7 +22,7 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
- namespace ivplugin_form\form_fields;
+namespace ivplugin_form\form_fields;
 
 /**
  * Configuration form for adding/editing form element "radio"
@@ -39,6 +39,8 @@ class radio extends base {
         $data = $this->set_data_default();
         $data->default = $this->optional_param('default', null, PARAM_TEXT);
         $data->options = $this->optional_param('options', null, PARAM_TEXT);
+        $data->display_vertical = $this->optional_param('display_vertical', null, PARAM_INT);
+        $data->allowother = $this->optional_param('allowother', null, PARAM_INT);
         $this->set_data($data);
     }
 
@@ -61,16 +63,51 @@ class radio extends base {
             [
                 'rows' => 4,
                 'oninput' => 'this.style.height = "";this.style.height = this.scrollHeight + 3 + "px"',
-                'placeholder' => 'key1=Value 1',
+                'placeholder' => 'key 1=Display value 1',
+                'data-id' => 'options',
+                'data-type' => 'keyvalue',
+                'data-radio' => 'true',
             ]
         );
         $mform->setType('options', PARAM_RAW);
         $mform->addRule('options', get_string('required'), 'required', null, 'client');
+        $mform->addHelpButton('options', 'optionsfield', 'ivplugin_form');
 
         // Default.
-        $mform->addElement('text', 'default', get_string('default', 'ivplugin_form'));
+        $mform->addElement(
+            'hidden',
+            'default',
+            null,
+            ['data-id' => 'options', 'data-type' => 'default']
+        );
         $mform->setType('default', PARAM_TEXT);
 
+        // Allow other.
+        $mform->addElement('advcheckbox', 'allowother', '', get_string('allowother', 'ivplugin_form'));
+        $mform->addHelpButton('allowother', 'allowother', 'ivplugin_form');
+
+        // Display vertical.
+        $mform->addElement('advcheckbox', 'display_vertical', get_string('displayvertical', 'ivplugin_form'));
+
         $this->set_display_vertical();
+    }
+
+    /**
+     * Validation
+     *
+     * @param array $data
+     * @param array $files
+     * @return array
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        $options = $data['options'];
+        $options = explode("\n", $options);
+        if (count($options) < 2) {
+            $errors['options'] = get_string('optionsmustbeatleasttwo', 'ivplugin_form');
+        }
+
+        return $errors;
     }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -22,17 +23,26 @@
  */
 import $ from 'jquery';
 import Base from 'mod_interactivevideo/type/base';
+import Ajax from 'core/ajax';
 import {dispatchEvent} from 'core/event_dispatcher';
 import 'mod_interactivevideo/libraries/jquery-ui';
 import Templates from 'core/templates';
 import DynamicForm from 'core_form/dynamicform';
 import {renderAnnotationLogs} from 'mod_interactivevideo/report';
 import {notifyFilterContentUpdated as notifyFilter} from 'core_filters/events';
+import Notification from 'core/notification';
 export default class Form extends Base {
+    /**
+     * Do nothing on the interactions page.
+     */
     postEditCallback() {
         // Do nothing
     }
 
+    /**
+     * Render the main container for the form plugin.
+     * @param {Object} annotation annotation object
+     */
     async renderViewer(annotation) {
         let self = this;
         if (this.isEditMode()) {
@@ -51,6 +61,8 @@ export default class Form extends Base {
                     'icon': 'bi bi-hr',
                     'type': 'linebreak',
                     'label': M.util.get_string('linebreakfield', 'ivplugin_form'),
+                },
+                {
                 },
                 {
                     'icon': 'bi bi-input-cursor-text',
@@ -83,14 +95,40 @@ export default class Form extends Base {
                     'label': M.util.get_string('radiofield', 'ivplugin_form'),
                 },
                 {
-                    'icon': 'bi bi-calendar',
-                    'type': 'date_selector',
+                },
+                {
+                    'icon': 'bi bi-calendar3-event',
+                    'type': 'date',
                     'label': M.util.get_string('dateselectorfield', 'ivplugin_form'),
+                },
+                {
+                    'icon': 'bi bi-calendar3-week',
+                    'type': 'week',
+                    'label': M.util.get_string('weekfield', 'ivplugin_form'),
+                },
+                {
+                    'icon': 'bi bi-calendar3',
+                    'type': 'month',
+                    'label': M.util.get_string('monthfield', 'ivplugin_form'),
+                },
+                {
+                    'icon': 'bi bi-clock',
+                    'type': 'time',
+                    'label': M.util.get_string('timefield', 'ivplugin_form'),
                 },
                 {
                     'icon': 'bi bi-stopwatch',
                     'type': 'duration',
                     'label': M.util.get_string('durationfield', 'ivplugin_form'),
+                },
+                {
+                },
+                {
+                    'icon': 'bi bi-sliders2',
+                    'type': 'range',
+                    'label': M.util.get_string('rangefield', 'ivplugin_form'),
+                },
+                {
                 },
                 {
                     'icon': 'bi bi-file-earmark-arrow-up',
@@ -112,85 +150,288 @@ export default class Form extends Base {
             });
 
             $('#form-modal').on('shown.bs.modal', async function() {
-                const content = await self.render(annotation, 'json');
+                let content = await self.render(annotation, 'json');
                 self.postContentRender(annotation, formfields, content);
             });
 
+            $(`#message[data-id='${annotation.id}']`).find('#content')
+                .append(`<div id="formjson" class="d-none"></div>`);
         } else {
             await super.renderViewer(annotation);
-            const content = await self.render(annotation, 'json');
+            let content = await self.render(annotation, 'json');
             $(`#message[data-id='${annotation.id}']`).find('#content')
-                .append('<div id="formmeta" class="mb-3 d-flex"></div><div id="form-preview"></div>');
+                .append(`<div id="formmeta" class="mb-3 d-flex"></div><div id="form-preview"></div>
+                    <div id="formjson" class="d-none"></div>`);
             this.postContentRender(annotation, '', content);
         }
     }
 
+    /**
+     * Apply render changes after the form is rendered.
+     */
+    postFormRender() {
+        $('form .fitem [data-type="time"]').attr('type', 'time');
+        $('form .fitem [data-type="week"]').attr('type', 'week');
+        $('form .fitem [data-type="month"]').attr('type', 'month');
+        $('form .fitem [data-type="date"]').attr('type', 'date');
+        $('form .fitem textarea:visible').trigger('input');
+        $('form .fitem [data-type="datetime"]').attr('type', 'datetime-local');
+        $('form .fitem [data-type="range"]').attr('type', 'range').removeClass('form-control').addClass('form-control-range');
+    }
+
+    /**
+     * Render the input group lists for repeatable options.
+     * @param {String} node selector for the form container
+     */
+    repeatableValues(node) {
+        $(`${node} form .fitem [data-type="keyvalue"]`).each(function() {
+            let $this = $(this);
+            let dataId = $this.attr('data-id');
+            // Remove the existing repeatable div
+            $(`div#${dataId}-repeatable`).remove();
+
+            let defaultValues = $(`input[type="hidden"][data-type="default"][data-id=${dataId}]`).val().split(",");
+            let value = $this.val();
+            let isRadio = $(this).attr('data-radio') == 'true';
+            let rows = value.split("\n");
+            let html = '';
+            if (value != '' && rows.length > 0) {
+                rows.forEach(function(row, i) {
+                    let rowvalues = row.split('=');
+                    let key = rowvalues[0].trim();
+                    let val = rowvalues[1].trim();
+                    if (key != '' && val != '') {
+                        html += `<div class="input-group mb-1 w-100 flex-nowrap align-items-center">
+                        <div class="input-group-text border-0 rounded-0 pl-0">
+                            <i class="bi bi-grip-vertical mr-2 cursor-move"></i>
+                            <input type="checkbox" ${defaultValues.includes(key) ? 'checked' : ''}>
+                        </div>
+                        <input type="text" class="form-control key" value="${key}">
+                        <input type="text" value="${val}" class="form-control value">
+                        <div class="input-group-append">
+                        <button class="btn add-row btn-secondary" type="button"><i class="bi bi-plus-lg"></i></button>
+                        <button class="btn btn-danger delete-row rounded-0" ${i == 0 ? 'disabled' : ''} type="button">
+                        <i class="bi bi-trash3-fill"></i></button>
+                        </div></div>`;
+                    }
+                });
+            } else {
+                html = `<div class="input-group mb-1 w-100 flex-nowrap align-items-center">
+                        <div class="input-group-text border-0 rounded-0 pl-0">
+                            <i class="bi bi-grip-vertical mr-2 cursor-move"></i>
+                            <input type="checkbox"/>
+                        </div>
+                        <input type="text" class="form-control key">
+                        <input type="text" class="form-control value">
+                        <div class="input-group-append">
+                        <button class="btn add-row btn-secondary" type="button"><i class="bi bi-plus-lg"></i></button>
+                        <button class="btn btn-danger delete-row rounded-0 disabled" disabled type="button">
+                        <i class="bi bi-trash3-fill"></i></button>
+                        </div></div>`;
+            }
+            $this.after(`<div id="${dataId}-repeatable" data-radio="${isRadio}" data-id="${dataId}"
+                 class="w-100 repeatable">${html}</div>`);
+            $this.addClass('d-none');
+            $(`form .fitem #${dataId}-repeatable`).sortable({
+                placeholder: "ui-state-highlight",
+                handle: '.bi-grip-vertical',
+                stop: function() {
+                    // Handle delete buttons. The first one should be disabled.
+                    $(`${node} form .repeatable .delete-row`).removeClass('disabled').removeAttr('disabled');
+                    $(`${node} form .repeatable .delete-row`).first().addClass('disabled').attr('disabled', 'disabled');
+                    $(`${node} form .repeatable input[type=text]`).trigger('input');
+                }
+            });
+        });
+        $(document).on('click', `${node} .repeatable .add-row`, function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            let $thisrow = $(this);
+            let $parent = $thisrow.closest('.input-group');
+            let $row = $parent.clone();
+            $row.find('input').val('');
+            $row.find('input[type="checkbox"]').prop('checked', false);
+            $row.find('.delete-row').removeClass('disabled').removeAttr('disabled');
+            $parent.after($row);
+        });
+        $(document).on('click', `${node} .repeatable .delete-row`, function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            let $thisrow = $(this);
+            let $parent = $thisrow.closest('.input-group');
+            $parent.remove();
+            $(`${node} form .repeatable input[type=text]`).trigger('input');
+        });
+        $(document).on('input change', `${node} form .repeatable input`, function() {
+            let $this = $(this);
+            let $parent = $this.closest('.repeatable');
+            let $inputs = $parent.find('.input-group');
+            let values = {};
+            let defaultValues = [];
+            let isRadio = $parent.attr('data-radio') == 'true';
+            if (isRadio && $this.attr('type') == 'checkbox') {
+                // Make sure only one checkbox is checked.
+                $inputs.find('input[type="checkbox"]').not(this).prop('checked', false);
+
+            }
+            $inputs.each(function() {
+                let $input = $(this);
+                if ($input.find('input.key').val() != '' && $input.find('input.value').val() != '') {
+                    let checkbox = $input.find('input[type="checkbox"]');
+                    if (checkbox.prop('checked')) {
+                        defaultValues.push($input.find('input.key').val().trim());
+                    }
+                    values[$input.find('input.key').val().trim()] = $input.find('input.value').val().trim();
+                }
+
+            });
+            let keys = Object.keys(values);
+            let rows = keys.map((key) => key + '=' + values[key]);
+            $('textarea[data-id="' + $parent.attr('data-id') + '"]').val(rows.join("\n"));
+            defaultValues = [...new Set(defaultValues)];
+            $('input[type="hidden"][data-type="default"][data-id="' + $parent.attr('data-id') + '"]').val(defaultValues.join(","));
+        });
+    }
+
+    /**
+     * Override the postContentRender method for the form plugin.
+     * @param {Object} annotation annotation object
+     * @param {Array} formfields form fields data
+     * @param {Object} content form content data
+     * @param {Boolean} reportpage report page flag
+     * @return {void}
+     */
     postContentRender(annotation, formfields, content, reportpage = false) {
         let self = this;
+        const $message = $(`#message[data-id='${annotation.id}']`);
         if (annotation.text1 != 0) {
-            $(`#message[data-id='${annotation.id}'] #formmeta`)
+            $message.find(`#formmeta`)
                 .append(`<div class="duedate">${M.util.get_string('duedate', 'ivplugin_form')}: ${content.duedate}</div>`);
         }
 
+        /**
+         * Fetch form submission data of the current user.
+         * @returns {Promise} form submission data
+         * @throws {Error} if an error occurs
+         */
         const fetchData = () => {
             return new Promise((resolve, reject) => {
-                $.ajax({
-                    url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
-                    method: "POST",
-                    dataType: "text",
-                    data: {
-                        action: 'get_log',
-                        sesskey: M.cfg.sesskey,
+                Ajax.call([{
+                    args: {
                         userid: this.userid,
-                        cm: annotation.annotationid,
+                        cmid: annotation.annotationid,
                         annotationid: annotation.id,
                         contextid: M.cfg.contextid,
-                        cmid: self.cmid,
-                        token: self.token,
                     },
-                    success: function(data) {
-                        let log = JSON.parse(data);
-                        resolve(log);
-                    },
-                    error: function(error) {
-                        reject(error);
-                    }
+                    contextid: M.cfg.contextid,
+                    methodname: 'ivplugin_form_get_log',
+                }])[0].then((response) => {
+                    resolve(JSON.parse(response.record));
+                }).catch((err) => {
+                    // Do nothing.
+                    reject(err);
                 });
             });
         };
 
+        /**
+         * Form fields data.
+         * @type {Array}
+         */
         let formjson = [];
-        const renderList = (data) => {
+
+        /**
+         * Render the list of form fields.
+         * @param {Array} fields form fields data
+         */
+        const renderList = (fields) => {
             $(`#form-field-list`).empty();
-            if (data) {
-                data.forEach((item) => {
+            if (fields) {
+                fields.forEach((item) => {
                     let icon = formfields.find((field) => field.type === item.type).icon;
                     $(`#form-field-list`)
                         .append(`<li class="list-group-item d-flex align-items-start justify-content-between p-0"
-                         data-id="${item.id}" data-properties='${JSON.stringify(item)}' data-type="${item.type}">
+                         data-id="${item.id}" data-type="${item.type}">
                                     <div class="d-flex align-items-start pt-1">
                                     <i class="bi bi-grip-vertical px-2 cursor-move"></i>
                                     <i class="${icon} mr-2"></i>
-                                    <div class="d-inline-block field-label">${item.formattedlabel}</div></div>
+                                    <div class="d-inline-block field-label cursor-pointer">${item.formattedlabel}</div></div>
                                     <div class="ml-auto d-flex">
-                                        <button class="btn btn-sm rounded-0"
-                                         id="edit" title="${M.util.get_string('edit', 'mod_interactivevideo')}">
+                                        <button class="btn btn-sm rounded-0 editfield"
+                                         title="${M.util.get_string('edit', 'mod_interactivevideo')}">
                                          <i class="bi bi-pencil-square"></i></button>
-                                        <button class="btn btn-sm rounded-0"
-                                         id="copy" title="${M.util.get_string('clone', 'mod_interactivevideo')}">
+                                        <button class="btn btn-sm rounded-0 copyfield"
+                                         title="${M.util.get_string('clone', 'mod_interactivevideo')}">
                                          <i class="bi bi-copy"></i></button>
-                                        <button class="btn btn-sm rounded-0 text-danger"
-                                         id="delete" title="${M.util.get_string('delete', 'mod_interactivevideo')}">
+                                        <button class="btn btn-sm rounded-0 text-danger deletefield"
+                                         title="${M.util.get_string('delete', 'mod_interactivevideo')}">
                                          <i class="bi bi-trash3"></i></button>
                                         </div>
                                 </li>`);
                 });
             }
+            $message.find(`#formjson`).text(JSON.stringify(fields));
         };
 
-        let previewform; // DynamicForm instance.
-        const previewForm = (data, id = null) => {
-            $(`#message[data-id='${annotation.id}']`).find(`#form-preview`).empty();
+        let tracking = [];
+        let trackingIndex = 0;
+        /**
+         * Update tracking data for redo and undo
+         * @param {Array} fields array of form fields
+         * @param {Array} actives array of active items
+         */
+        const saveTracking = (fields, actives) => {
+            if (trackingIndex < tracking.length - 1) {
+                // Remove all the tracking data after the current index.
+                tracking = tracking.slice(0, trackingIndex + 1);
+            }
+            tracking.push({
+                items: JSON.stringify(fields),
+                actives: actives,
+                at: new Date().getTime(),
+            });
+            tracking.sort((a, b) => a.at - b.at);
+            trackingIndex = tracking.length - 1;
+            $('#save-close #undo').removeAttr('disabled');
+            $('#save-close #redo').attr('disabled', 'disabled');
+            if (tracking.length == 1) {
+                $('#save-close #undo').attr('disabled', 'disabled');
+            }
+            $('#save-close #save').removeAttr('disabled');
+        };
+
+        let previewform = null; // DynamicForm instance.
+
+        /**
+         * Activate the sortable fields.
+         */
+        const activateFieldsSortable = () => {
+            $('#form-preview form').sortable({
+                items: ".fitem.row:not(.femptylabel):not([hidden]), fieldset.collapsible",
+                connectWith: "#form-preview form .fcontainer",
+            });
+
+            $('#form-preview form .fcontainer').sortable({
+                items: ".fitem.row:not(.femptylabel):not([hidden])",
+                connectWith: "#form-preview form .fcontainer, #form-preview form",
+            });
+            $('#form-preview form, #form-preview form .fcontainer').sortable("option", {
+                placeholder: "ui-state-highlight",
+                forcePlaceholderSize: true,
+                cursor: 'move',
+                forceHelperSize: true,
+                tolerance: 'pointer',
+            });
+        };
+
+        /**
+         * Preview the form.
+         * @param {Array} data form fields data
+         * @param {Number} id field id
+         * @param {Boolean} updateDraft update draft status
+         */
+        const previewForm = (data, id = null, updateDraft = true) => {
+            $message.find(`#form-preview`).empty();
             const selector = document.querySelector(`#message[data-id='${annotation.id}'] #form-preview`);
             previewform = new DynamicForm(selector, 'ivplugin_form\\submitform_form');
             if (data === null || data.length == 0) {
@@ -200,6 +441,12 @@ export default class Form extends Base {
             $('#form-preview').addClass('loader');
             formdata.formjson = JSON.stringify(data);
             previewform.load(formdata);
+            let interval = setInterval(() => {
+                if ($message.find(`#form-preview form`).length > 0) {
+                    clearInterval(interval);
+                    self.postFormRender();
+                }
+            }, 100);
             if (id) {
                 // Loop until the form element is found and highlight the current field.
                 let interval = setInterval(() => {
@@ -211,7 +458,39 @@ export default class Form extends Base {
                              #form-preview div#field-${id}, #form-preview [data-groupname=field-${id}],
                              #form-preview [id^=fitem_id_field-${id}]`).addClass('field-highlight');
                         let field = element.querySelector(`#form-preview .field-highlight`);
-                        field.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        let isHeader = $('.field-highlight').hasClass(`collapsible`);
+                        if (field) {
+                            field.scrollIntoView({behavior: 'smooth', block: isHeader ? 'start' : 'center'});
+                        }
+                    }
+                }, 100);
+            }
+            if (updateDraft) {
+                saveTracking(data, id);
+            }
+
+            if (!self.isEditMode() && $message.attr('data-placement') == 'popup') {
+                const interval = setInterval(() => {
+                    if ($message.find(`#form-preview form`).length > 0) {
+                        clearInterval(interval);
+                        // Create the modal footer
+                        let $actionbtns = $message.find(`#form-preview #form-action-btns`);
+                        let $clone = $actionbtns.clone();
+                        $actionbtns.remove();
+                        let footer = `<div class="modal-footer">
+                            ${$clone.html()}
+                            </div>`;
+                        $message.find(`.modal-content .modal-footer`).remove();
+                        $message.find(`.modal-content`).append(footer);
+                    }
+                }, 100);
+            }
+
+            if (this.isEditMode()) {
+                let interval = setInterval(() => {
+                    if ($('#form-preview form').length > 0) {
+                        clearInterval(interval);
+                        activateFieldsSortable();
                     }
                 }, 100);
             }
@@ -246,23 +525,75 @@ export default class Form extends Base {
             formjson: JSON.stringify(formjson),
         };
 
-        if (this.isEditMode()) {
-            renderList(formjson);
-        }
+        $message.on('click', `#submitform-submit`, e => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const event = previewform.trigger(previewform.events.SUBMIT_BUTTON_PRESSED);
+            if (!event.defaultPrevented) {
+                previewform.submitFormAjax();
+            }
+
+            // On validation error we have to rerender the custom fields.
+            previewform.addEventListener(previewform.events.SERVER_VALIDATION_ERROR, (e) => {
+                e.stopImmediatePropagation();
+                self.addNotification(M.util.get_string('formvalidationerror', 'ivplugin_form'), 'danger');
+                previewform.notifyResetFormChanges();
+                self.postFormRender();
+            });
+
+            previewform.addEventListener(previewform.events.CLIENT_VALIDATION_ERROR, (e) => {
+                e.stopImmediatePropagation();
+                self.addNotification(M.util.get_string('formvalidationerror', 'ivplugin_form'), 'danger');
+                previewform.notifyResetFormChanges();
+            });
+
+            previewform.addEventListener(previewform.events.FORM_SUBMITTED, e => {
+                e.preventDefault();
+                e.stopImmediatePropagation(); // Important; otherwise, event will repeat multiple times.
+                self.toggleCompletion(annotation.id, 'mark-done', 'automatic');
+                formdata.reviewing = 1;
+                if (annotation.char2 == 1 && (annotation.text1 == 0 || annotation.text1 > new Date().getTime() / 1000)) {
+                    $('#editsubmission').show();
+                }
+            });
+        });
+
+        $message.on('click', `#editsubmission`, (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            formdata.reviewing = 0;
+            $('#editsubmission').hide();
+            formjson = $message.find(`#formjson`).text();
+            formjson = JSON.parse(formjson);
+            previewForm(formjson);
+        });
+
+        $message.on('click', `#cancel-submit`, (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            $message.find(`.modal-content .modal-footer`).remove();
+            formdata.reviewing = 1;
+            $('#editsubmission').show();
+            previewForm(formjson);
+        });
 
         if (!this.isEditMode()) {
             if (annotation.completed) {
                 fetchData()
                     .then((log) => {
                         if (log) {
-                            const submission = JSON.parse(log.text1);
-                            const newformjson = formjson.map((item) => {
+                            let submission = JSON.parse(log.text1);
+                            let newformjson = formjson.map((item) => {
                                 item.value = submission['field-' + item.id];
                                 item.default = submission['field-' + item.id];
+                                if (item.type == 'radio') {
+                                    item.othertext = submission['field-' + item.id + '-otheroptiontext'];
+                                }
                                 return item;
                             });
                             formdata.reviewing = 1;
                             formdata.submissionid = submission.id;
+                            $message.find(`#formjson`).text(JSON.stringify(formjson));
                             previewForm(newformjson);
                             // Append the edit button if applicable
                             if (annotation.char2 == 1 && (annotation.text1 == 0
@@ -290,26 +621,48 @@ export default class Form extends Base {
                 }
             }
         } else {
-            previewForm(formjson);
+            previewForm(formjson, null, true);
+            $message.find(`#formjson`).text(JSON.stringify(formjson));
+            renderList(formjson);
         }
 
         if (this.isEditMode()) {
-            const getFormJson = () => {
-                formjson = $('#form-field-list').find('li').map(function() {
-                    return JSON.parse($(this).attr('data-properties'));
-                }).get();
+
+            /**
+             * Put form fields in DOM.
+             * @param {Array} ff form fields data
+             */
+            const saveFormJson = (ff) => {
+                $message.find(`#formjson`).text(JSON.stringify(ff));
             };
+
+            /**
+             * Get the form fields data based on the current order.
+             */
+            const getFormJson = () => {
+                let currentFormFields = JSON.parse($message.find(`#formjson`).text());
+                let updatedFormJson = $message.find(`#form-field-list li`).map(function() {
+                    const id = $(this).attr('data-id');
+                    const field = currentFormFields.find((item) => item.id == id);
+                    return field;
+                }).get();
+                saveFormJson(updatedFormJson);
+                formjson = updatedFormJson;
+            };
+
             $('#form-field-list').sortable({
-                handle: '.bi-grip-vertical',
                 placeholder: "ui-state-highlight",
-                stop: function() {
+                cursor: 'move',
+                stop: function(event, ui) {
+                    const id = ui.item.attr('data-id');
                     getFormJson();
                     renderList(formjson);
-                    previewForm(formjson);
+                    previewForm(formjson, id, true);
                 }
             });
+
             // Add the form field.
-            $(document).on('click', 'button.add-field', function(e) {
+            $message.on('click', `button.add-field`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 let type = $(this).data('type');
@@ -320,9 +673,9 @@ export default class Form extends Base {
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title">${M.util.get_string('addformfield', 'ivplugin_form',
-                    typeString.toLowerCase())}</h5>
+                    typeString)}</h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
+                                <i class="bi bi-x-lg fs-25px"></i>
                                 </button>
                             </div>
                             <div class="modal-body loader">
@@ -365,6 +718,7 @@ export default class Form extends Base {
 
                     document.querySelector('#newfield-submit').addEventListener('click', (e) => {
                         e.preventDefault();
+                        e.stopImmediatePropagation();
                         const event = formfieldform.trigger(formfieldform.events.SUBMIT_BUTTON_PRESSED);
                         if (!event.defaultPrevented) {
                             formfieldform.submitFormAjax();
@@ -373,23 +727,57 @@ export default class Form extends Base {
 
                     formfieldform.addEventListener(formfieldform.events.FORM_SUBMITTED, (e) => {
                         e.preventDefault();
+                        e.stopImmediatePropagation();
                         const response = e.detail;
-                        formjson.push(response);
+                        formjson = JSON.parse($message.find(`#formjson`).text());
+                        const active = $('#form-preview form .fitem.row.field-active');
+                        if (active.length > 0) {
+                            let id = active.attr('id');
+                            id = id.split('field-')[1];
+                            id = id.split('_')[0];
+                            let index = formjson.findIndex((item) => item.id == id);
+                            // Insert the new field after the active field.
+                            formjson.splice(index + 1, 0, response);
+                        } else {
+                            formjson.push(response);
+                        }
                         renderList(formjson);
-                        previewForm(formjson, response.id);
+                        previewForm(formjson, response.id, true);
                         $('#newfield-modal').modal('hide');
                     });
 
                     self.setModalDraggable('#newfield-modal .modal-dialog');
+                    let formInterval = setInterval(() => {
+                        if ($('#newfield-modal .modal-body').find('form').length > 0) {
+                            clearInterval(formInterval);
+                            self.postFormRender();
+                            if (type == 'advcheckbox' || type == 'radio' || type == 'select') {
+                                self.repeatableValues('#newfield-modal');
+                            }
+                        }
+                    }, 100);
 
+                    $(formfieldform).on('core_form_dynamicform_clientvalidationerror core_form_dynamicform_validationerror',
+                        function(e) {
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            self.postFormRender();
+                            if (type == 'advcheckbox' || type == 'radio' || type == 'select') {
+                                self.repeatableValues('#newfield-modal');
+                            }
+                            self.addNotification(M.util.get_string('formvalidationerror', 'ivplugin_form'), 'danger');
+                        });
                 });
             });
 
-            $(document).on('click', '#form-field-list button#edit', function(e) {
+            // Edit the form field
+            $message.on('click', `#form-field-list button.editfield`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 let type = $(this).closest('li').attr('data-type');
-                let formfielddata = JSON.parse($(this).closest('li').attr('data-properties'));
+                let fieldid = $(this).closest('li').attr('data-id');
+                formjson = JSON.parse($message.find(`#formjson`).text());
+                let formfielddata = formjson.find((item) => item.id == fieldid);
                 let fields = formjson.map((item) => {
                     return {
                         id: item.id,
@@ -405,9 +793,9 @@ export default class Form extends Base {
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title">${M.util.get_string('editformfield',
-                    'ivplugin_form', typeString.toLowerCase())}</h5>
+                    'ivplugin_form', typeString)}</h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
+                                <i class="bi bi-x-lg fs-25px"></i>
                                 </button>
                             </div>
                             <div class="modal-body loader">
@@ -434,6 +822,7 @@ export default class Form extends Base {
 
                     document.querySelector('#editfield-submit').addEventListener('click', (e) => {
                         e.preventDefault();
+                        e.stopImmediatePropagation();
                         const event = formfieldform.trigger(formfieldform.events.SUBMIT_BUTTON_PRESSED);
                         if (!event.defaultPrevented) {
                             formfieldform.submitFormAjax();
@@ -442,47 +831,98 @@ export default class Form extends Base {
 
                     formfieldform.addEventListener(formfieldform.events.FORM_SUBMITTED, (e) => {
                         e.preventDefault();
+                        e.stopImmediatePropagation();
                         const response = e.detail;
                         const index = formjson.findIndex((item) => item.id == response.id);
                         if (index !== -1) {
                             formjson[index] = response;
                         }
                         renderList(formjson);
-                        previewForm(formjson, response.id);
+                        previewForm(formjson, response.id, true);
                         $('#editfield-modal').modal('hide');
                     });
 
                     self.setModalDraggable('#editfield-modal .modal-dialog');
+                    let formInterval = setInterval(() => {
+                        if ($('#editfield-modal .modal-body').find('form').length > 0) {
+                            clearInterval(formInterval);
+                            if (type == 'advcheckbox' || type == 'radio' || type == 'select') {
+                                self.repeatableValues('#editfield-modal');
+                            }
+                            self.postFormRender();
+                        }
+                    }, 100);
+
+                    $(formfieldform).on('core_form_dynamicform_clientvalidationerror core_form_dynamicform_validationerror',
+                        function(e) {
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            self.postFormRender();
+                            if (type == 'advcheckbox' || type == 'radio' || type == 'select') {
+                                self.repeatableValues('#editfield-modal');
+                            }
+                            self.addNotification(M.util.get_string('formvalidationerror', 'ivplugin_form'), 'danger');
+                        });
                 });
             });
 
-            $(document).on('click', '#form-field-list button#copy', function(e) {
+            // Copy the form field
+            $message.on('click', `#form-field-list button.copyfield`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                let formfielddata = JSON.parse($(this).closest('li').attr('data-properties'));
+                let fieldid = $(this).closest('li').attr('data-id');
+                formjson = JSON.parse($message.find(`#formjson`).text());
+                let formfielddata = JSON.parse(JSON.stringify(formjson.find((item) => item.id == fieldid)));
                 const index = formjson.findIndex((item) => item.id == formfielddata.id);
                 if (index !== -1) {
                     formfielddata.id = Math.floor(new Date().getTime() / 1000);
                     formjson.splice(index + 1, 0, formfielddata);
                 }
                 renderList(formjson);
-                previewForm(formjson, formfielddata.id);
+                previewForm(formjson, formfielddata.id, true);
             });
 
-            $(document).on('click', '#form-field-list button#delete', function(e) {
+            // Delete the form field
+            $message.on('click', `#form-field-list button.deletefield`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                let id = $(this).closest('li').attr('data-id');
-                formjson = formjson.filter((item) => item.id != id);
-                renderList(formjson);
-                previewForm(formjson);
+                let currentFormFields = JSON.parse($message.find(`#formjson`).text());
+                const $this = $(this);
+                Notification.saveCancel(
+                    M.util.get_string('deletefield', 'ivplugin_form'),
+                    M.util.get_string('deletefieldconfirm', 'ivplugin_form'),
+                    M.util.get_string('delete', 'mod_interactivevideo'),
+                    function() {
+                        let li = $this.closest('li');
+                        let id = li.attr('data-id');
+                        li.remove();
+                        $(`#form-preview #fitem_field-${id},
+                            #form-preview fieldset[id^=id_field-${id}],
+                            #form-preview div#field-${id}, #form-preview [data-groupname=field-${id}],
+                            #form-preview [id^=fitem_id_field-${id}]`).addClass('field-highlight');
+                        let isHeader = $('.field-highlight').hasClass(`collapsible`);
+                        let ff = currentFormFields.filter((item) => item.id != id);
+                        renderList(ff);
+                        if (isHeader) {
+                            previewForm(ff, id, true);
+                        } else {
+                            $('.field-highlight').fadeOut(300, 'linear', function() {
+                                $(this).remove();
+                            });
+                            saveTracking(ff, id);
+                        }
+                    },
+                    null
+                );
             });
 
-            $(document).on('click', 'button#save', function(e) {
+            // Save the form fields
+            $message.on('click', `button#save`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 getFormJson();
-                let json = formjson.map((item) => {
+                let formJsonCopy = JSON.parse(JSON.stringify(formjson));
+                let json = formJsonCopy.map((item) => {
                     delete item.annotationid;
                     delete item.contextid;
                     delete item.formattedlabel;
@@ -506,6 +946,14 @@ export default class Form extends Base {
                     },
                     success: function(data) {
                         let updated = JSON.parse(data);
+                        tracking = [];
+                        tracking.push({
+                            items: JSON.stringify(formJsonCopy),
+                            actives: null,
+                            at: new Date().getTime(),
+                        });
+                        $('#save-close #redo, #save-close #undo').attr('disabled', 'disabled');
+                        $('#save-close #save').attr('disabled', 'disabled');
                         dispatchEvent('annotationupdated', {
                             annotation: updated,
                             action: 'edit',
@@ -514,8 +962,10 @@ export default class Form extends Base {
                 });
             });
 
-            $(document).on('click', '#form-field-list li .field-label', function() {
+            // Scroll to the form field on label click
+            $message.on('click', `#form-field-list li .field-label`, function() {
                 let id = $(this).closest('li').attr('data-id');
+                let type = $(this).closest('li').attr('data-type');
                 $(`#form-preview #fitem_field-${id}, #form-preview fieldset[id^=id_field-${id}],
                      #form-preview div#field-${id}, #form-preview [data-groupname=field-${id}],
                       #form-preview [id^=fitem_id_field-${id}]`).addClass('field-highlight');
@@ -524,10 +974,12 @@ export default class Form extends Base {
                     $collapsible.find('[data-toggle="collapse"]').trigger('click');
                 }
                 let field = document.querySelector(`#form-preview .field-highlight`);
-                field.scrollIntoView({behavior: 'smooth', block: 'center'});
+                if (field) {
+                    field.scrollIntoView({behavior: 'smooth', block: type == 'header' ? 'start' : 'center'});
+                }
             });
 
-            $(document).on('mouseover', '#form-field-list li', function() {
+            $message.on('mouseover', `#form-field-list li`, function() {
                 $(`#form-preview .field-highlight`).removeClass('field-highlight');
                 const id = $(this).attr('data-id');
                 $(`#form-preview #fitem_field-${id}, #form-preview fieldset[id^=id_field-${id}],
@@ -535,11 +987,11 @@ export default class Form extends Base {
                       #form-preview [id^=fitem_id_field-${id}]`).addClass('field-highlight');
             });
 
-            $(document).on('mouseout', '#form-field-list li', function() {
+            $message.on('mouseout', `#form-field-list li`, function() {
                 $(`#form-preview .field-highlight`).removeClass('field-highlight');
             });
 
-            $(document).on('mouseover', '#form-preview .fitem', function() {
+            $message.on('mouseover', `#form-preview .fitem`, function() {
                 $(`#form-field-list li`).removeClass('field-highlight');
                 let group = $(this).attr('data-groupname');
                 let id;
@@ -556,29 +1008,177 @@ export default class Form extends Base {
                 $(`#form-field-list li[data-id=${id}]`).addClass('field-highlight');
             });
 
-            $(document).on('mouseout', '#form-preview .fitem', function() {
+            $message.on('mouseout', `#form-preview .fitem`, function() {
                 $(`#form-field-list li`).removeClass('field-highlight');
             });
 
-            $(document).on('click', '#form-preview i#edit', function(e) {
+            // Edit the form field from the preview.
+            $message.on('click', `#form-preview i.edit`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 let id = $(this).data('id');
-                $(`#form-field-list li[data-id=${id}] button#edit`).trigger('click');
+                $(`#form-field-list li[data-id=${id}] button.editfield`).trigger('click');
             });
 
-            $(document).on('click', '#form-preview i#delete', function(e) {
+            // Delete the form field from the preview.
+            $message.on('click', `#form-preview i.delete`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 let id = $(this).data('id');
-                $(`#form-field-list li[data-id=${id}] button#delete`).trigger('click');
+                $(`#form-field-list li[data-id=${id}] button.deletefield`).trigger('click');
             });
 
-            $(document).on('click', '#form-preview i#copy', function(e) {
+            // Copy the form field from the preview.
+            $message.on('click', `#form-preview i.copy`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 let id = $(this).data('id');
-                $(`#form-field-list li[data-id=${id}] button#copy`).trigger('click');
+                $(`#form-field-list li[data-id=${id}] button.copyfield`).trigger('click');
+            });
+
+            // Undo the form field changes.
+            $message.on('click', `#save-close #undo`, async function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (trackingIndex == 0) {
+                    return;
+                }
+                trackingIndex--;
+                const instance = tracking[trackingIndex];
+                formjson = JSON.parse(instance.items);
+                renderList(formjson);
+                previewForm(formjson, instance.actives, false);
+                if (trackingIndex == 0) {
+                    $('#save-close #undo').attr('disabled', 'disabled');
+                    $('#save-close #redo').removeAttr('disabled');
+                } else {
+                    $('#save-close #undo').removeAttr('disabled');
+                    if (trackingIndex == tracking.length - 1) {
+                        $('#save-close #redo').attr('disabled', 'disabled');
+                    } else {
+                        $('#save-close #redo').removeAttr('disabled');
+                    }
+                }
+            });
+
+            // Redo the form field changes.
+            $message.on('click', `#save-close #redo`, async function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (trackingIndex == tracking.length - 1) {
+                    return;
+                }
+                trackingIndex++;
+                const instance = tracking[trackingIndex];
+                formjson = JSON.parse(instance.items);
+                renderList(formjson);
+                previewForm(formjson, instance.actives, false);
+                if (trackingIndex == tracking.length - 1) {
+                    $('#save-close #redo').attr('disabled', 'disabled');
+                    $('#save-close #undo').removeAttr('disabled');
+                } else {
+                    $('#save-close #redo').removeAttr('disabled');
+                    if (trackingIndex == 0) {
+                        $('#save-close #undo').attr('disabled', 'disabled');
+                    } else {
+                        $('#save-close #undo').removeAttr('disabled');
+                    }
+                }
+            });
+
+            // Close the form field modal.
+            $message.on('click', `#save-close #close`, async function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (tracking.length > 1) {
+                    Notification.saveCancel(
+                        M.util.get_string('savechanges', 'mod_interactivevideo'),
+                        M.util.get_string('savechangesconfirm', 'mod_interactivevideo'),
+                        M.util.get_string('save', 'mod_interactivevideo'),
+                        function() {
+                            $('#save-close #save').trigger('click');
+                        },
+                        function() {
+                            tracking = [];
+                            $('#save-close #redo, #save-close #undo').attr('disabled', 'disabled');
+                            $('#save-close #save').attr('disabled', 'disabled');
+                            $('#form-modal').modal('hide');
+                        }
+                    );
+                } else {
+                    $('#form-modal').modal('hide');
+                }
+            });
+
+            // Sort the form fields in the preview.
+            $message.on('sortstart', '#form-preview form, #form-preview form .fcontainer', function() {
+                $(this).addClass('no-pointer');
+                $('#form-preview form .fcontainer').addClass('empty-container');
+            });
+
+            // Revert the item if it's a collapsible being dropped into .fcontainer.
+            $message.on('sortreceive', '#form-preview form, #form-preview form .fcontainer', function(event, ui) {
+                if (ui.item.hasClass('collapsible') && ui.item.parent().hasClass('fcontainer')) {
+                    $(ui.sender).sortable('cancel');
+                    self.addNotification(M.util.get_string('sectioninsectionisnotsupported', 'ivplugin_form'), 'danger');
+                }
+            });
+
+            // Update the form fields data on sort stop.
+            $message.on('sortstop', '#form-preview form, #form-preview form .fcontainer', function(event, ui) {
+                let id = ui.item.attr('id');
+                id = id.split('field-')[1];
+                id = id.split('_')[0];
+                ui.item.trigger('click');
+                let currentFormFields = JSON.parse($message.find(`#formjson`).text());
+                $(this).removeClass('no-pointer');
+                $('#form-preview form .fcontainer').removeClass('empty-container');
+                let sortables = $message.find(`#form-preview form`)
+                    .find('.fitem:not(.femptylabel):not([hidden]), fieldset.collapsible');
+                let fieldsets = $message.find(`#form-preview form`).find('fieldset.collapsible');
+
+                let fields = sortables.map(function() {
+                    let $this = $(this);
+                    let id = $this.attr('id');
+                    return id;
+                }).get();
+                let fieldsetsIds = fieldsets.map(function() {
+                    let $this = $(this);
+                    let id = $this.attr('id');
+                    return id;
+                }).get();
+
+                let newFormJson = [];
+                fields.forEach(x => {
+                    let y = x.split('field-')[1];
+                    y = y.split('_')[0];
+                    let row = currentFormFields.find(f => f.id == y);
+                    if (fieldsetsIds.includes(x)) {
+                        // Get the next sibling after this collapsible section
+                        let $next = $(`#${x}`).next();
+                        let endId = 0;
+                        if ($next && $next.hasClass('fitem') && !$next.hasClass('femptylabel')) {
+                            endId = $next.attr('id');
+                        }
+                        if (endId != 0 && endId) {
+                            endId = endId.split('field-')[1];
+                            endId = endId.split('_')[0];
+                            row.closeat = endId;
+                        } else {
+                            row.closeat = '';
+                        }
+                    }
+                    newFormJson.push(row);
+                });
+                formjson = newFormJson;
+                renderList(formjson);
+                saveTracking(formjson, id);
+            });
+
+            // Add field-highlight class when the field is clicked.
+            $message.on('click', `#form-preview .fitem.row`, function() {
+                $(`#form-preview .field-active`).removeClass('field-active');
+                $(this).addClass('field-active');
             });
         } else {
             if (annotation.completiontracking && annotation.completiontracking != 'manual') {
@@ -594,42 +1194,16 @@ export default class Form extends Base {
                         .text(`${M.util.get_string('completionincomplete', 'mod_interactivevideo')}`);
                 }
             }
-
-            $(document).on('click', `#message[data-id='${annotation.id}'] #submitform-submit`, async (e) => {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                const event = previewform.trigger(previewform.events.SUBMIT_BUTTON_PRESSED);
-                if (!event.defaultPrevented) {
-                    previewform.submitFormAjax();
-                }
-                previewform.addEventListener(previewform.events.FORM_SUBMITTED, () => {
-                    self.toggleCompletion(annotation.id, 'mark-done', 'automatic');
-                    formdata.reviewing = 1;
-                    if (annotation.char2 == 1 && (annotation.text1 == 0 || annotation.text1 > new Date().getTime() / 1000)) {
-                        $('#editsubmission').show();
-                    }
-                    previewForm(formjson);
-                });
-            });
-
-            $(document).on('click', `#message[data-id='${annotation.id}'] #editsubmission`, (e) => {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                formdata.reviewing = 0;
-                $('#editsubmission').hide();
-                previewForm(formjson);
-            });
-
-            $(document).on('click', `#message[data-id='${annotation.id}'] #cancel-submit`, (e) => {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                formdata.reviewing = 1;
-                $('#editsubmission').show();
-                previewForm(formjson);
-            });
         }
     }
 
+    /**
+     * Override the completionCallback method for the form plugin.
+     * @param {Array} annotations annotations data
+     * @param {Object} thisItem annotation object
+     * @param {String} action action type
+     * @param {String} type action type
+     */
     completionCallback(annotations, thisItem, action, type) {
         let msg = 'formupdated';
         if (!thisItem.completed) {
@@ -639,8 +1213,18 @@ export default class Form extends Base {
         if (type == 'automatic') {
             this.addNotification(M.util.get_string(msg, 'ivplugin_form'), 'success');
         }
+        let annotation = annotations.find((item) => item.id == thisItem.id);
+        this.runInteraction(annotation);
     }
 
+    /**
+     * Render form used on the report page
+     * @param {Object} annotation The annotation object
+     * @param {Array} f Form fields data
+     * @param {Object} response Form submission data
+     * @param {String} node The node to render the form
+     * @returns {void}
+     */
     renderForm(annotation, f, response, node) {
         let self = this;
         const getFormJson = () => {
@@ -667,7 +1251,7 @@ export default class Form extends Base {
             $(`#message[data-id='${annotation.id}']`).find(`${node} #form-preview`).addClass('loader').empty();
             let newformjson = ff;
             if (response !== null) {
-                const submission = JSON.parse(response.text1);
+                let submission = JSON.parse(response.text1);
                 newformjson = ff.map((item) => {
                     item.value = submission['field-' + item.id];
                     item.default = submission['field-' + item.id];
@@ -679,10 +1263,16 @@ export default class Form extends Base {
 
             formdata.formjson = JSON.stringify(newformjson);
 
-            const previewform = new DynamicForm(document.
+            let previewform = new DynamicForm(document.
                 querySelector(`#message[data-id='${annotation.id}'] ${node} #form-preview`),
                 'ivplugin_form\\submitform_form');
             previewform.load(formdata);
+            let interval = setInterval(() => {
+                if ($(`#message[data-id='${annotation.id}'] ${node} #form-preview form`).length > 0) {
+                    clearInterval(interval);
+                    self.postFormRender();
+                }
+            }, 100);
         };
 
         if (!f) {
@@ -696,6 +1286,7 @@ export default class Form extends Base {
         }
 
     }
+
     /**
      * What happens when an item runs
      * @param {Object} annotation The annotation object
@@ -711,7 +1302,7 @@ export default class Form extends Base {
         // First render container
         this.renderViewer(annotation);
 
-        this.enableManualCompletion();
+        this.enableManualCompletion(annotation);
         if (annotation.displayoptions == 'popup') {
             $('#annotation-modal').on('shown.bs.modal', function() {
                 self.setModalDraggable('#annotation-modal .modal-dialog');
@@ -732,25 +1323,22 @@ export default class Form extends Base {
         $message.find('#content').html(`<div class="tab-content" id="myTabContent">
             <div class="tab-pane fade" id="formtab" role="tabpanel">
             <div id="formmeta" class="mb-3 d-flex"></div><div id="form-preview"></div></div>
-            <div class="tab-pane fade show active" id="responsetab" role="tabpanel"></div>
+            <div class="tab-pane fade show active loading" id="responsetab" role="tabpanel"></div>
             </div><div class="shadow z-index-1 h-100 bg-white overflow-auto" id="responseview">
             <div class="modal-header d-flex bg-white align-items-center pr-0 sticky-top" id="title">
-                                            <h5 class="modal-title text-truncate mb-0"><div class="d-flex align-items-center p-1">
-                                                <select id="submission-list"
-                                                class="custom-select rounded-sm mr-1"></select>
-                                                <button class="btn p-0 previous">
-                                                <i class="bi bi-chevron-left fa-fw fs-25px"></i>
-                                                </button>
-                                                <button class="btn p-0 next">
-                                                <i class="bi bi-chevron-right fa-fw fs-25px"></i>
-                                                </button>
-                                            </div></h5>
-                                            <div class="d-flex align-items-center">
-                                                <button class="btn mx-2 p-0 close">
-                                                <i class="bi bi-x-lg fa-fw fs-25px"></i>
-                                                </button>
-                                            </div>
-                                        </div>
+                <h5 class="modal-title text-truncate mb-0">
+                    <div class="d-flex align-items-center p-1">
+                        <select id="submission-list" class="custom-select rounded-sm mr-1"></select>
+                        <button class="btn p-0 previous"><i class="bi bi-chevron-left fa-fw fs-25px"></i></button>
+                        <button class="btn p-0 next"><i class="bi bi-chevron-right fa-fw fs-25px"></i></button>
+                    </div>
+                </h5>
+                <div class="d-flex align-items-center">
+                    <button class="btn mx-2 p-0 close">
+                        <i class="bi bi-x-lg fa-fw fs-25px"></i>
+                    </button>
+                </div>
+            </div>
             <div id="form-preview"></div>
             </div>`);
         $message.find('.btns')
@@ -793,12 +1381,12 @@ export default class Form extends Base {
                     let head = f.formattedlabel;
                     if (f.helptext.text && f.helptext.text != '') {
                         head = `<span>${f.formattedlabel}
-                            <i class="ml-2 bi bi-info-circle-fill text-secondary helptext" data-fieldid="${f.id}"
+                            <i class="ml-2 bi bi-info-circle-fill text-secondary helptext cursor-pointer" data-fieldid="${f.id}"
                              data-toggle="popover">
                             </i></span>`;
                     }
                     heading.push({
-                        title: head,
+                        "title": head,
                         "class": 'exportable not-sortable',
                     });
                     validfields.push(f);
@@ -826,8 +1414,30 @@ export default class Form extends Base {
                     }
                     switch (f.type) {
                         case 'text':
+                        case 'time':
                         case 'textarea':
                             row.push(response);
+                            break;
+                        case 'range':
+                            row.push(response + '/[' + f.minlength + '-' + f.maxlength + ']');
+                            break;
+                        case 'week':
+                            var wvalue = response.split('-');
+                            var week = wvalue[1].replace('W', '');
+                            row.push(`${M.util.get_string('weekvalue', 'ivplugin_form', week)}, ${wvalue[0]}`);
+                            break;
+                        case 'month':
+                            var mvalue = response.split('-');
+                            var month = M.util.get_string('month' + mvalue[1], 'ivplugin_form');
+                            row.push(`${month} ${mvalue[0]}`);
+                            break;
+                        case 'date':
+                            var includeTime = response.includes('T');
+                            var dvalue = new Date(response).toLocaleDateString();
+                            if (includeTime) {
+                                dvalue += ' ' + new Date(response).toLocaleTimeString();
+                            }
+                            row.push(dvalue);
                             break;
                         case 'editor':
                             row.push(response.text);
@@ -846,62 +1456,85 @@ export default class Form extends Base {
                             row.push(res.join(', '));
                             break;
                         case 'radio':
-                            var options = f.options.split('\n');
-                            options.forEach((option) => {
+                            var ans = '';
+                            var roptions = f.options.split('\n');
+                            if (response == 'otheroption') {
+                                let othertext = submission['field-' + f.id + '-otheroptiontext'];
+                                row.push(M.util.get_string('otheroption', 'ivplugin_form')
+                                    + (othertext != '' ? ': ' + othertext : ''));
+                                break;
+                            }
+                            roptions.forEach((option) => {
                                 option = option.trim();
                                 let choices = option.split('=');
                                 let value = choices[0];
                                 if (response == value) {
-                                    row.push(choices[1]);
+                                    ans = choices[1];
                                     return;
                                 }
                             });
+                            row.push(ans);
                             break;
                         case 'advcheckbox':
-                            var res = [];
-                            var options = f.options.split('\n');
-                            var selected = Object.values(response);
-                            selected = selected.filter((item) => item != '');
-                            options.forEach((option) => {
-                                option = option.trim();
-                                let choices = option.split('=');
-                                let value = choices[0];
-                                if (selected.indexOf(value) > -1) {
-                                    res.push(choices[1]);
+                            var ares = [];
+                            var aoptions = f.options.split('\n');
+                            if (f.allowother == 1) {
+                                aoptions.push(`otheroption=${M.util.get_string('otheroption', 'ivplugin_form')}`);
+                            }
+                            // Convert to object.
+                            var optionObj = {};
+                            aoptions.forEach((option) => {
+                                let opt = option.split('=');
+                                optionObj[opt[0].trim()] = opt[1].trim();
+                            });
+                            var keys = Object.keys(response);
+                            keys = keys.filter((item) => response[item] != '' && response[item] !== undefined);
+                            keys.forEach((key) => {
+                                if (optionObj[key]) {
+                                    let v = response[key];
+                                    // Other: Other Text.
+                                    if (key == 'otheroption') {
+                                        v = M.util.get_string('otheroption', 'ivplugin_form')
+                                            + (response['otheroptiontext'] != '' ? ': ' + response['otheroptiontext'] : '');
+                                    }
+                                    ares.push(v);
                                 }
                             });
-                            row.push(res.join(', '));
+                            row.push(ares.join(', <br>'));
                             break;
                         case 'date_selector':
-                            var date;
-                            if (response.day < 9) {
-                                date += '0' + response.day;
-                            } else {
-                                date += response.day;
-                            }
-                            date += '/';
+                            var dsdate = response.year + '-';
                             if (response.month < 9) {
-                                date += '0' + response.month;
+                                dsdate += '0' + response.month;
                             } else {
-                                date += response.month;
+                                dsdate += response.month;
                             }
-                            date += '/';
-                            date += response.year;
+                            dsdate += '-';
+                            if (response.day < 9) {
+                                dsdate += '0' + response.day;
+                            } else {
+                                dsdate += response.day;
+                            }
                             if (response.hour && response.minute) {
-                                date += ' ';
+                                dsdate += 'T';
                                 if (response.hour < 9) {
-                                    date += '0' + response.hour;
+                                    dsdate += '0' + response.hour;
                                 } else {
-                                    date += response.hour;
+                                    dsdate += response.hour;
                                 }
-                                date += ':';
+                                dsdate += ':';
                                 if (response.minute < 9) {
-                                    date += '0' + response.minute;
+                                    dsdate += '0' + response.minute;
                                 } else {
-                                    date += response.minute;
+                                    dsdate += response.minute;
                                 }
                             }
-                            row.push(date);
+                            var inclTime = dsdate.includes('T');
+                            var dsvalue = new Date(dsdate).toLocaleDateString();
+                            if (inclTime) {
+                                dsvalue += ' ' + new Date(dsdate).toLocaleTimeString();
+                            }
+                            row.push(dsvalue);
                             break;
                         case 'duration':
                             if (response) {
@@ -914,9 +1547,9 @@ export default class Form extends Base {
                             if (response.length > 0) {
                                 const files = response.map((file) => {
                                     const filename = file.split('/').pop();
-                                    return `<a href="${file}" target="_blank" class="text-truncate">
-                                    ${decodeURIComponent(filename.replace('field-' + f.id + '_', ''))}<span class="d-none">
-                                    [${file}]</span></a>`;
+                                    return `<a href="${file}" target="_blank" class="text-truncate">${decodeURIComponent(
+                                        filename.replace('field-' + f.id + '_', ''))}<span class="d-none"><br>\n[${file}]
+                                        </span></a>`;
                                 });
                                 row.push(files.join(',<br>'));
                             } else {
@@ -964,7 +1597,7 @@ export default class Form extends Base {
             renderAnnotationLogs({
                 heading: heading,
                 rows: rows,
-            }, '#formresponsetable');
+            }, '#formresponsetable', annotation.formattedtitle);
 
             $message.find('.btns').on('click', `[data-toggle="tab"]`, function() {
                 $(`[data-toggle="tab"]`).removeClass('active');

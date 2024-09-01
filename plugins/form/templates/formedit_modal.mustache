@@ -32,15 +32,24 @@ Example context (json):
             <div class="modal-header d-flex align-items-center shadow-sm z-index-1" id="title" style="height:73px;">
                 <div id="form-btns" data-id="{{id}}">
                     <div id="save-close" class="d-flex align-items-center">
+                    <button class="btn btn-sm rounded-0 text-primary" id="undo" disabled="disabled"
+                        title="{{#str}}undo,mod_interactivevideo{{/str}}"><i class="bi bi-arrow-90deg-left fs-25px"></i></button>
+                <button class="btn btn-sm rounded-0 text-primary" id="redo" disabled="disabled"
+                        title="{{#str}}redo,mod_interactivevideo{{/str}}"><i class="bi bi-arrow-90deg-right fs-25px"></i></button>
                         <button class="btn btn-sm rounded-0 text-primary mr-1" id="save"
                             title="{{#str}}save,mod_interactivevideo{{/str}}"><i class="bi bi-floppy fs-25px"></i></button>
-                        <button class="btn btn-sm rounded-0" id="close" data-dismiss="modal"
+                        <button class="btn btn-sm rounded-0" id="close"
                             title="{{#str}}close,mod_interactivevideo{{/str}}"><i class="bi bi-x-lg fs-25px"></i></button>
                     </div>
                     <div class="d-flex align-items-center">
                         {{#items}}
-                        <button class="btn btn-sm rounded-0 add-field mr-1" title="{{label}}" data-type="{{type}}"><i
+                        {{#type}}
+                        <button class="btn btn-sm rounded-0 add-field mr-1 px-1" title="{{label}}" data-type="{{type}}"><i
                                 class="{{icon}} fs-25px"></i></button>
+                        {{/type}}
+                        {{^type}}
+                        <div class="separator border-left border-secondary mr-1" style="width:1px; height:30px;"></div>
+                        {{/type}}
                         {{/items}}
                     </div>
                 </div>

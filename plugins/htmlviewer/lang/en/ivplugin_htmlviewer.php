@@ -25,8 +25,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'HTML Viewer';
-$string['privacy:metadata'] = 'The HTML Viewer plugin doesn\'t store any personal data.';
 $string['htmlfile'] = 'HTML file';
 $string['htmlviewercontent'] = 'HTML viewer';
 $string['htmlviewerdescription'] = 'Upload HTML content to the video.';
+$string['pluginname'] = 'HTML Viewer';
+$string['privacy:metadata'] = 'The HTML Viewer plugin doesn\'t store any personal data.';

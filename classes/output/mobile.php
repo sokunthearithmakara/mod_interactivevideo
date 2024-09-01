@@ -51,6 +51,7 @@ class mobile {
             'id' => $cm->id,
             'iframe' => 1,
             'token' => self::create_token(),
+            'lang' => $args->applang,
         ]);
 
         return [
@@ -99,7 +100,10 @@ class mobile {
             'shortname' => MOODLE_OFFICIAL_MOBILE_SERVICE,
             'token' => $token,
         ])) {
-            \core\session\manager::login_user($user);
+            // Check if the user is logged in; if not, try login
+            if (!isloggedin()) {
+                complete_user_login($user);
+            }
             return true;
         } else {
             return false;

@@ -188,7 +188,8 @@ class submitform_form extends \core_form\dynamic_form {
 
         $attributes = $mform->getAttributes();
         $attributes['data-name'] = 'submitform-form';
-        $attributes['class'] = $attributes['class'] . ' bg-white px-0' . ($isreviewing ? ' reviewing' : '');
+        $attributes['class'] = $attributes['class'] . ' bg-white px-0'
+            . ($isreviewing ? ' reviewing' : '') . ($isedit ? ' editing' : '');
 
         $mform->setAttributes($attributes);
         $mform->addElement('hidden', 'contextid', null);
@@ -220,19 +221,19 @@ class submitform_form extends \core_form\dynamic_form {
         $mform->setType('reviewing', PARAM_INT);
 
         foreach ($fields as $field) {
-            $field->fieldid = 'field-' . $field->id;
-            $fieldactions = '<div class="px-2 py-1 field-actions ">
-            <i class="bi bi-pencil-square cursor-pointer mr-3" id="edit" data-id="' . $field->id . '" title="'
-                . get_string('edit', 'mod_interactivevideo') . '"></i>
-            <i class="bi bi-copy cursor-pointer mr-3" id="copy" data-id="' . $field->id . '" title="'
-                . get_string('clone', 'mod_interactivevideo') . '"></i>
-            <i class="bi bi-trash3 cursor-pointer text-danger" id="delete" data-id="' . $field->id . '" title="'
-                . get_string('delete', 'mod_interactivevideo') . '"></i></div>';
+            $field->fieldid = "field-{$field->id}";
+            $fieldactions = "<div class=\"px-2 py-1 field-actions \">
+            <i class=\"bi bi-pencil-square cursor-pointer mr-3 edit\" data-id=\"{$field->id}\" title=\""
+                . get_string('edit', 'mod_interactivevideo') . "\"></i>
+            <i class=\"bi bi-copy cursor-pointer mr-3 copy\" data-id=\"{$field->id}\" title=\""
+                . get_string('clone', 'mod_interactivevideo') . "\"></i>
+            <i class=\"bi bi-trash3 cursor-pointer text-danger delete\" data-id=\"{$field->id}\" title=\""
+                . get_string('delete', 'mod_interactivevideo') . "\"></i></div>";
             $label = '<div class="d-flex flex-column">';
             if ($isedit) {
                 $label .= $fieldactions;
             }
-            $label .= '<div class="font-weight-bold field-label">' . $field->label . '</div><div class="small text-muted d-block">'
+            $label .= "<div class=\"font-weight-bold field-label\">{$field->label}</div><div class=\"small text-muted d-block\">"
                 . str_replace('brokenfile.php#', 'draftfile.php', format_text(
                     $field->helptext->text,
                     FORMAT_HTML,
@@ -240,26 +241,80 @@ class submitform_form extends \core_form\dynamic_form {
                         'context' => $this->get_context_for_dynamic_submission(),
                     ]
                 ));
-            if ($field->minfiles && $field->minfiles > 0) {
-                $label .= '<span class="mr-3">' . get_string('minlength', 'ivplugin_form') . ': '
-                    . $field->minfiles . '</span>';
+            if ($field->minfiles) {
+                $label .= '<span class="mr-3">' . get_string('minfile', 'ivplugin_form') . ": {$field->minfiles}</span>";
             }
-            if ($field->maxfiles && $field->maxfiles > 0) {
-                $label .= '<span class="mr-3">' . get_string('maxlength', 'ivplugin_form') . ': '
-                    . $field->maxfiles . '</span>';
+            if ($field->maxfiles) {
+                $label .= '<span class="mr-3">' . get_string('maxfile', 'ivplugin_form') . ": {$field->maxfiles}</span>";
             }
             if ($field->filemaxsize) {
                 $label .= '<span class="mr-3">' . get_string('maxsizeshort', 'ivplugin_form') . ': '
                     . display_size($field->filemaxsize) . '</span>';
             }
+            if ($field->minselection) {
+                $label .= '<span class="mr-3">' . get_string('minselection', 'ivplugin_form') . ": {$field->minselection}</span>";
+            }
+            if ($field->maxselection) {
+                $label .= '<span class="mr-3">' . get_string('maxselection', 'ivplugin_form') . ": {$field->maxselection}</span>";
+            }
             $label .= '</div></div>';
             if ($field->minlength) {
-                $label .= '<span class="small text-muted mr-3">' . get_string('minlength', 'ivplugin_form') . ': '
-                    .  $field->minlength . '</span>';
+                $min = 'minlength';
+                $minvalue = $field->minlength;
+                if ($field->type == 'editor') {
+                    $min = 'minwords';
+                } else if ($field->type == 'text' || $field->type == 'textarea') {
+                    $min = 'minchars';
+                } else if ($field->type == 'time') {
+                    $min = 'aftertime';
+                    $minvalue = userdate(strtotime($field->minlength), get_string('strftimetime', 'langconfig'));
+                } else if ($field->type == 'week') {
+                    $min = 'afterweek';
+                    $minvalue = userdate(strtotime($field->minlength), get_string('strftimedatefullshort', 'langconfig'));
+                } else if ($field->type == 'month') {
+                    $min = 'aftermonth';
+                    $minvalue = userdate(strtotime($field->minlength), get_string('strftimemonthyear', 'langconfig'));
+                } else if ($field->type == 'date') {
+                    $min = 'afterdate';
+                    if ($field->includetime) {
+                        $minvalue = userdate(strtotime($field->minlength), get_string('strftimedatetimeshort', 'langconfig'));
+                    } else {
+                        $minvalue = userdate(strtotime($field->minlength), get_string('strftimedatefullshort', 'langconfig'));
+                    }
+                }
+                $label .= '<span class="small text-muted mr-3">' . get_string(
+                    $min,
+                    'ivplugin_form'
+                ) . ": {$minvalue}</span>";
             }
             if ($field->maxlength) {
-                $label .= '<span class="small text-muted mr-3">' . get_string('maxlength', 'ivplugin_form') . ': '
-                    .  $field->maxlength . '</span>';
+                $max = 'maxlength';
+                $maxvalue = $field->maxlength;
+                if ($field->type == 'editor') {
+                    $max = 'maxwords';
+                } else if ($field->type == 'text' || $field->type == 'textarea') {
+                    $max = 'maxchars';
+                } else if ($field->type == 'time') {
+                    $max = 'beforetime';
+                    $maxvalue = userdate(strtotime($field->maxlength), get_string('strftimetime', 'langconfig'));
+                } else if ($field->type == 'week') {
+                    $max = 'beforeweek';
+                    $maxvalue = userdate(strtotime($field->maxlength), get_string('strftimedatefullshort', 'langconfig'));
+                } else if ($field->type == 'month') {
+                    $max = 'beforemonth';
+                    $maxvalue = userdate(strtotime($field->maxlength), get_string('strftimemonthyear', 'langconfig'));
+                } else if ($field->type == 'date') {
+                    $max = 'beforedate';
+                    if ($field->includetime) {
+                        $maxvalue = userdate(strtotime($field->maxlength), get_string('strftimedatetimeshort', 'langconfig'));
+                    } else {
+                        $maxvalue = userdate(strtotime($field->maxlength), get_string('strftimedatefullshort', 'langconfig'));
+                    }
+                }
+                $label .= '<span class="small text-muted mr-3">' . get_string(
+                    $max,
+                    'ivplugin_form'
+                ) . ": {$maxvalue}</span>";
             }
 
             switch ($field->type) {
@@ -284,7 +339,9 @@ class submitform_form extends \core_form\dynamic_form {
                     break;
                 case 'text':
                     $mform->addElement('text', $field->fieldid, $label, [
-                        'size' => 100, 'placeholder' => $field->placeholder, 'id' => $field->fieldid,
+                        'size' => 100,
+                        'placeholder' => $field->placeholder,
+                        'id' => $field->fieldid,
                     ]);
                     $mform->setType($field->fieldid, PARAM_TEXT);
                     $mform->setDefault($field->fieldid, $field->default);
@@ -316,20 +373,22 @@ class submitform_form extends \core_form\dynamic_form {
                     $mform->disabledIf($field->fieldid, 'reviewing', 'eq', 1);
                     break;
                 case 'html':
-                    $html = '<div id="' . $field->fieldid . '" class="fitem ';
-                    if ($isedit) {
-                        $html .= ' row form-group"><div class="position-relative w-100">' . $fieldactions . '</div>';
-                    } else {
-                        $html .= '">';
-                    }
-                    $html .= str_replace('brokenfile.php#', 'draftfile.php', format_text($field->content->text, FORMAT_HTML, [
-                        'context' => $this->get_context_for_dynamic_submission(),
-                    ])) . '</div>';
-                    $mform->addElement('html', $html);
+                    $htmlgroup = [];
+                    $htmlgroup[] = $mform->createElement('html', ($isedit ? $fieldactions : '') . str_replace(
+                        'brokenfile.php#',
+                        'draftfile.php',
+                        format_text($field->content->text, FORMAT_HTML, [
+                            'context' => $this->get_context_for_dynamic_submission(),
+                        ])
+                    ));
+                    $mform->addGroup($htmlgroup, $field->fieldid, '-', '', false, ['class' => 'fhtml']);
                     break;
                 case 'textarea':
                     $mform->addElement('textarea', $field->fieldid, $label, [
-                        'rows' => 5, 'cols' => 100, 'placeholder' => $field->placeholder, 'id' => $field->fieldid,
+                        'rows' => 5,
+                        'cols' => 100,
+                        'placeholder' => $field->placeholder,
+                        'id' => $field->fieldid,
                         'oninput' => 'this.style.height = "";this.style.height = this.scrollHeight + 3 + "px"',
                     ]);
                     $mform->setType($field->fieldid, PARAM_TEXT);
@@ -368,29 +427,11 @@ class submitform_form extends \core_form\dynamic_form {
                             'editor',
                             $field->fieldid,
                             $label,
-                            ['rows' => 8, 'id' => $field->fieldid],
-                            $this->editor_options()
+                            ['rows' => $field->height, 'id' => $field->fieldid],
+                            $this->editor_options($field->allowfiles)
                         );
                         $mform->setType($field->fieldid, PARAM_RAW);
                         $mform->setDefault($field->fieldid, $field->default);
-                        if ($field->minlength) {
-                            $mform->addRule(
-                                $field->fieldid,
-                                get_string('minlength', 'ivplugin_form'),
-                                'minlength',
-                                $field->minlength,
-                                'client'
-                            );
-                        }
-                        if ($field->maxlength) {
-                            $mform->addRule(
-                                $field->fieldid,
-                                get_string('maxlength', 'ivplugin_form'),
-                                'maxlength',
-                                $field->maxlength,
-                                'client'
-                            );
-                        }
                     }
                     $mform->hideIf($field->fieldid, 'reviewing', 'eq', 1);
                     break;
@@ -401,6 +442,7 @@ class submitform_form extends \core_form\dynamic_form {
                     if ($field->multiple || $field->useautocomplete) {
                         $optionsarray = []; // Initialize an empty array.
                     } else {
+                        $optionsarray = [];
                         $optionsarray[''] = get_string('choose') . '...';
                     }
                     foreach ($options as $option) {
@@ -412,13 +454,12 @@ class submitform_form extends \core_form\dynamic_form {
                         }
                         $optionsarray[$key] = format_string($value); // Use the key as the array key.
                     }
-                    // Make sure the options are unique.
-                    $optionsarray = array_unique($optionsarray);
                     $attributes = ['id' => $field->fieldid];
                     if ($field->multiple) {
                         $attributes['multiple'] = true;
                     }
                     if ($field->useautocomplete && !$isreviewing) {
+                        $attributes['noselectionstring'] = get_string('choose') . '...';
                         $mform->addElement('autocomplete', $field->fieldid, $label, $optionsarray, $attributes);
                     } else {
                         $mform->addElement('select', $field->fieldid, $label, $optionsarray, $attributes);
@@ -449,13 +490,42 @@ class submitform_form extends \core_form\dynamic_form {
                             'advcheckbox',
                             $key,
                             '',
-                            $value,
+                            $value . '<span class="mr-2"></span>',
                             ['group' => 1],
-                            [0, $key]
+                            ['', $key]
                         );
                         $mform->setType($key, PARAM_TEXT);
                     }
-                    $mform->addGroup($advcheckboxgroups, $field->fieldid, $label);
+
+                    if ($field->allowother) {
+                        $advcheckboxgroups[] = $mform->createElement(
+                            'advcheckbox',
+                            'otheroption',
+                            '',
+                            '<span class="text-muted">' . get_string('otheroption', 'ivplugin_form') . ' ...</span>',
+                            ['group' => 1],
+                            ['', 'otheroption']
+                        );
+                        $mform->setType('other', PARAM_TEXT);
+
+                        $advcheckboxgroups[] = $mform->createElement(
+                            'text',
+                            'otheroptiontext',
+                            '',
+                            [
+                                'size' => 100,
+                                'placeholder' => get_string('specifyresponse', 'ivplugin_form'),
+                            ]
+                        );
+                        $mform->setType($field->fieldid . '[otheroptiontext]', PARAM_TEXT);
+                        $mform->hideIf($field->fieldid . '[otheroptiontext]', $field->fieldid . '[otheroption]');
+                    }
+
+                    $attributes = [];
+                    if ($field->display_vertical == '1') {
+                        $attributes['class'] = 'checkbox-vertical';
+                    }
+                    $mform->addGroup($advcheckboxgroups, $field->fieldid, $label, '', true, $attributes);
                     $defaults = $field->default;
                     foreach ($defaults as $key => $value) {
                         $mform->setDefault($field->fieldid . '[' . $key . ']', $value);
@@ -478,21 +548,60 @@ class submitform_form extends \core_form\dynamic_form {
                     }
                     // Make sure the options are unique.
                     $optionsarray = array_unique($optionsarray);
+                    // Get the first key to use as the default value if no default is set.
+                    $first = array_key_first($optionsarray);
+                    if ($field->default == '' && $field->required) {
+                        $field->default = $first;
+                    }
                     $radiogroup = [];
+                    if (!$field->required) {
+                        $radiogroup[] = $mform->createElement(
+                            'radio',
+                            $field->fieldid,
+                            '',
+                            '<span class="text-muted">' . get_string('noneoption', 'ivplugin_form') . '</span>',
+                            ''
+                        );
+                    }
                     foreach ($optionsarray as $key => $value) {
                         $radiogroup[] = $mform->createElement(
                             'radio',
                             $field->fieldid,
                             '',
-                            format_string($value),
+                            format_string($value) . '<span class="mr-2"></span>',
                             $key
                         );
                     }
-                    $mform->addGroup($radiogroup, $field->fieldid, $label, '', false);
+
+                    if ($field->allowother) {
+                        $radiogroup[] = $mform->createElement(
+                            'radio',
+                            $field->fieldid,
+                            '',
+                            '<span class="text-muted">' . get_string('otheroption', 'ivplugin_form') . ' ...</span>',
+                            'otheroption'
+                        );
+                        $radiogroup[] = $mform->createElement(
+                            'text',
+                            $field->fieldid . '-otheroptiontext',
+                            '',
+                            [
+                                'size' => 100,
+                                'placeholder' => get_string('specifyresponse', 'ivplugin_form'),
+                            ]
+                        );
+                        $mform->setType($field->fieldid . '-otheroptiontext', PARAM_TEXT);
+                    }
+                    $attributes = [];
+                    if ($field->display_vertical == '1') {
+                        $attributes['class'] = 'radio-vertical';
+                    }
+                    $mform->addGroup($radiogroup, $field->fieldid, $label, '', false, $attributes);
                     $mform->setDefault($field->fieldid, $field->default);
                     $mform->setType($field->fieldid, PARAM_TEXT);
                     $mform->disabledIf($field->fieldid, 'reviewing', 'eq', 1);
-
+                    $mform->hideIf($field->fieldid . '-otheroptiontext', $field->fieldid, 'neq', 'otheroption');
+                    $mform->setDefault($field->fieldid . '-otheroptiontext', $field->othertext);
                     break;
                 case 'duration':
                     $attributes = ['id' => $field->fieldid];
@@ -581,20 +690,88 @@ class submitform_form extends \core_form\dynamic_form {
                 case 'linebreak':
                     $mform->addElement('static', $field->fieldid, $label, '<hr>', ['id' => $field->fieldid]);
                     break;
+                case 'time':
+                    $mform->addElement('text', $field->fieldid, $label, [
+                        'size' => 100,
+                        'id' => $field->fieldid,
+                        'min' => $field->minlength,
+                        'max' => $field->maxlength,
+                        'data-type' => 'time',
+                    ]);
+                    $mform->setType($field->fieldid, PARAM_TEXT);
+                    $mform->setDefault($field->fieldid, $field->default);
+                    $mform->disabledIf($field->fieldid, 'reviewing', 'eq', 1);
+                    break;
+                case 'week':
+                    $mform->addElement('text', $field->fieldid, $label, [
+                        'size' => 100,
+                        'id' => $field->fieldid,
+                        'data-type' => 'week',
+                        'min' => $field->minlength,
+                        'max' => $field->maxlength,
+                    ]);
+                    $mform->setType($field->fieldid, PARAM_TEXT);
+                    $mform->setDefault($field->fieldid, $field->default);
+                    $mform->disabledIf($field->fieldid, 'reviewing', 'eq', 1);
+                    break;
+                case 'month':
+                    $mform->addElement('text', $field->fieldid, $label, [
+                        'size' => 100,
+                        'id' => $field->fieldid,
+                        'data-type' => 'month',
+                    ]);
+                    $mform->setType($field->fieldid, PARAM_TEXT);
+                    $mform->setDefault($field->fieldid, $field->default);
+                    $mform->disabledIf($field->fieldid, 'reviewing', 'eq', 1);
+                    break;
+                case 'date':
+                    $mform->addElement('text', $field->fieldid, $label, [
+                        'id' => $field->fieldid,
+                        'optional' => true,
+                        'min' => $field->minlength,
+                        'max' => $field->maxlength,
+                        'data-type' => $field->includetime ? 'datetime' : 'date',
+                    ]);
+                    if ($field->includetime) {
+                        $default = $field->default;
+                    } else {
+                        $default = explode('T', $field->default);
+                        $default = $default[0];
+                    }
+                    $mform->setType($field->fieldid, PARAM_TEXT);
+                    $mform->setDefault($field->fieldid, $default);
+                    $mform->disabledIf($field->fieldid, 'reviewing', 'eq', 1);
+                    break;
+                case 'range':
+                    $label .= '<span class="float-right">' . get_string('currentvalue', 'ivplugin_form') . ': <span class="selected-value">'
+                        .  ($field->default ?? '-') . '</span></span>';
+                    $mform->addElement('text', $field->fieldid, $label, [
+                        'size' => 100,
+                        'id' => $field->fieldid,
+                        'data-type' => 'range',
+                        'min' => $field->minlength,
+                        'max' => $field->maxlength,
+                        'step' => $field->step,
+                        'oninput' => 'this.closest(".row").querySelector(".selected-value").textContent = this.value',
+                    ]);
+                    $mform->setType($field->fieldid, PARAM_TEXT);
+                    $mform->setDefault($field->fieldid, $field->default);
+                    $mform->disabledIf($field->fieldid, 'reviewing', 'eq', 1);
+                    break;
             }
             if ($field->required && !$isreviewing) {
                 $mform->addRule($field->fieldid, get_string('required'), 'required', null, 'client');
             }
         }
 
-        $actionbuttons = '<div class="d-flex justify-content-end mt-3">';
+        $actionbuttons = '<div class="d-flex justify-content-end mt-3 mb-3" id="form-action-btns">';
         if (!$isedit && !$isreviewing) {
             if ($this->optional_param('submissionid', 0, PARAM_INT) > 0) {
-                $actionbuttons .= '<button class="btn btn-primary mb-3 mr-2" id="submitform-submit">'
-                    . get_string('savechanges') . '</button><button class="btn btn-secondary mb-3" id="cancel-submit">'
+                $actionbuttons .= '<button class="btn btn-primary mr-2" id="submitform-submit">'
+                    . get_string('savechanges') . '</button><button class="btn btn-secondary" id="cancel-submit">'
                     . get_string('cancel') . '</button>';
             } else {
-                $actionbuttons .= '<button class="btn btn-primary mb-3" id="submitform-submit">' . get_string('submit')
+                $actionbuttons .= '<button class="btn btn-primary" id="submitform-submit">' . get_string('submit')
                     . '</button>';
             }
         }
@@ -749,6 +926,8 @@ class submitform_form extends \core_form\dynamic_form {
     public function validation($data, $files) {
         $errors = [];
         $formjson = json_decode($data['formjson']);
+
+        // Handle filemanager fields min/max files validation.
         $filemanagerfields = array_filter($formjson, function ($field) {
             return $field->type == 'filemanager' && $field->required == 1;
         });
@@ -760,6 +939,143 @@ class submitform_form extends \core_form\dynamic_form {
                 $errors[$fieldid] = get_string('youmustuploadfilesatleast', 'ivplugin_form', $field->minfiles);
             }
         }
+
+        // Handle editor fields min/max words validation.
+        $editorfields = array_filter($formjson, function ($field) {
+            return $field->type == 'editor';
+        });
+        foreach ($editorfields as $field) {
+            $fieldid = 'field-' . $field->id;
+            $max = $field->maxlength;
+            $min = $field->minlength;
+            if ($min || $max) {
+                $text = $data[$fieldid]['text'];
+                $text = strip_tags($text);
+                $length = str_word_count($text);
+                if ($min && $length < $min) {
+                    $errors[$fieldid] = get_string('mustenteratleastwords', 'ivplugin_form', $min);
+                }
+                if ($max && $length > $max) {
+                    $errors[$fieldid] = get_string('mustenterlessthanwords', 'ivplugin_form', $max);
+                }
+            }
+        }
+
+        // Handle checkbox fields min/max selection validation.
+        $checkboxfields = array_filter($formjson, function ($field) {
+            return $field->type == 'advcheckbox';
+        });
+        foreach ($checkboxfields as $field) {
+            $fieldid = 'field-' . $field->id;
+            $min = $field->minselection;
+            $max = $field->maxselection;
+            $selections = $data[$fieldid];
+            $selectedothertext = $selections['otheroptiontext'];
+            unset($selections['otheroptiontext']);
+            $selected = 0;
+            foreach ($selections as $selection => $value) {
+                if ($value) {
+                    $selected++;
+                }
+            }
+            if ($min && $selected < $min) {
+                $errors[$fieldid] = get_string('youmustselectatleast', 'ivplugin_form', $min);
+            }
+            if ($max && $selected > $max) {
+                $errors[$fieldid] = get_string('youmustselectatmost', 'ivplugin_form', $max);
+            }
+            if ($selections['otheroption'] && empty($selectedothertext)) {
+                $errors[$fieldid] = get_string('youmustspecifyresponse', 'ivplugin_form');
+            }
+        }
+
+        // Handle time/week/month/date fields min/max validation.
+        $timefields = array_filter($formjson, function ($field) {
+            return $field->type == 'time' || $field->type == 'week' || $field->type == 'month' || $field->type == 'date';
+        });
+        foreach ($timefields as $field) {
+            $fieldid = 'field-' . $field->id;
+            $min = strtotime($field->minlength);
+            $max = strtotime($field->maxlength);
+            $time = strtotime($data[$fieldid]);
+            if ($field->type == 'time') {
+                $minstr = userdate($min, get_string('strftimetime', 'langconfig'));
+                $maxstr = userdate($max, get_string('strftimetime', 'langconfig'));
+                $minerror = 'timemustbeafter';
+                $maxerror = 'timemustbebefore';
+            } else if ($field->type == 'week') {
+                $minstr = userdate($min, get_string('strftimedatefullshort', 'langconfig'));
+                $maxstr = userdate($max, get_string('strftimedatefullshort', 'langconfig'));
+                $minerror = 'weekmustbeafter';
+                $maxerror = 'weekmustbebefore';
+            } else if ($field->type == 'month') {
+                $minstr = userdate($min, get_string('strftimemonthyear', 'langconfig'));
+                $maxstr = userdate($max, get_string('strftimemonthyear', 'langconfig'));
+                $minerror = 'monthmustbeafter';
+                $maxerror = 'monthmustbebefore';
+            } else if ($field->type == 'date') {
+                if ($field->includetime) {
+                    $minstr = userdate($min, get_string('strftimedatetimeshort', 'langconfig'));
+                    $maxstr = userdate($max, get_string('strftimedatetimeshort', 'langconfig'));
+                } else {
+                    $minstr = userdate($min, get_string('strftimedatefullshort', 'langconfig'));
+                    $maxstr = userdate($max, get_string('strftimedatefullshort', 'langconfig'));
+                }
+                $minerror = 'datemustbeafter';
+                $maxerror = 'datemustbebefore';
+            }
+            if ($min && $time < $min) {
+                $errors[$fieldid] = get_string(
+                    $minerror,
+                    'ivplugin_form',
+                    $minstr
+                );
+            }
+            if ($max && $time > $max) {
+                $errors[$fieldid] = get_string(
+                    $maxerror,
+                    'ivplugin_form',
+                    $maxstr
+                );
+            }
+        }
+
+        // Handle select fields min/max selection validation.
+        $selectfields = array_filter($formjson, function ($field) {
+            return $field->type == 'select';
+        });
+        foreach ($selectfields as $field) {
+            $fieldid = 'field-' . $field->id;
+            $min = $field->minselection;
+            $max = $field->maxselection;
+            $selections = $data[$fieldid];
+            $selected = 0;
+            foreach ($selections as $selection) {
+                if ($selection) {
+                    $selected++;
+                }
+            }
+            if ($min && $selected < $min) {
+                $errors[$fieldid] = get_string('youmustselectatleast', 'ivplugin_form', $min);
+            }
+            if ($max && $selected > $max) {
+                $errors[$fieldid] = get_string('youmustselectatmost', 'ivplugin_form', $max);
+            }
+        }
+
+        // Handle radio fields otheroption validation.
+        $radiofields = array_filter($formjson, function ($field) {
+            return $field->type == 'radio';
+        });
+
+        foreach ($radiofields as $field) {
+            $fieldid = 'field-' . $field->id;
+            $otheroption = $data[$fieldid] == 'otheroption';
+            if ($otheroption && empty($data[$fieldid . '-otheroptiontext'])) {
+                $errors[$fieldid] = get_string('youmustspecifyresponse', 'ivplugin_form');
+            }
+        }
+
         return $errors;
     }
 
@@ -789,9 +1105,9 @@ class submitform_form extends \core_form\dynamic_form {
      *
      * @return array
      */
-    public function editor_options() {
+    public function editor_options($allowfiles = true) {
         return [
-            'maxfiles' => EDITOR_UNLIMITED_FILES,
+            'maxfiles' => $allowfiles ? EDITOR_UNLIMITED_FILES : 0,
             'maxbytes' => 0,
             'trusttext' => false,
             'context' => $this->get_context_for_dynamic_submission(),

@@ -236,8 +236,7 @@ class base_form extends \core_form\dynamic_form {
                 'view' => get_string('completiononview', 'mod_interactivevideo'),
             ];
         }
-        $mform->addElement(
-            'select',
+        $this->render_dropdown(
             'completiontracking',
             '<i class="bi bi-check2-square mr-2"></i>' . get_string('completiontracking', 'mod_interactivevideo'),
             $options
@@ -255,8 +254,7 @@ class base_form extends \core_form\dynamic_form {
     public function display_options_field($default = 'popup') {
         $mform = &$this->_form;
         // Display options.
-        $mform->addElement(
-            'select',
+        $this->render_dropdown(
             'displayoptions',
             '<i class="bi bi-aspect-ratio mr-2"></i>' . get_string('displayoptions', 'mod_interactivevideo'),
             [
@@ -320,7 +318,7 @@ class base_form extends \core_form\dynamic_form {
                 );
             }
 
-            $mform->addGroup($elementarray, '', '<i class="bi-eye bi mr-2"></i>' . get_string('visibilityonvideonav', 'mod_interactivevideo'));
+            $mform->addGroup($elementarray, '', get_string('visibilityonvideonav', 'mod_interactivevideo'));
 
             $mform->setDefault('visiblebeforecompleted', 1);
             $mform->setDefault('visibleaftercompleted', 1);
@@ -348,7 +346,7 @@ class base_form extends \core_form\dynamic_form {
                 );
             }
 
-            $mform->addGroup($elementarray, '', '<i class="bi-cursor bi mr-2"></i>' . get_string('clickability', 'mod_interactivevideo'));
+            $mform->addGroup($elementarray, '', get_string('clickability', 'mod_interactivevideo'));
             $mform->setDefault('clickablebeforecompleted', 1);
             $mform->setDefault('clickableaftercompleted', 1);
         }
@@ -357,7 +355,7 @@ class base_form extends \core_form\dynamic_form {
             $mform->addElement(
                 'advcheckbox',
                 'replaybehavior',
-                '<i class="bi-arrow-clockwise bi mr-2"></i>' . get_string('replaybehavior', 'mod_interactivevideo'),
+                get_string('replaybehavior', 'mod_interactivevideo'),
                 get_string('replayaftercompletion', 'mod_interactivevideo'),
                 ["group" => 1],
                 [0, 1]
@@ -404,6 +402,35 @@ class base_form extends \core_form\dynamic_form {
             'trusttext' => false,
             'context' => $this->get_context_for_dynamic_submission(),
         ];
+    }
+
+    /**
+     * Render select dropdown based on Moodle version.
+     *
+     * @param string $name
+     * @param string $label
+     * @param mixed $opts
+     * @param array $attributes
+     * @return void
+     */
+    public function render_dropdown($name, $label, $opts, $attributes = []) {
+        global $CFG;
+        $mform = &$this->_form;
+        if ($CFG->version < 2024081000) {
+            $mform->addElement('select', $name, $label, $opts, $attributes);
+        } else {
+            $options = new \core\output\choicelist();
+            foreach ($opts as $key => $value) {
+                $options->add_option($key, $value);
+            }
+            // Add the choicedropdown field to the form.
+            $mform->addElement(
+                'choicedropdown',
+                $name,
+                $label,
+                $options,
+            );
+        }
     }
 
     /**

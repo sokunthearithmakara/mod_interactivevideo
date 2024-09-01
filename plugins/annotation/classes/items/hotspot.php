@@ -52,8 +52,8 @@ class hotspot extends \core_form\dynamic_form {
         $data->id = $this->optional_param('id', 0, PARAM_INT);
         $data->contextid = $this->optional_param('contextid', null, PARAM_INT);
         $data->annotationid = $this->optional_param('annotationid', null, PARAM_INT);
-        $data->start = $this->optional_param('start', null, PARAM_INT);
-        $data->end = $this->optional_param('end', null, PARAM_INT);
+        $data->start = $this->optional_param('start', null, PARAM_FLOAT);
+        $data->end = $this->optional_param('end', null, PARAM_FLOAT);
         $data->title = $this->optional_param('title', null, PARAM_TEXT);
         $data->color = $this->optional_param('color', null, PARAM_TEXT);
         $data->content = $this->optional_param('content', null, PARAM_RAW);
@@ -76,9 +76,9 @@ class hotspot extends \core_form\dynamic_form {
         $mform->addElement('hidden', 'annotationid', 0);
         $mform->setType('annotationid', PARAM_INT);
         $mform->addElement('hidden', 'start', null);
-        $mform->setType('start', PARAM_INT);
+        $mform->setType('start', PARAM_FLOAT);
         $mform->addElement('hidden', 'end', null);
-        $mform->setType('end', PARAM_INT);
+        $mform->setType('end', PARAM_FLOAT);
         $mform->addElement('text', 'title', get_string('title', 'mod_interactivevideo'), ['size' => 100]);
         $mform->setType('title', PARAM_TEXT);
 

@@ -15,6 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace mod_interactivevideo\completion;
+
 use core_completion\activity_custom_completion;
 
 /**
@@ -48,11 +49,11 @@ class custom_completion extends activity_custom_completion {
         $select = "annotationid = ? AND timestamp >= ? AND timestamp <= ? AND (hascompletion = 1 OR type = 'skipsegment')";
 
         $relevantitems = $DB->get_records_select('interactivevideo_items', $select, [$cm->instance, $start, $end]);
-        $skipsegment = array_filter($relevantitems, function($item) {
+        $skipsegment = array_filter($relevantitems, function ($item) {
             return $item->type === 'skipsegment';
         });
 
-        $relevantitems = array_filter($relevantitems, function($item) use ($skipsegment) {
+        $relevantitems = array_filter($relevantitems, function ($item) use ($skipsegment) {
             foreach ($skipsegment as $ss) {
                 if ($item->timestamp > $ss->timestamp && $item->timestamp < $ss->title) {
                     return false;
@@ -64,11 +65,15 @@ class custom_completion extends activity_custom_completion {
             return true;
         });
 
-        $relevantitems = array_map(function($item) {
+        $relevantitems = array_map(function ($item) {
             return $item->id;
         }, $relevantitems);
 
-        $usercompletion = $DB->get_field('interactivevideo_completion', 'completeditems', ['userid' => $userid, 'cmid' => $cm->instance]);
+        $usercompletion = $DB->get_field(
+            'interactivevideo_completion',
+            'completeditems',
+            ['userid' => $userid, 'cmid' => $cm->instance]
+        );
         if (!$usercompletion) {
             return COMPLETION_INCOMPLETE;
         }

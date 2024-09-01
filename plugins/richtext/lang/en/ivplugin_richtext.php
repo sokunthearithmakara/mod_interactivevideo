@@ -25,8 +25,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['content'] = 'Content';
 $string['pluginname'] = 'Rich Text';
 $string['privacy:metadata'] = 'The Rich Text plugin doesn\'t store any personal data.';
-$string['content'] = 'Content';
 $string['richtextcontent'] = 'Rich text';
 $string['richtextdescription'] = 'Add rich text content using the built-in text editor.';

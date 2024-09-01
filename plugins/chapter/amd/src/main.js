@@ -69,7 +69,7 @@ export default class Chapter extends Base {
         $chapterlists.empty();
         chapters.forEach((chapter) => {
             $chapterlists.append(`<li class="p-0 flex-column border-left-0 border-right-0 chapter
-            list-group-item d-flex justify-content-between align-items-center cursor-pointer"
+            list-group-item bg-transparent d-flex justify-content-between align-items-center cursor-pointer"
             data-id="${chapter.id}" data-start="${chapter.start}" data-end="${chapter.end}">
             <div class="w-100 d-flex align-items-center justify-content-between p-2">
             <span class="flex-grow-1 text-truncate font-weight-bold"><i class="bi bi-chevron-down mr-2 toggle"></i>
@@ -78,18 +78,19 @@ export default class Chapter extends Base {
             <ul class="annolistinchapter w-100 p-0"></ul></li>`);
         });
 
-        var interval = setInterval(async () => {
-            var currenttime = await this.player.getCurrentTime();
-            if (currenttime >= this.end) {
-                clearInterval(interval);
-                return;
-            }
+        $(document).on('timeupdate', async (e) => {
+            const currenttime = e.originalEvent.detail.time;
             var currentchapter = chapters.find((chapter) => currenttime >= chapter.start && currenttime < chapter.end);
             if (currentchapter) {
                 $chapterlists.find('.chapter').removeClass('active-chapter');
                 $chapterlists.find(`.chapter[data-id=${currentchapter.id}]`).addClass('active-chapter');
+                if (currentchapter.id != 0) {
+                    $('#controller #chaptertitle').text(currentchapter.formattedtitle);
+                } else {
+                    $('#controller #chaptertitle').text('');
+                }
             }
-        }, 1000);
+        });
 
         $chapterlists.on('click', '.chapter .chapter-title', function(e) {
             e.preventDefault();
@@ -179,16 +180,15 @@ export default class Chapter extends Base {
     runInteraction(annotation) {
         this.player.pause();
         $('#controler').addClass('no-pointer-events');
-        $('#video-wrapper').append(`<h2 id="message" class="chapter position-absolute w-100 py-4
+        $('#video-wrapper').append(`<h2 id="message" style="z-index:105" class="chapter position-absolute w-100 py-4
         px-3 m-0 justify-content-start"><span class="text-truncate">${annotation.formattedtitle}</span></h2>`);
         // Add a progress bar and load it for 3 seconds.
-        $('#video-wrapper #message').append(`<div id="chapterprogress"
-        class="progress position-absolute w-100">
+        $('#video-wrapper #message').append(`<div id="chapterprogress" class="position-absolute w-100">
         <div class="progress-bar"></div></div>`);
         $('#message span').animate({
-            'top': '30px',
+            'top': '1em',
         }, 300, 'swing');
-        $('#chapterprogress .progress-bar').animate({width: '100%'}, 3000, 'linear', () => {
+        $('#chapterprogress .progress-bar').animate({'width': '100%'}, 3000, 'linear', () => {
             if (!this.isEditMode()) {
                 $('#message span').css('top', '0');
                 this.player.play();

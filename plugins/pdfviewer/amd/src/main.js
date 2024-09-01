@@ -101,7 +101,7 @@ export default class PdfViewer extends Iframe {
         }
 
         if (annotation.completiontracking == 'manual') {
-            this.enableManualCompletion();
+            this.enableManualCompletion(annotation);
         }
     }
 }

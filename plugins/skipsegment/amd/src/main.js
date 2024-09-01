@@ -26,23 +26,25 @@ import {dispatchEvent} from 'core/event_dispatcher';
 import Ajax from 'core/ajax';
 export default class SkipSegment extends Base {
     init() {
-        var self = this;
-        var skipsegment = this.annotations.filter((annotation) => annotation.type == 'skipsegment');
-        $(document).on('timeupdate', function(e) {
-            var t = e.originalEvent.detail.time;
-            skipsegment.forEach((annotation) => {
-                if (annotation.timestamp < t && annotation.title > t) {
-                    self.runInteraction(annotation);
-                }
+        if (!this.isEditMode()) {
+            var self = this;
+            var skipsegment = this.annotations.filter((annotation) => annotation.type == 'skipsegment');
+            $(document).on('timeupdate', function(e) {
+                var t = e.originalEvent.detail.time;
+                skipsegment.forEach((annotation) => {
+                    if (annotation.timestamp < t && annotation.title > t) {
+                        self.runInteraction(annotation);
+                    }
+                });
             });
-        });
+        }
     }
     renderEditItem(annotations, listItem, item) {
         listItem = super.renderEditItem(annotations, listItem, item);
         listItem.find('[data-editable]').removeAttr('data-editable');
         listItem.find('.btn.copy').remove();
         listItem.find('.title').replaceWith(`<span class="skipend timestamp
-                            bg-gray px-2 py-1 rounded-sm text-truncate"
+                            bg-light px-2 py-1 rounded-sm text-truncate"
                             data-timestamp="${item.title}">${this.convertSecondsToHMS(item.title)}</span>`);
         if (this.isSkipped(item.timestamp)) {
             listItem.find('.skipend').after(`<span class="badge badge-warning ml-2">
@@ -54,7 +56,7 @@ export default class SkipSegment extends Base {
     async addAnnotation(annotations, timestamp, coursemodule) {
         let self = this;
         let data = {
-            title: timestamp + 5,
+            title: timestamp + 5 > this.end ? this.end : timestamp + 5,
             timestamp: timestamp,
             contextid: M.cfg.contextid,
             type: self.prop.name,

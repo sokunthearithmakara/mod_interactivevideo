@@ -156,7 +156,7 @@ const defaultDisplayContent = async function(annotation, player) {
 
         case 'inline':
             // Cover the video with a message on a white background div
-            $('#video-wrapper').append(`<div id="message" style="z-index:5;top:100%" data-placement="inline"
+            $('#video-wrapper').append(`<div id="message" style="z-index:105;top:100%" data-placement="inline"
          data-id="${annotation.id}">
         <div id="title" class="modal-header shadow-sm pr-0">${messageTitle}</div><div class="modal-body" id="content">
         </div></div>`);

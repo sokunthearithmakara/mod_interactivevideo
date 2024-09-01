@@ -45,7 +45,7 @@ class form extends \mod_interactivevideo\form\base_form {
         $this->standard_elements();
 
         $mform->addElement('hidden', 'title');
-        $mform->setType('title', PARAM_INT);
+        $mform->setType('title', PARAM_FLOAT);
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
         $starttime = $this->optional_param('timestamp', 0, PARAM_INT);
         $mform->setDefault('title', $this->optional_param('title', $starttime, PARAM_INT));

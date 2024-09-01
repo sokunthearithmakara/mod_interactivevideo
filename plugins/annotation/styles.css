@@ -22,7 +22,16 @@
     align-items: center;
     justify-content: space-between;
     flex-direction: row-reverse;
-    z-index: 1021;
+    z-index: 1031;
+}
+
+#page-mod-interactivevideo-view .annotation-wrapper.clickable {
+    transition: filter ease-in-out 300ms;
+    cursor: pointer;
+}
+
+#page-mod-interactivevideo-view .annotation-wrapper.clickable:hover {
+    filter: drop-shadow(0 0 0.2rem #222);
 }
 
 #page-mod-interactivevideo-interactions #annotation-btns .btn {
@@ -53,7 +62,6 @@
 }
 
 .path-mod-interactivevideo #annotation-canvas .annotation-wrapper {
-    width: 30%;
     position: absolute;
     z-index: 5;
 }
@@ -125,9 +133,11 @@
 
     .annotation-timeline-item.active {
         background-color: var(--ivprimary);
+        height: 10px;
+        z-index: 1;
     }
 
     .annotation-timeline-item:hover {
-        height: 6px;
+        height: 10px;
     }
 }

@@ -65,7 +65,7 @@ class header extends base {
         }
 
         $fields = array_filter($fields, function ($field) {
-            return $field['type'] !== 'header' && $field['type'] !== 'html'
+            return $field['type'] !== 'header'
                 && $field['id'] !== $this->optional_param('id', null, PARAM_INT);
         });
 
@@ -74,6 +74,7 @@ class header extends base {
         $flds = ['' => get_string('unset', 'ivplugin_form')] + $flds;
         $mform->addElement('select', 'closeat', get_string('closeat', 'ivplugin_form'), $flds);
         $mform->setType('closeat', PARAM_TEXT);
+        $mform->addHelpButton('closeat', 'closeat', 'ivplugin_form');
 
         $this->set_display_vertical();
     }

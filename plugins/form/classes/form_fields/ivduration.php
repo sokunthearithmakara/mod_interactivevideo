@@ -48,6 +48,13 @@ class MoodleQuickForm_ivduration extends MoodleQuickForm_duration {
                 'hours' => get_string('hours', 'ivplugin_form'),
                 'minutes' => get_string('minutes', 'ivplugin_form'),
                 'seconds' => get_string('seconds', 'ivplugin_form'),
+                'semesters' => get_string('semesters', 'ivplugin_form'),
+                'terms' => get_string('terms', 'ivplugin_form'),
+                'quarters' => get_string('quarters', 'ivplugin_form'),
+                'fortnights' => get_string('fortnights', 'ivplugin_form'),
+                'decades' => get_string('decades', 'ivplugin_form'),
+                'periods' => get_string('periods', 'ivplugin_form'),
+                'sessions' => get_string('sessions', 'ivplugin_form'),
             ];
         }
         return $this->_units;
@@ -78,7 +85,7 @@ class MoodleQuickForm_ivduration extends MoodleQuickForm_duration {
             return $this->_prepareValue(0, $assoc);
         }
         return $this->_prepareValue(
-            $valuearray['number'] .' '. $valuearray['timeunit'],
+            $valuearray['number'] . ' ' . $valuearray['timeunit'],
             $assoc
         );
     }

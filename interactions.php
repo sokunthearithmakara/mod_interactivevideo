@@ -42,7 +42,14 @@ if ($id) {
 }
 
 require_login($course, true, $cm);
-$PAGE->force_theme('boost');
+if ($moduleinstance->displayoptions) {
+    $moduleinstance->displayoptions = json_decode($moduleinstance->displayoptions, true);
+} else {
+    $moduleinstance->displayoptions = [];
+}
+if (isset($moduleinstance->displayoptions['theme']) && $moduleinstance->displayoptions['theme'] != '') {
+    $PAGE->force_theme($moduleinstance->displayoptions['theme']);
+}
 $modulecontext = context_module::instance($cm->id);
 
 // Check if the user has capability to edit the interactions.
@@ -74,6 +81,7 @@ $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
 $PAGE->set_pagelayout('embedded');
 $PAGE->add_body_class('page-interactions');
+
 
 $contentoptions = interactivevideo_util::get_all_activitytypes();
 
@@ -115,6 +123,10 @@ if ($moduleinstance->source == 'url') {
     $moduleinstance->type = 'html5video';
 }
 
+$primary = new core\navigation\output\primary($PAGE);
+$renderer = $PAGE->get_renderer('core');
+$primarymenu = $primary->export_for_template($renderer);
+
 // Display page navigation.
 $datafortemplate = [
     "returnurl" => new moodle_url('/course/view.php', ['id' => $course->id]),
@@ -129,7 +141,7 @@ $datafortemplate = [
     "reporturl" => has_capability('mod/interactivevideo:viewreport', $modulecontext)
         ? new moodle_url('/mod/interactivevideo/report.php', ['id' => $cm->id]) : '',
     "interactionsurl" => '',
-    "useravatar" => $OUTPUT->user_picture($USER, ['class' => 'userpicture ml-2', 'size' => 35]),
+    "useravatar" => $primarymenu['user'],
     "viewurl" => new moodle_url('/mod/interactivevideo/view.php', ['id' => $cm->id]),
     "backupurl" => has_capability('moodle/backup:backupactivity', $modulecontext) ? new moodle_url(
         '/backup/backup.php',

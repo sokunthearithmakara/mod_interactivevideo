@@ -52,8 +52,8 @@ class text extends \core_form\dynamic_form {
         $data->id = $this->optional_param('id', 0, PARAM_INT);
         $data->contextid = $this->optional_param('contextid', null, PARAM_INT);
         $data->annotationid = $this->optional_param('annotationid', null, PARAM_INT);
-        $data->start = $this->optional_param('start', null, PARAM_INT);
-        $data->end = $this->optional_param('end', null, PARAM_INT);
+        $data->start = $this->optional_param('start', null, PARAM_FLOAT);
+        $data->end = $this->optional_param('end', null, PARAM_FLOAT);
         $data->label = $this->optional_param('label', null, PARAM_TEXT);
         $data->url = $this->optional_param('url', null, PARAM_URL);
         $data->bold = $this->optional_param('bold', null, PARAM_INT);
@@ -80,9 +80,9 @@ class text extends \core_form\dynamic_form {
         $mform->addElement('hidden', 'annotationid', 0);
         $mform->setType('annotationid', PARAM_INT);
         $mform->addElement('hidden', 'start', null);
-        $mform->setType('start', PARAM_INT);
+        $mform->setType('start', PARAM_FLOAT);
         $mform->addElement('hidden', 'end', null);
-        $mform->setType('end', PARAM_INT);
+        $mform->setType('end', PARAM_FLOAT);
         $mform->addElement('text', 'label', get_string('label', 'ivplugin_annotation'), ['size' => 100]);
         $mform->setType('label', PARAM_TEXT);
         $mform->addRule('label', get_string('required'), 'required', null, 'client');
@@ -148,7 +148,19 @@ class text extends \core_form\dynamic_form {
         $mform->setType('textcolor', PARAM_TEXT);
         $mform->setDefault('textcolor', '#fff');
 
-        $mform->addElement('text', 'textfont', get_string('textfont', 'ivplugin_annotation'), ['size' => 100]);
+        $availablefonts = get_config('mod_interactivevideo', 'fontfamilies');
+        $availablefonts = explode("\n", $availablefonts);
+        $availablefonts = array_map(function ($font) {
+            $font = explode('=', $font);
+            return $font;
+        }, $availablefonts);
+        $availablefonts = array_filter($availablefonts, function ($font) {
+            return count($font) === 2;
+        });
+        // Add default font.
+        array_unshift($availablefonts, [get_string('default', 'mod_interactivevideo'), '']);
+        $availablefonts = array_column($availablefonts, 0, 1);
+        $mform->addElement('select', 'textfont', get_string('textfont', 'ivplugin_annotation'), $availablefonts);
         $mform->setType('textfont', PARAM_TEXT);
 
         $mform->addElement(
@@ -213,4 +225,3 @@ class text extends \core_form\dynamic_form {
         ]);
     }
 }
-

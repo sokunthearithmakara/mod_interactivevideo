@@ -26,6 +26,10 @@ Example context (json):
 }}
 <div id="inlineannotation-btns" data-id="{{id}}">
         <div id="save-close" class="d-flex align-items-center">
+        <button class="btn btn-sm rounded-0 text-primary" id="undo" disabled="disabled"
+                        title="{{#str}}undo,mod_interactivevideo{{/str}}"><i class="bi bi-arrow-90deg-left fs-25px"></i></button>
+                <button class="btn btn-sm rounded-0 text-primary" id="redo" disabled="disabled"
+                        title="{{#str}}redo,mod_interactivevideo{{/str}}"><i class="bi bi-arrow-90deg-right fs-25px"></i></button>
                 <button class="btn btn-sm rounded-0 text-primary" id="hideshow"
                         title="{{#str}}show,mod_interactivevideo{{/str}}"><i class="bi bi-eye-slash fs-25px"></i></button>
                 <button class="btn btn-sm rounded-0 text-primary" id="save"
@@ -35,6 +39,10 @@ Example context (json):
         </div>
         <div id="edit-btns" data-active="5" class="align-items-center d-none">
                 <span class="btn-sm rounded-0 mr-1 small d-none d-lg-flex" id="position" title="Position"></span>
+                <button class="btn btn-sm rounded-0" disabled="disabled" id="group" title="{{#str}}group,ivplugin_annotation{{/str}}"><i
+                class="bi bi-union"></i></button>
+                <button class="btn btn-sm rounded-0" disabled="disabled" id="ungroup" title="{{#str}}ungroup,ivplugin_annotation{{/str}}"><i
+                class="bi bi-subtract"></i></button>
                 <button class="btn btn-sm rounded-0" id="up" title="{{#str}}layer-up,mod_interactivevideo{{/str}}"><i
                                 class="bi bi-arrow-bar-up"></i></button>
                 <button class="btn btn-sm rounded-0" id="down"

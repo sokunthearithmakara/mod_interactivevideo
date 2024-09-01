@@ -316,7 +316,7 @@ const init = (cmid, groupid) => {
     });
 };
 
-const renderAnnotationLogs = (data, node) => {
+const renderAnnotationLogs = (data, node, title) => {
     let tableOptions = {
         "data": data.rows,
         "deferRender": true,
@@ -367,6 +367,7 @@ const renderAnnotationLogs = (data, node) => {
             {
                 extend: "csvHtml5",
                 text: '<i class="bi bi-filetype-csv fa-fw fs-unset"></i>',
+                title: title,
                 className: "btn btn-sm",
                 exportOptions: {
                     columns: ['.exportable']
@@ -376,6 +377,7 @@ const renderAnnotationLogs = (data, node) => {
                 extend: "excelHtml5",
                 text: '<i class="bi bi-file-earmark-excel fa-fw fs-unset"></i>',
                 className: "btn btn-sm",
+                title: title,
                 exportOptions: {
                     columns: ['.exportable']
                 }

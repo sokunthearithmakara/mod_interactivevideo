@@ -24,7 +24,7 @@
     }
 }}
 
-<div class="modal-header d-flex align-items-center {{^darkmode}}bg-white shadow-sm{{/darkmode}} sticky-top pl-1 rounded-0 {{#darkmode}}bg-dark text-white border-0{{/darkmode}}" style="height:70px;">
+<div class="navbar fixed-top d-flex align-items-center {{^darkmode}}bg-white shadow-sm{{/darkmode}} pl-1 rounded-0 {{#darkmode}}bg-dark text-white border-0{{/darkmode}}" style="height:70px;">
     <div class="d-flex align-items-center">
         <a href="{{{returnurl}}}" class="rotatex-360 btn btn-sm mr-2 border-0"
             title="{{#str}}backtocourse,mod_interactivevideo{{/str}}" data-toggle="tooltip"><i
@@ -40,7 +40,7 @@
                 <i class="fs-25px bi bi-check-circle{{#completed}}-fill{{/completed}} {{#darkmode}}{{^completed}}text-white{{/completed}}{{/darkmode}} {{#completedpass}}text-success{{/completedpass}}{{#completedfail}}text-danger{{/completedfail}}"
                    ></i>
             </button>
-            <div class="dropdown-menu dropdown-menu-right px-2" aria-labelledby="completionDropdown">
+            <div class="dropdown-menu dropdown-menu-left px-2" aria-labelledby="completionDropdown">
                 {{{completion}}}
             </div>
         </div>
@@ -74,7 +74,9 @@
             class=" btn btn-sm mr-2 border-0"><i class="bi bi-cloud-arrow-down fs-25px {{#darkmode}}text-white{{/darkmode}} "></i></a>
         {{/restoreurl}}
         <span class="ml-2">
-            {{{useravatar}}}
+        {{#useravatar}}
+            {{> core/user_menu }}
+            {{/useravatar}}
         </span>
     </div>
 </div>

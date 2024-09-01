@@ -61,8 +61,8 @@ class shape extends \core_form\dynamic_form {
         $data->shadow = $this->optional_param('shadow', 0, PARAM_INT);
         $data->gotourl = $this->optional_param('gotourl', null, PARAM_URL);
         $data->timestamp = $this->optional_param('timestamp', null, PARAM_TEXT);
-        $data->start = $this->optional_param('start', null, PARAM_INT);
-        $data->end = $this->optional_param('end', null, PARAM_INT);
+        $data->start = $this->optional_param('start', null, PARAM_FLOAT);
+        $data->end = $this->optional_param('end', null, PARAM_FLOAT);
         $this->set_data($data);
     }
 
@@ -78,9 +78,9 @@ class shape extends \core_form\dynamic_form {
         $mform->addElement('hidden', 'annotationid', 0);
         $mform->setType('annotationid', PARAM_INT);
         $mform->addElement('hidden', 'start', null);
-        $mform->setType('start', PARAM_INT);
+        $mform->setType('start', PARAM_FLOAT);
         $mform->addElement('hidden', 'end', null);
-        $mform->setType('end', PARAM_INT);
+        $mform->setType('end', PARAM_FLOAT);
         $mform->addElement('select', 'shape', get_string('shape', 'ivplugin_annotation'), [
             'rectangle' => get_string('rectangle', 'ivplugin_annotation'),
             'circle' => get_string('circle', 'ivplugin_annotation'),

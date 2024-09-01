@@ -23,43 +23,81 @@
     {
     }
 }}
-
-<div id="timeline" class="px-4">
-        <div id="timeline-btns" class="py-2">
-                <div>
-                        <button class="btn btn-sm py-0 px-2 btn-primary text-white text-uppercase ml-2" type="button"
-                                id="addcontent">
-                                <i class="bi bi-plus-lg mr-2"></i>{{#str}}add,mod_interactivevideo{{/str}}</button>
-                </div>
-                <div>
-                        <button class="btn btn-sm p-0 text-white mr-3" type="button" id="playpause"><i
-                                        class="bi bi-play-fill fs-25px"></i></button>
-                        <span class="text-white" id="currenttime">00:00</span><span class="mx-1">/</span><span
-                                class="text-white mr-2" id="duration">00:00</span>
-                </div>
-                <div class="d-flex">
-                        <button class="btn btn-sm p-0 text-white text-uppercase mr-4" disabled id="savedraft"><i
-                                        class="bi bi-floppy mr-2"></i>{{#str}}save,mod_interactivevideo{{/str}}</button>
-                        <div id="zoomlevel" class="d-flex align-items-center">
-                                <button class="btn btn-sm p-0 text-white mr-2" type="button" disabled id="zoomout"><i
-                                                class="bi bi-zoom-out"></i></button>
-                                <button class="btn btn-sm p-0 text-white mr-4" type="button" id="zoomin"><i
-                                                class="bi bi-zoom-in"></i></button>
-                        </div>
-                        <button class="border-0 btn btn-sm p-0 text-white mr-2" data-toggle="popover"
-                                data-trigger="hover" data-placement="auto" data-boundary="viewport"
-                                data-content='{{#str}}videonavhelp,mod_interactivevideo{{/str}}' data-html="true"><i
-                                        class="bi bi-info-circle"></i></button>
-                </div>
+<div id="timeline-wrapper" class="d-flex flex-column">
+<div id="timeline-btns" class="py-2 w-100 position-relative z-index-1">
+        <div class="col">
+                <button class="btn btn-sm py-0 px-2 btn-primary text-white text-uppercase ml-2" type="button"
+                        id="addcontent">
+                        <i class="bi bi-plus-lg mr-2"></i>{{#str}}add,mod_interactivevideo{{/str}}</button>
         </div>
-        <div id="timeline-items-wrapper" class="px-2 pt-3">
-                <div id="timeline-items">
-                        <div id="vseek">
-                                <div class="w-100"></div>
+        <div class="col text-center d-flex align-items-center justify-content-center" id="playbutton">
+                <button class="btn btn-sm p-0 text-white mr-3" type="button" id="playpause"><i
+                                class="bi bi-play-fill fs-25px"></i></button>
+
+                <span class="text-white" id="currenttime">00:00</span><span class="mx-1">/</span><span
+                        class="text-white mr-3" id="duration">00:00</span>
+                <div class="btn-group dropup d-none" id="changerate">
+                        <span role="button" data-toggle="dropdown" aria-haspopup="true"
+                            aria-expanded="false"
+                            class="btn border-0 btn-sm btn-control text-white bg-transparent py-0 px-1 mx-1"><i
+                                class="bi bi-speedometer2" data-toggle="tooltip" data-trigger="focus"
+                                title="{{#str}}changeplaybackspeed,mod_interactivevideo{{/str}}"></i></span>
+                        <div class="dropdown-menu dropdown-menu-right bg-black text-white">
+                            <a class="dropdown-item text-white changerate" data-rate="0.5" href="#"><i
+                                    class="bi fa-fw ml-n3"></i>0.5</a>
+                            <a class="dropdown-item text-white changerate" data-rate="1" href="#"><i
+                                    class="bi fa-fw bi-check ml-n3"></i>1</a>
+                            <a class="dropdown-item text-white changerate" data-rate="1.5" href="#"><i
+                                    class="bi fa-fw ml-n3"></i>1.5</a>
+                            <a class="dropdown-item text-white changerate" data-rate="2" href="#"><i
+                                    class="bi fa-fw ml-n3"></i>2</a>
                         </div>
-                        <div id="scrollbar">
-                                <div id="scrollhead"></div>
-                                <div id="scrollline"></div>
+                    </div>
+        </div>
+        <div class="d-flex col justify-content-end">
+                <button class="btn btn-sm p-0 text-white text-uppercase mr-4" disabled id="savedraft"><i
+                                class="bi bi-floppy mr-2"></i>{{#str}}save,mod_interactivevideo{{/str}}</button>
+                <div id="zoomlevel" class="d-flex align-items-center">
+                        <button class="btn btn-sm p-0 text-white mr-2" type="button" disabled id="zoomout"><i
+                                        class="bi bi-zoom-out"></i></button>
+                        <button class="btn btn-sm p-0 text-white mr-4" type="button" id="zoomin"><i
+                                        class="bi bi-zoom-in"></i></button>
+                </div>
+                <button class="border-0 btn btn-sm p-0 text-white mr-2" data-toggle="popover"
+                        data-trigger="hover" data-placement="auto" data-boundary="viewport"
+                        data-content='{{#str}}videonavhelp,mod_interactivevideo{{/str}}' data-html="true"><i
+                                class="bi bi-info-circle"></i></button>
+        </div>
+</div>
+<div id="minute-markers-bg-wrapper" class="pl-5 position-absolute h-100" style="
+    min-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-right: 3rem !important;
+    pointer-events: none;
+    z-index: 0;
+">
+<div id="minute-markers-bg" class="pt-1 d-flex position-relative" style="height: 100%;font-size: x-small;display: flex;align-items: flex-end;"></div>
+</div>
+<div id="minute-markers-wrapper" class="pl-5 position-relative" style="
+    min-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-right: 3rem !important;
+    pointer-events: none;
+">
+<div id="minute-markers" class="pt-1 d-flex position-relative" style="height: 15px;font-size: x-small;display: flex;align-items: flex-end;"></div>
+</div>
+<div id="vseek" class="ml-5 position-relative">
+    <div id="scrollhead-top" style="margin-left: -5px;position: absolute;"></div>
+    <div class="w-100" id="bar"></div>
+</div>
+<div id="timeline" class="px-4">
+        <div id="timeline-items-wrapper" class="px-2">
+                <div id="timeline-items">
+                        <div id="scrollbar" class="snap">
+                            <div id="scrollhead" class="opacity-0 bg-transparent"></div>
+                            <div id="scrollline"></div>
                         </div>
                         <div id="interaction-timeline">
                                 <div id="video-nav">
@@ -70,8 +108,9 @@
                                 <div id="video-timeline" class="rounded-sm">
                                 </div>
                         </div>
-                        <div id="annotation-timeline" style="display:none;">
+                        <div id="annotation-timeline" style="display:none; padding-bottom: 1rem;">
                         </div>
                 </div>
         </div>
+</div>
 </div>

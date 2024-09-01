@@ -25,11 +25,11 @@ Example context (json):
 }
 }}
 <div id="wrapper">
-        <div style="height: calc(100vh - 195px); overflow: auto">
+        <div style="height: calc(100vh - 195px); overflow: auto; top: 70px; margin-top: 70px;" id="top-region">
                 <div class="row m-0 position-relative" style="min-height: 100%">
                         <div class="p-3" id="player-region" style="width: 60%">
                                 {{! Player }}
-                                <div id="video-wrapper">
+                                <div id="video-wrapper" class="bg-black">
                                 <div id="annotation-canvas">
                                         {{#html5}}<video id="player" class="w-100"></video>{{/html5}}
                                         {{^html5}}
@@ -40,8 +40,8 @@ Example context (json):
                                 <div id="annotation-content" class="w-100 position-relative"></div>
                         </div>
                         <div id="separator"
-                                class="d-none border d-lg-flex align-items-center justify-content-center h-100 position-absolute bg-gray z-index-1"
-                                style="width: 1px; cursor: col-resize; left: 60%">
+                                class="d-none border-left d-lg-flex align-items-center justify-content-center h-100 position-absolute z-index-1"
+                                style="cursor: col-resize; left: 60%">
                                 <i style="top: 30vh" class="position-absolute bi bi-grip-vertical"></i>
                         </div>
                         <div class="p-3 mt-3 mt-lg-0 position-relative" id="content-region" style="width: 40%">
@@ -77,7 +77,7 @@ Example context (json):
                                                         <td style="width: 0px">
                                                                 <span data-editable="timestamp"
                                                                         title="{{#str}}goto, mod_interactivevideo{{/str}}"
-                                                                        class="timestamp bg-gray px-2 py-1 rounded-sm text-truncate">0</span>
+                                                                        class="timestamp bg-light px-2 py-1 rounded-sm text-truncate">0</span>
                                                                 <input type="text" name="timestampassist"
                                                                         data-field="timestamp"
                                                                         class="form-control form-control-sm d-none" />

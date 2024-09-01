@@ -29,5 +29,5 @@ $string['chaptercontent'] = 'Chapter';
 $string['chapterdescription'] = 'Separate the video into chapters.';
 $string['pluginname'] = 'Chapter';
 $string['privacy:metadata'] = 'The Chapter plugin doesn\'t store any personal data.';
-$string['startchapter'] = 'Startchapter';
+$string['startchapter'] = 'Start';
 

@@ -72,6 +72,7 @@ function interactivevideo_display_options($moduleinstance) {
     $options['disableinteractionclick'] = $moduleinstance->disableinteractionclick;
     $options['disableinteractionclickuntilcompleted'] = $moduleinstance->disableinteractionclickuntilcompleted;
     $options['hideinteractions'] = $moduleinstance->hideinteractions;
+    $options['theme'] = $moduleinstance->theme;
     return $options;
 }
 

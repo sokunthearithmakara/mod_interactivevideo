@@ -35,7 +35,6 @@ switch ($action) {
             require_once($CFG->libdir . '/filelib.php');
             $curl = new curl(['ignoresecurity' => true]);
             $curl->setHeader('Content-Type: application/json');
-
             $response = $curl->get($url);
         }
         echo $response;

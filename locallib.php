@@ -149,7 +149,7 @@ class interactivevideo_util {
      * @param int $grade
      * @param int $gradeiteminstance
      * @param int $xp
-     * @return void
+     * @return mixed
      */
     public static function save_progress(
         $interactivevideo,
@@ -219,9 +219,12 @@ class interactivevideo_util {
         global $DB, $OUTPUT, $COURSE, $PAGE;
         $context = context::instance_by_id($contextid);
         $PAGE->set_context($context);
+        // Get fields for userpicture.
+        $fields = \core_user\fields::get_picture_fields();
+        $fields = 'u.' . implode(', u.', $fields);
         if ($group == 0) {
             // Get all enrolled users (student only).
-            $sql = "SELECT u.id, u.email, u.firstname, u.lastname, u.picture, ac.timecompleted, ac.timecreated,
+            $sql = "SELECT " . $fields . ", ac.timecompleted, ac.timecreated,
              ac.completionpercentage, ac.completeditems, ac.xp
                     FROM {user} u
                     LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
@@ -230,7 +233,7 @@ class interactivevideo_util {
             $records = $DB->get_records_sql($sql, ['cmid' => $interactivevideo, 'contextid' => $contextid]);
         } else {
             // Get users in group (student only).
-            $sql = "SELECT u.id, u.email, u.firstname, u.lastname, u.picture, ac.timecompleted, ac.timecreated,
+            $sql = "SELECT " . $fields . ", ac.timecompleted, ac.timecreated,
              ac.completionpercentage, ac.completeditems, ac.xp
                     FROM {user} u
                     LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
@@ -242,7 +245,10 @@ class interactivevideo_util {
         // Render the photo of the user.
         foreach ($records as $record) {
             $record->picture = $OUTPUT->user_picture($record, [
-                'size' => 35, 'courseid' => $COURSE->id, 'link' => true, 'includefullname' => true,
+                'size' => 35,
+                'courseid' => $COURSE->id,
+                'link' => true,
+                'includefullname' => true,
             ]);
         }
         return $records;

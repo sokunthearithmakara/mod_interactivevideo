@@ -125,7 +125,6 @@ switch ($action) {
         $cxtid = required_param('cxtid', PARAM_INT);
         echo json_encode(array_values(interactivevideo_util::get_report_data_by_group($cmid, $groupid, $cxtid)));
         break;
-
     case 'get_log':
         $userid = required_param('userid', PARAM_INT);
         $cmid = required_param('cm', PARAM_INT);
@@ -135,7 +134,8 @@ switch ($action) {
         echo json_encode($log);
         break;
     case 'get_logs_by_userids':
-        $userids = required_param('userids', PARAM_RAW);
+        $userids = required_param('userids', PARAM_TEXT);
+        $userids = explode(',', $userids);
         $annotationid = required_param('annotationid', PARAM_INT);
         $contextid = required_param('contextid', PARAM_INT);
         $log = interactivevideo_util::get_logs_by_userids($userids, $annotationid, $contextid);

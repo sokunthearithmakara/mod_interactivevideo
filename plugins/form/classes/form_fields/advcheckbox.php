@@ -46,6 +46,10 @@ class advcheckbox extends base {
             $defaultstrings = $defaults;
         }
         $data->default = $defaultstrings;
+        $data->allowother = $this->optional_param('allowother', null, PARAM_INT);
+        $data->minselection = $this->optional_param('minselection', null, PARAM_INT);
+        $data->maxselection = $this->optional_param('maxselection', null, PARAM_INT);
+        $data->display_vertical = $this->optional_param('display_vertical', null, PARAM_INT);
         $this->set_data($data);
     }
 
@@ -69,15 +73,44 @@ class advcheckbox extends base {
             [
                 'rows' => 4,
                 'oninput' => 'this.style.height = "";this.style.height = this.scrollHeight + 3 + "px"',
-                'placeholder' => 'key1=Value 1',
+                'placeholder' => 'key 1=Display value 1',
+                'data-id' => 'options',
+                'data-type' => 'keyvalue',
             ]
         );
         $mform->setType('options', PARAM_RAW);
         $mform->addRule('options', get_string('required'), 'required', null, 'client');
+        $mform->addHelpButton('options', 'optionsfield', 'ivplugin_form');
 
         // Default.
-        $mform->addElement('text', 'default', get_string('default', 'ivplugin_form'));
+        $mform->addElement(
+            'hidden',
+            'default',
+            null,
+            ['data-id' => 'options', 'data-type' => 'default']
+        );
         $mform->setType('default', PARAM_TEXT);
+
+        // Allow other.
+        $mform->addElement('advcheckbox', 'allowother', '', get_string('allowother', 'ivplugin_form'));
+        $mform->addHelpButton('allowother', 'allowother', 'ivplugin_form');
+
+        // Min.
+        $mform->addElement('text', 'minselection', get_string('minselection', 'ivplugin_form'));
+        $mform->setType('minselection', PARAM_INT);
+        $mform->addRule('minselection', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client', true);
+        $mform->addRule('minselection', get_string('required'), 'required', null, 'client', true);
+        $mform->setDefault('minselection', 0);
+
+        // Max.
+        $mform->addElement('text', 'maxselection', get_string('maxselection', 'ivplugin_form'));
+        $mform->setType('maxselection', PARAM_INT);
+        $mform->addRule('maxselection', get_string('numeric', 'mod_interactivevideo'), 'numeric', null, 'client', true);
+        $mform->addRule('maxselection', get_string('required'), 'required', null, 'client', true);
+        $mform->setDefault('maxselection', 0);
+
+        // Display vertical.
+        $mform->addElement('advcheckbox', 'display_vertical', get_string('displayvertical', 'ivplugin_form'));
 
         $this->set_display_vertical();
     }
@@ -100,5 +133,32 @@ class advcheckbox extends base {
         }
         $fromform->formattedlabel = format_string($fromform->label);
         return $fromform;
+    }
+
+    /**
+     * Validation
+     *
+     * @param array $data
+     * @param array $files
+     * @return array
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        $options = explode("\n", $data['options']);
+
+        if ($data['minselection'] > $data['maxselection'] && ($data['maxselection'] > 0 || $data['minselection'] > 0)) {
+            $errors['minselection'] = get_string('minvaluemustbelessthanmaxvalue', 'ivplugin_form', $data['maxselection']);
+        }
+
+        if ($data['minselection'] > count($options)) {
+            $errors['minselection'] = get_string('minvaluemustbelessthanoption', 'ivplugin_form', count($options));
+        }
+
+        if ($data['maxselection'] > count($options)) {
+            $errors['maxselection'] = get_string('maxvaluemustbelessthanoption', 'ivplugin_form', count($options));
+        }
+
+        return $errors;
     }
 }

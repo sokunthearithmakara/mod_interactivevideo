@@ -34,6 +34,9 @@ class Wistia {
             playbackrate: true,
             quality: true,
         };
+        if (!showControls) {
+            $('body').addClass('no-original-controls');
+        }
         var regex = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^\/]+)/g;
         var match = regex.exec(url);
         var videoId = match[1];
