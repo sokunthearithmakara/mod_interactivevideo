@@ -5,7 +5,7 @@
     top: 0;
 
     span {
-        border-left: 5px solid var(--ivwarning);
+        border-left: 5px solid var(--ivdanger);
         padding-left: 0.45em;
         left: 0.75em;
         top: -40px;

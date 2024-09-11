@@ -156,12 +156,10 @@ class Base {
     }
 
     render(annotation, format = 'html') {
-        return new Promise((resolve) => {
-            resolve(renderContent(annotation, format));
-        });
+        return renderContent(annotation, format);
     }
 
-    addNotification(msg, type = "danger") {
+    addNotification(msg, type = 'danger') {
         addToast(msg, {type});
     }
     /**
@@ -181,12 +179,10 @@ class Base {
     }
 
     convertSecondsToHMS(s) {
-        const hours = Math.floor(s / 3600);
-        const minutes = Math.floor(s % 3600 / 60);
-        const seconds = Math.floor(s % 3600 % 60);
-        return (hours < 10 ? '0' + hours : hours) + ':' +
-            (minutes < 10 ? '0' + minutes : minutes) + ':' +
-            (seconds < 10 ? '0' + seconds : seconds);
+        const hours = Math.floor(s / 3600).toString().padStart(2, '0');
+        const minutes = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+        const seconds = Math.floor(s % 60).toString().padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
     }
 
     /**
@@ -262,8 +258,8 @@ class Base {
      * @returns {boolean}
      */
     isInSkipSegment(timestamp) {
-        return this.annotations.some(x => x.type == 'skipsegment'
-            && Number(x.timestamp) < Number(timestamp) && Number(x.title) > Number(timestamp));
+        return this.annotations.some(x => x.type == 'skipsegment' &&
+            Number(x.timestamp) < Number(timestamp) && Number(x.title) > Number(timestamp));
     }
 
     /**
@@ -272,8 +268,7 @@ class Base {
      * @returns {boolean}
      */
     validateTimestampFormat(timestamp) {
-        const regex = /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])$/;
-        return regex.test(timestamp);
+        return /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])$/.test(timestamp);
     }
 
     /**
@@ -283,7 +278,7 @@ class Base {
      * @returns {void}
      */
     validateTimestampFieldValue(fld, hiddenfield) {
-        var self = this;
+        const self = this;
         $(document).on('change', `form [name=${fld}]`, function(e) {
             e.preventDefault();
             // Make sure the timestamp format is hh:mm:ss.
@@ -570,15 +565,15 @@ class Base {
      */
     interactionRunEvent(annotation, data) {
         dispatchEvent('interactionrun', {
-            annotation: annotation,
-            data: data,
+            annotation,
+            data,
         });
     }
 
     /**
      * Called when the edit form is loaded.
      * @param {Object} form The form
-     * @return {void}
+     * @return {jQuery} The modal body element
      */
     onEditFormLoaded(form) {
         return form.modal.modal.find('.modal-body');
@@ -674,9 +669,7 @@ class Base {
      * @returns {Promise}
      */
     renderViewer(annotation) {
-        return new Promise((resolve) => {
-            resolve(defaultDisplayContent(annotation, this.player, this.start, this.end));
-        });
+        return defaultDisplayContent(annotation, this.player, this.start, this.end);
     }
 
     /**
@@ -691,13 +684,11 @@ class Base {
         if (annotation.completiontracking != 'manual') {
             let $completiontoggle = $message.find('#completiontoggle');
             $completiontoggle.prop('disabled', true);
-            if (annotation.completed == true) {
-                $completiontoggle.find(`span`)
-                    .text(`${M.util.get_string('completioncompleted', 'mod_interactivevideo')}`);
-            } else {
-                $completiontoggle.find(`span`)
-                    .text(`${M.util.get_string('completionincomplete', 'mod_interactivevideo')}`);
-            }
+            $completiontoggle.find('span').text(
+                annotation.completed
+                    ? `${M.util.get_string('completioncompleted', 'mod_interactivevideo')}`
+                    : `${M.util.get_string('completionincomplete', 'mod_interactivevideo')}`
+            );
         }
     }
 
@@ -705,9 +696,7 @@ class Base {
      * Callback to excute after the content is rendered.
      * @returns {void}
      */
-    postContentRender() {
-        // Do nothing.
-    }
+    postContentRender() {}
 
     /**
      * Callback to excute after the content is rendered in the editor.
@@ -721,9 +710,7 @@ class Base {
      * @param {string} elem The element to make draggable
      */
     setModalDraggable(elem) {
-        $(elem).draggable({
-            handle: ".modal-header"
-        });
+        $(elem).draggable({ handle: ".modal-header" });
     }
 
     /**
@@ -802,7 +789,6 @@ class Base {
      * @returns {Promise}
      */
     toggleCompletion(id, action, type = 'manual') {
-        let self = this;
         // Skip if the page is the interactions page.
         if (this.isEditMode()) {
             return Promise.resolve(); // Return a resolved promise for consistency
@@ -810,27 +796,24 @@ class Base {
         // Gradable items (hascompletion and not in the skipsegment)
         const gradableitems = this.annotations.filter(x => x.hascompletion == '1');
 
-        const totalXp = gradableitems.map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
-        let completedItems = gradableitems.filter(x => x.completed);
-        let earnedXp = completedItems.map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
-        completedItems = completedItems.map(x => x.id);
-        let thisItem = gradableitems.find(x => x.id == id);
+        const totalXp = gradableitems.map(({ xp }) => Number(xp)).reduce((a, b) => a + b, 0);
+        let completedItems = gradableitems.filter(({ completed }) => completed);
+        let earnedXp = completedItems.map(({ xp }) => Number(xp)).reduce((a, b) => a + b, 0);
+        completedItems = completedItems.map(({ id }) => id);
+        const thisItem = gradableitems.find(({ id: itemId }) => itemId == id);
         if (action == 'mark-done') {
             completedItems.push(id.toString());
             earnedXp += Number(thisItem.xp);
         } else if (action == 'mark-undone') {
-            completedItems = completedItems.filter(x => x != id);
+            completedItems = completedItems.filter(itemId => itemId != id);
             earnedXp -= Number(thisItem.xp);
         }
 
-        let completed = 0;
-        if ((completedItems.length / gradableitems.length) * 100 >= Number(this.completionpercentage)) {
-            completed = 1;
-        }
+        const completed = (completedItems.length / gradableitems.length) * 100 >= Number(this.completionpercentage) ? 1 : 0;
 
         return new Promise((resolve) => {
             $.ajax({
-                url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                url: `${M.cfg.wwwroot}/mod/interactivevideo/ajax.php`,
                 method: "POST",
                 dataType: "text",
                 data: {
@@ -844,14 +827,14 @@ class Base {
                     c: completed,
                     xp: earnedXp,
                     completeditems: JSON.stringify(completedItems),
-                    token: self.token,
-                    cmid: self.cm,
+                    token: this.token,
+                    cmid: this.cm,
                 },
                 success: () => {
                     // Update the annotations array.
-                    var annotations = this.annotations.map(x => {
+                    const annotations = this.annotations.map(x => {
                         if (x.id == id) {
-                            x.completed = action == 'mark-done' ? true : false;
+                            x.completed = action == 'mark-done';
                         }
                         return x;
                     });
@@ -860,15 +843,15 @@ class Base {
 
                     this.completionCallback(annotations, thisItem, action, type);
                     dispatchEvent('interactionCompletionUpdated', {
-                        annotations: annotations,
+                        annotations,
                         completionpercentage: (completedItems.length / gradableitems.length) * 100,
                         grade: parseFloat((earnedXp / totalXp) * this.grademax).toFixed(2),
-                        completed: completed,
+                        completed,
                         xp: earnedXp,
                         completeditems: completedItems,
                         target: thisItem,
-                        action: action,
-                        type: type
+                        action,
+                        type
                     });
                     resolve();
                 }
@@ -883,8 +866,8 @@ class Base {
      */
     enableManualCompletion(annotation) {
         var self = this;
-        const $message = $(`#message[data-id=${annotation.id}]`);
-        $message.on('click', 'button#completiontoggle', function(e) {
+        const $message = $(`#message[data-id='${annotation.id}']`);
+        $message.off('click', 'button#completiontoggle').on('click', 'button#completiontoggle', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(this).attr('disabled', true);

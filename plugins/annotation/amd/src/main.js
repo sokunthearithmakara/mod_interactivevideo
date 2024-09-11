@@ -1,4 +1,3 @@
-/* eslint-disable complexity */
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -51,7 +50,7 @@ export default class Annotation extends Base {
             if (!item || item.content == '') {
                 return;
             }
-            const updateAspectRatio = async(video, reset) => {
+            const updateAspectRatio = async (video, reset) => {
                 let elem = video ? $('#player') : $(`#annotation-canvas[data-id='${item.id}']`);
                 if ($("#wrapper").hasClass('fullscreen')) {
                     let ratio = await this.player.ratio();
@@ -324,7 +323,7 @@ export default class Annotation extends Base {
          * @param {Array} elements array of elements to render
          * @param {Number} activeids array of ids of active elements
          */
-        const renderTimelineItems = async(elements, activeids) => {
+        const renderTimelineItems = async (elements, activeids) => {
             const currentTime = self.roundToTwo(await self.player.getCurrentTime());
             if (activeids === null) {
                 activeids = [];
@@ -573,7 +572,7 @@ export default class Annotation extends Base {
          * @param {Array} actives ids of active element
          * @param {Boolean} update first render or updating items
          */
-        const renderItems = async(elements, actives, update) => {
+        const renderItems = async (elements, actives, update) => {
             const currentTime = await self.player.getCurrentTime();
             if (!update) { // Clear the annotation-canvas if it is a new start.
                 $videoWrapper.find(`.annotation-wrapper`).remove();
@@ -598,8 +597,235 @@ export default class Annotation extends Base {
                 return item;
             });
 
+            const renderImage = (wrapper, item, prop, id, position) => {
+                var parts = prop.timestamp.split(':');
+                var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+                if (prop.gotourl != '') {
+                    wrapper.append(`<a href="${prop.gotourl}" target="_blank"><img src="${prop.url}" id="${id}"
+                             class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
+                             ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/></a>`);
+                } else {
+                    wrapper.append(`<img src="${prop.url}" id="${id}"
+                                 ${timestamp > 0 ? ' data-timestamp="' + timestamp + '"' : ''}
+                                  class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}
+                                  ${timestamp > 0 ? 'cursor-pointer' : ''}"
+                                   ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/>`);
+                }
+                if (!self.isEditMode()) {
+                    if (prop.gotourl == '' && timestamp == 0) {
+                        wrapper.removeClass('resizable');
+                        wrapper.addClass('no-pointer');
+                    } else {
+                        wrapper.addClass('clickable');
+                    }
+                }
+                wrapper.css(position);
+                wrapper.css('height', 'auto');
+                $videoWrapper.append(wrapper);
+            };
+
+            const renderFile = (wrapper, item, prop, id, position) => {
+                var wrapperhtml = ``;
+                wrapperhtml = `<a id="${id}"
+                        class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
+                        annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatey-180" href="${prop.url}"
+                         target="_blank"><i class="bi bi-paperclip fs-unset"></i>${prop.formattedlabel != "" ?
+                        `<span style="margin-left:0.25em;">${prop.formattedlabel}` : ''}</a>`;
+                wrapper.append(`<div class="d-flex h-100">${wrapperhtml}</div>`);
+                position.width = 0;
+                wrapper.css(position);
+                $videoWrapper.append(wrapper);
+                recalculatingTextSize(wrapper, true);
+            };
+
+            const renderNavigation = (wrapper, item, prop, id, position) => {
+                var parts = prop.timestamp.split(':');
+                var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+
+                wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0"
+                             class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
+                              annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''}"
+                               data-timestamp="${timestamp}">${prop.formattedlabel}</span></div>`);
+
+                position.width = 0;
+
+                wrapper.css(position);
+                $videoWrapper.append(wrapper);
+                recalculatingTextSize(wrapper, true);
+            };
+
+            const renderText = (wrapper, item, prop, id, position) => {
+                if (prop.url != undefined && prop.url != '') {
+                    wrapper.append(`<a id="${id}"
+                         class="annotation-content text-nowrap ${prop.shadow == '1' ? 'text-shadow' : ''} d-block"
+                          href="${prop.url}" target="_blank">${prop.formattedlabel}</a>`);
+                } else {
+                    if (!self.isEditMode() || !$('#content-region').hasClass('no-pointer-events')) {
+                        wrapper.addClass('no-pointer');
+                    }
+                    wrapper.append(`<div id="${id}"
+                         class="annotation-content text-nowrap ${prop.shadow == '1' ? 'text-shadow' : ''}
+                         ">${prop.formattedlabel}</div>`);
+                }
+                wrapper.position.width = 0;
+                wrapper.css(position);
+                var style = {
+                    'font-weight': prop.bold == '1' ? 'bold' : 'normal',
+                    'font-style': prop.italic == '1' ? 'italic' : 'normal',
+                    'text-decoration': prop.underline == '1' ? 'underline' : 'none',
+                    'color': prop.textcolor,
+                    'background': prop.bgcolor,
+                    'border-width': prop.borderwidth,
+                    'border-color': prop.bordercolor,
+                    'border-style': 'solid',
+                    'font-family': prop.textfont != '' ? prop.textfont : 'inherit',
+                };
+                wrapper.find('.annotation-content').css(style);
+                $videoWrapper.append(wrapper);
+                recalculatingTextSize(wrapper);
+            };
+
+            const renderTextBlock = (wrapper, item, prop, id, position) => {
+                var textparts = prop.formattedlabel.split('\r\n');
+                var textblock = '<div class="d-flex flex-column">';
+                textparts.forEach((part) => {
+                    if (part.trim() == '') {
+                        return;
+                    }
+                    textblock += `<span class="text-row text-nowrap text-${prop.alignment}"
+                             style="font-family: ${prop.textfont != '' ? prop.textfont : 'inherit'}">${part}</span>`;
+                });
+                textblock += '</div>';
+                if (prop.url != undefined && prop.url != '') {
+                    wrapper.append(`<a id="${id}"
+                                 class="annotation-content d-block ${prop.shadow == '1' ? 'text-shadow' : ''}"
+                                  href="${prop.url}" target="_blank">${textblock}</a>`);
+                    wrapper.addClass('clickable');
+                } else {
+                    if (!self.isEditMode() || !$('#content-region').hasClass('no-pointer-events')) {
+                        wrapper.addClass('no-pointer');
+                    }
+                    wrapper.append(`<div id="${id}"
+                                 class="annotation-content ${prop.shadow == '1' ? 'text-shadow' : ''}
+                                 ">${textblock}</div>`);
+                }
+                wrapper.position.width = 0;
+                wrapper.css(position);
+                var style = {
+                    'font-size': item.position.fontSize,
+                    'line-height': item.position.lineHeight,
+                    'font-weight': prop.bold == '1' ? 'bold' : 'normal',
+                    'font-style': prop.italic == '1' ? 'italic' : 'normal',
+                    'text-decoration': prop.underline == '1' ? 'underline' : 'none',
+                    'color': prop.textcolor,
+                    'background': prop.bgcolor,
+                    'border-radius': prop.rounded == '1' ? '0.3em' : '0',
+                    'border-width': prop.borderwidth,
+                    'border-color': prop.bordercolor,
+                    'border-style': 'solid',
+                };
+                wrapper.find('.annotation-content').css(style);
+                $videoWrapper.append(wrapper);
+                recalculatingTextSize(wrapper, false, true);
+            };
+
+            const renderShape = (wrapper, item, prop, id, position) => {
+                var parts = prop.timestamp.split(':');
+                var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+                if (prop.gotourl != '') {
+                    wrapper.append(`<a href="${prop.gotourl}" target="_blank"><div id="${id}"
+                             class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}"
+                              style="width: 100%; height: 100%;"></div></a>`);
+                    wrapper.addClass('clickable');
+                } else {
+                    if (!self.isEditMode()) {
+                        if (timestamp == 0) {
+                            wrapper.addClass('no-pointer');
+                        } else {
+                            wrapper.addClass('clickable');
+                        }
+                    }
+                    wrapper.append(`<div id="${id}" class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}
+                                 ${timestamp > 0 ? 'cursor-pointer' : ''}"
+                             ${timestamp > 0 ? 'data-timestamp="' + timestamp + '"' : ''}
+                             style="width: 100%; height: 100%;"></div>`);
+                }
+                wrapper.css(position);
+                var style = {
+                    'background': prop.bgcolor,
+                    'border-width': prop.borderwidth,
+                    'border-color': prop.bordercolor,
+                    'border-style': 'solid',
+                    'opacity': prop.opacity / 100,
+                };
+                if (prop.shape == 'circle') {
+                    style['border-radius'] = '50%';
+                } else if (prop.shape == 'rectangle') {
+                    style['border-radius'] = prop.rounded == '1' ? '1em' : '0';
+                }
+                wrapper.find('.annotation-content').css(style);
+                $videoWrapper.append(wrapper);
+            };
+
+            const renderHotspot = (wrapper, item, prop, id, position) => {
+                wrapper.append(`<div id="${id}" class="annotation-content shadow-sm pulse" role="button"></div>`);
+                position['aspect-ratio'] = '1';
+                wrapper.css(position);
+                var style = {
+                    'background-color': prop.color,
+                    'opacity': prop.opacity / 100,
+                    'border-radius': '50%',
+                    'aspect-ratio': '1',
+                };
+                wrapper.find('.annotation-content').css(style);
+                $videoWrapper.append(wrapper);
+
+                if (!self.isEditMode()) {
+                    if (prop.usemodal == '1') {
+                        wrapper.attr({
+                            'data-toggle': 'modal',
+                        });
+                    } else {
+                        wrapper.attr({
+                            'tabindex': -1,
+                            'data-trigger': 'manual',
+                            'data-boundary': 'viewport',
+                            'data-placement': 'auto',
+                            'data-html': 'true',
+                            'data-content': '<div class="loader"></div>',
+                            'data-title': prop.formattedtitle
+                                + `<i class="bi bi-x-circle-fill ml-auto popover-dismiss cursor-pointer"
+                                         style="font-size:1.5em;"></i>`,
+                        });
+
+                        wrapper.popover({
+                            container: '#wrapper',
+                            html: true,
+                            template: `<div class="popover inlineannotation-popover id-${id}"
+                                     role="tooltip"><div class="arrow"></div>
+                                     <h3 class="popover-header d-flex justify-content-between"></h3>
+                                     <div class="popover-body rounded"></div>${prop.url != '' ?
+                                    `<div class="popup-footer bg-light p-2 rounded-bottom"><a href="${prop.url}"
+                                          class="d-block w-100 text-right rotatex-360" target="_blank">
+                                          <i class="bi bi-arrow-right"><i></i></i></a></div>` : ''}</div>`,
+                        });
+
+                        wrapper.on('shown.bs.popover', async function() {
+                            let $body = $(`.popover.id-${id} .popover-body`);
+                            const html = await self.formatContent(prop.content.text, M.cfg.contextid);
+                            $body.html(html);
+                            notifyFilter($body);
+                            wrapper.popover('update');
+                        });
+                        if (prop.openbydefault == '1') {
+                            wrapper.popover('show');
+                        }
+                    }
+                }
+            };
+
             let count = 0;
-            elements.forEach(async(item) => {
+            elements.forEach(async (item) => {
                 let prop = item.properties;
                 let type = item.type;
                 let id = item.id;
@@ -612,225 +838,25 @@ export default class Annotation extends Base {
                 }
                 switch (type) {
                     case 'image':
-                        var parts = prop.timestamp.split(':');
-                        var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-                        if (prop.gotourl != '') {
-                            wrapper.append(`<a href="${prop.gotourl}" target="_blank"><img src="${prop.url}" id="${id}"
-                             class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
-                             ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/></a>`);
-                        } else {
-                            wrapper.append(`<img src="${prop.url}" id="${id}"
-                                 ${timestamp > 0 ? ' data-timestamp="' + timestamp + '"' : ''}
-                                  class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}
-                                  ${timestamp > 0 ? 'cursor-pointer' : ''}"
-                                   ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/>`);
-                        }
-                        if (!self.isEditMode()) {
-                            if (prop.gotourl == '' && timestamp == 0) {
-                                wrapper.removeClass('resizable');
-                                wrapper.addClass('no-pointer');
-                            } else {
-                                wrapper.addClass('clickable');
-                            }
-                        }
-                        wrapper.css(position);
-                        wrapper.css('height', 'auto');
-                        $videoWrapper.append(wrapper);
+                        renderImage(wrapper, item, prop, id, position);
                         break;
                     case 'file':
-                        var wrapperhtml = ``;
-                        wrapperhtml = `<a id="${id}"
-                        class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
-                        annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatey-180" href="${prop.url}"
-                         target="_blank"><i class="bi bi-paperclip fs-unset"></i>${prop.formattedlabel != "" ?
-                                `<span style="margin-left:0.25em;">${prop.formattedlabel}` : ''}</a>`;
-                        wrapper.append(`<div class="d-flex h-100">${wrapperhtml}</div>`);
-                        position.width = 0;
-                        wrapper.css(position);
-                        $videoWrapper.append(wrapper);
-                        recalculatingTextSize(wrapper, true);
+                        renderFile(wrapper, item, prop, id, position);
                         break;
                     case 'navigation':
-                        var parts = prop.timestamp.split(':');
-                        var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-
-                        wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0"
-                             class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
-                              annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''}"
-                               data-timestamp="${timestamp}">${prop.formattedlabel}</span></div>`);
-
-                        position.width = 0;
-
-                        wrapper.css(position);
-                        $videoWrapper.append(wrapper);
-                        recalculatingTextSize(wrapper, true);
+                        renderNavigation(wrapper, item, prop, id, position);
                         break;
                     case 'text':
-                        if (prop.url != undefined && prop.url != '') {
-                            wrapper.append(`<a id="${id}"
-                                 class="annotation-content text-nowrap ${prop.shadow == '1' ? 'text-shadow' : ''} d-block"
-                                  href="${prop.url}" target="_blank">${prop.formattedlabel}</a>`);
-                        } else {
-                            if (!self.isEditMode() || !$('#content-region').hasClass('no-pointer-events')) {
-                                wrapper.addClass('no-pointer');
-                            }
-                            wrapper.append(`<div id="${id}"
-                                 class="annotation-content text-nowrap ${prop.shadow == '1' ? 'text-shadow' : ''}
-                                 ">${prop.formattedlabel}</div>`);
-                        }
-                        wrapper.position.width = 0;
-                        wrapper.css(position);
-                        var style = {
-                            'font-weight': prop.bold == '1' ? 'bold' : 'normal',
-                            'font-style': prop.italic == '1' ? 'italic' : 'normal',
-                            'text-decoration': prop.underline == '1' ? 'underline' : 'none',
-                            'color': prop.textcolor,
-                            'background': prop.bgcolor,
-                            'border-width': prop.borderwidth,
-                            'border-color': prop.bordercolor,
-                            'border-style': 'solid',
-                            'font-family': prop.textfont != '' ? prop.textfont : 'inherit',
-                        };
-                        wrapper.find('.annotation-content').css(style);
-                        $videoWrapper.append(wrapper);
-                        recalculatingTextSize(wrapper);
+                        renderText(wrapper, item, prop, id, position);
                         break;
                     case 'textblock':
-                        var textparts = prop.formattedlabel.split('\r\n');
-                        var textblock = '<div class="d-flex flex-column">';
-                        textparts.forEach((part) => {
-                            if (part.trim() == '') {
-                                return;
-                            }
-                            textblock += `<span class="text-row text-nowrap text-${prop.alignment}"
-                             style="font-family: ${prop.textfont != '' ? prop.textfont : 'inherit'}">${part}</span>`;
-                        });
-                        textblock += '</div>';
-                        if (prop.url != undefined && prop.url != '') {
-                            wrapper.append(`<a id="${id}"
-                                 class="annotation-content d-block ${prop.shadow == '1' ? 'text-shadow' : ''}"
-                                  href="${prop.url}" target="_blank">${textblock}</a>`);
-                            wrapper.addClass('clickable');
-                        } else {
-                            if (!self.isEditMode() || !$('#content-region').hasClass('no-pointer-events')) {
-                                wrapper.addClass('no-pointer');
-                            }
-                            wrapper.append(`<div id="${id}"
-                                 class="annotation-content ${prop.shadow == '1' ? 'text-shadow' : ''}
-                                 ">${textblock}</div>`);
-                        }
-                        wrapper.position.width = 0;
-                        wrapper.css(position);
-                        var style = {
-                            'font-size': item.position.fontSize,
-                            'line-height': item.position.lineHeight,
-                            'font-weight': prop.bold == '1' ? 'bold' : 'normal',
-                            'font-style': prop.italic == '1' ? 'italic' : 'normal',
-                            'text-decoration': prop.underline == '1' ? 'underline' : 'none',
-                            'color': prop.textcolor,
-                            'background': prop.bgcolor,
-                            'border-radius': prop.rounded == '1' ? '0.3em' : '0',
-                            'border-width': prop.borderwidth,
-                            'border-color': prop.bordercolor,
-                            'border-style': 'solid',
-                        };
-                        wrapper.find('.annotation-content').css(style);
-                        $videoWrapper.append(wrapper);
-                        recalculatingTextSize(wrapper, false, true);
+                        renderTextBlock(wrapper, item, prop, id, position);
                         break;
                     case 'shape':
-                        var parts = prop.timestamp.split(':');
-                        var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-                        if (prop.gotourl != '') {
-                            wrapper.append(`<a href="${prop.gotourl}" target="_blank"><div id="${id}"
-                             class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}"
-                              style="width: 100%; height: 100%;"></div></a>`);
-                            wrapper.addClass('clickable');
-                        } else {
-                            if (!self.isEditMode()) {
-                                if (timestamp == 0) {
-                                    wrapper.addClass('no-pointer');
-                                } else {
-                                    wrapper.addClass('clickable');
-                                }
-                            }
-                            wrapper.append(`<div id="${id}" class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}
-                                 ${timestamp > 0 ? 'cursor-pointer' : ''}"
-                             ${timestamp > 0 ? 'data-timestamp="' + timestamp + '"' : ''}
-                             style="width: 100%; height: 100%;"></div>`);
-                        }
-                        wrapper.css(position);
-                        var style = {
-                            'background': prop.bgcolor,
-                            'border-width': prop.borderwidth,
-                            'border-color': prop.bordercolor,
-                            'border-style': 'solid',
-                            'opacity': prop.opacity / 100,
-                        };
-                        if (prop.shape == 'circle') {
-                            style['border-radius'] = '50%';
-                        } else if (prop.shape == 'rectangle') {
-                            style['border-radius'] = prop.rounded == '1' ? '1em' : '0';
-                        }
-                        wrapper.find('.annotation-content').css(style);
-                        $videoWrapper.append(wrapper);
+                        renderShape(wrapper, item, prop, id, position);
                         break;
-
                     case 'hotspot':
-                        wrapper.append(`<div id="${id}" class="annotation-content shadow-sm pulse" role="button"></div>`);
-                        position['aspect-ratio'] = '1';
-                        wrapper.css(position);
-                        var style = {
-                            'background-color': prop.color,
-                            'opacity': prop.opacity / 100,
-                            'border-radius': '50%',
-                            'aspect-ratio': '1',
-                        };
-                        wrapper.find('.annotation-content').css(style);
-                        $videoWrapper.append(wrapper);
-
-                        if (!self.isEditMode()) {
-                            if (prop.usemodal == '1') {
-                                wrapper.attr({
-                                    'data-toggle': 'modal',
-                                });
-                            } else {
-                                wrapper.attr({
-                                    'tabindex': -1,
-                                    'data-trigger': 'manual',
-                                    'data-boundary': 'viewport',
-                                    'data-placement': 'auto',
-                                    'data-html': 'true',
-                                    'data-content': '<div class="loader"></div>',
-                                    'data-title': prop.formattedtitle
-                                        + `<i class="bi bi-x-circle-fill ml-auto popover-dismiss cursor-pointer"
-                                         style="font-size:1.5em;"></i>`,
-                                });
-
-                                wrapper.popover({
-                                    container: '#wrapper',
-                                    html: true,
-                                    template: `<div class="popover inlineannotation-popover id-${id}"
-                                     role="tooltip"><div class="arrow"></div>
-                                     <h3 class="popover-header d-flex justify-content-between"></h3>
-                                     <div class="popover-body rounded"></div>${prop.url != '' ?
-                                            `<div class="popup-footer bg-light p-2 rounded-bottom"><a href="${prop.url}"
-                                          class="d-block w-100 text-right rotatex-360" target="_blank">
-                                          <i class="bi bi-arrow-right"><i></i></i></a></div>` : ''}</div>`,
-                                });
-
-                                wrapper.on('shown.bs.popover', async function() {
-                                    let $body = $(`.popover.id-${id} .popover-body`);
-                                    const html = await self.formatContent(prop.content.text, M.cfg.contextid);
-                                    $body.html(html);
-                                    notifyFilter($body);
-                                    wrapper.popover('update');
-                                });
-                                if (prop.openbydefault == '1') {
-                                    wrapper.popover('show');
-                                }
-                            }
-                        }
+                        renderHotspot(wrapper, item, prop, id, position);
                         break;
                 }
 
@@ -1326,6 +1352,59 @@ export default class Annotation extends Base {
             renderItems(items, [newItem.id], false);
         };
 
+        $(document).on('click', '.annotation-timeline-item', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            $videoWrapper.find('.annotation-wrapper').removeClass('active');
+            if (!e.ctrlKey && !e.metaKey) {
+                let elementid = $(this).data('item');
+                let elem = $videoWrapper.find(`.annotation-wrapper[data-item="${elementid}"]`);
+                elem.trigger('click');
+            } else {
+                if ($(this).hasClass('active')) {
+                    $(this).removeClass('active');
+                } else {
+                    $(this).addClass('active');
+                }
+            }
+
+            var activeitems = $(`.annotation-timeline-item.active`);
+            if (activeitems.length == 0) {
+                $('#annotation-canvas #background').addClass('d-none').css('z-index', 0);
+                $('#edit-btns').attr('data-active', '').addClass('d-none').removeClass('d-flex');
+                $('#annotation-btns #edit').attr('disabled', 'disabled');
+                $('#annotation-btns #edit').removeAttr('disabled');
+            } else {
+                let dataActive = activeitems.map(function() {
+                    return $(this).data('item');
+                }).get();
+
+                dataActive.forEach((id) => {
+                    $videoWrapper.find(`.annotation-wrapper[data-item=${id}]`).addClass('active');
+                });
+
+                let activewrapper = $videoWrapper.find('.annotation-wrapper.active');
+                document.querySelector('.annotation-wrapper.active').focus();
+                $('#edit-btns').attr('data-active', dataActive).addClass('d-flex').removeClass('d-none');
+                if (activewrapper.length > 1) {
+                    $('#annotation-btns #edit').attr('disabled', 'disabled');
+                    $('#annotation-btns #position').addClass('d-none');
+                } else {
+                    $('#annotation-btns #edit').removeAttr('disabled');
+                    $('#annotation-btns #position').removeClass('d-none');
+                }
+
+                $('#annotation-canvas #background').removeClass('d-none').css('z-index', 1);
+            }
+        });
+
+        $(document).on('dblclick', '.annotation-timeline-item', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            self.player.seek($(this).data('start'));
+            dispatchEvent('timeupdate', {time: $(this).data('start')});
+        });
+
         $playerWrapper.on('click', `#annotation-btns #save`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -1482,7 +1561,7 @@ export default class Annotation extends Base {
             getItems(false);
             let item = items.find(x => x.id == active);
             let type = item.type;
-            let formdata = {...item.properties};
+            let formdata = JSON.parse(JSON.stringify(item.properties));
             formdata.contextid = M.cfg.contextid;
             formdata.id = item.id;
             formdata.annotationid = annnoid;
@@ -1490,7 +1569,7 @@ export default class Annotation extends Base {
             let editform = new ModalForm({
                 formClass: "ivplugin_annotation\\items\\" +
                     (type == 'image' || type == 'file' ? 'media' : type),
-                args: item.properties,
+                args: formdata,
                 modalConfig: {
                     title: M.util.get_string('editinlineannotation', 'ivplugin_annotation',
                         M.util.get_string(type, 'ivplugin_annotation')),

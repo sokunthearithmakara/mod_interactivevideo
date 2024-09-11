@@ -80,8 +80,8 @@
 }
 
 .path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row.field-active {
-    border: 3px solid var(--ivprimary);
-    transition: border ease-in-out 300ms;
+    outline: 3px solid var(--ivprimary);
+    transition: outline ease-in-out 300ms;
 }
 
 .path-mod-interactivevideo #form-preview .field-actions {

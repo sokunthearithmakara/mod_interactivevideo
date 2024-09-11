@@ -38,7 +38,7 @@ define(['jquery',
      * */
     const replaceProgressBars = (percentage) => {
         percentage = percentage > 100 ? 100 : percentage;
-        $('#video-nav #progress').replaceWith(`<div id="progress"  style="width: ${percentage}%;"></div>`);
+        $('#video-nav #progress').css('width', percentage + '%');
         $('#scrollbar, #scrollhead-top').css('left', percentage + '%');
     };
     /**
@@ -72,7 +72,24 @@ define(['jquery',
 
 
     return {
+        /**
+         * Initialize function on page loads.
+         * @param {String} url video url
+         * @param {Number} coursemodule cm id
+         * @param {Number} interaction cm instance
+         * @param {Number} course course id
+         * @param {Number} start video start time
+         * @param {Number} end video end time
+         * @param {Number} coursecontextid course context id
+         * @param {String} type video type
+         */
         init: function(url, coursemodule, interaction, course, start, end, coursecontextid, type = 'yt') {
+
+            /**
+             * Util function to display notification
+             * @param {String} msg message text
+             * @param {String} type message type
+             */
             const addNotification = (msg, type = "info") => {
                 addToast.add(msg, {
                     type: type
@@ -89,9 +106,16 @@ define(['jquery',
                 end = null;
             }
 
-            var annotations = [];
-            var contentTypes;
+            var annotations = []; // Annotations
+            var contentTypes; // Content types
 
+            /**
+             * Convert seconds to HH:MM:SS format
+             * @param {Number} s second
+             * @param {Boolean} dynamic if true, only show minutes and seconds if less than one hour
+             * @param {Boolean} rounded if true, second is rounded
+             * @returns formatted timestamp
+             */
             const convertSecondsToHMS = (s, dynamic = false, rounded = true) => {
                 let hours = Math.floor(s / 3600);
                 let minutes = Math.floor((s - hours * 3600) / 60);
@@ -126,6 +150,12 @@ define(['jquery',
             };
 
             var activeid = null; // Current active annotation id. Mainly used when editing to relaunch the interaction afte editing.
+
+            /**
+             * Handle rendering of annotation items on the list
+             * @param {Array} annotations array of annotation objects
+             * @returns
+             */
             const renderAnnotationItems = (annotations) => {
                 renderVideoNav(annotations, start, totaltime);
                 $('#annotationwrapper .loader').remove();
@@ -155,6 +185,10 @@ define(['jquery',
                 }
             };
 
+            /**
+             * Get annotations from the server and execute the rendering function
+             * @returns
+             */
             const getAnnotations = () => {
                 const getItems = $.ajax({
                     url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
@@ -210,6 +244,13 @@ define(['jquery',
                 });
             };
 
+            /**
+             * Validate given timestamp against format
+             * @param {String} timestamp formatted timestamp hh:mm:ss
+             * @param {String} fld field selector
+             * @param {String} existing existing value
+             * @returns
+             */
             const validateTimestampFormat = (timestamp, fld, existing) => {
                 var regex = /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])$/;
                 if (!regex.test(timestamp)) {
@@ -224,6 +265,17 @@ define(['jquery',
                 return true;
             };
 
+            /**
+             * Validate timestamp against start and end time of the video, existing timestamp and skip segments
+             * @param {String} timestamp formatted timestamp
+             * @param {String} fld field selector
+             * @param {String} existing existing value
+             * @param {Number} seconds
+             * @param {Boolean} checkduration if true, check against start and end time
+             * @param {Boolean} checkexisting if true, check against existing annotations
+             * @param {Boolean} checkskipsegment if true, check against skip segments
+             * @returns
+             */
             const validateTimeStartEnd = (timestamp, fld, existing, seconds, checkduration,
                 checkexisting, checkskipsegment) => {
                 // Convert the timestamp to seconds.
@@ -261,7 +313,7 @@ define(['jquery',
 
                 // Make sure timestamp is not in a skip segment.
                 if (checkskipsegment) {
-                    var skipsegments = annotations.filter((annotation) => annotation.type == 'skipsegment');
+                    const skipsegments = annotations.filter((annotation) => annotation.type == 'skipsegment');
                     var skip = skipsegments.find(x => Number(x.timestamp) < Number(timestamp)
                         && Number(x.title) > Number(timestamp));
                     if (skip) {
@@ -279,9 +331,12 @@ define(['jquery',
                 }
 
                 return timestamp;
-
             };
 
+            /**
+             * Run interaction
+             * @param {Object} annotation annotation object
+             */
             const runInteraction = (annotation) => {
                 // Remove the previous message but keep the one below the video.
                 $('#annotation-modal').modal('hide');
@@ -292,6 +347,9 @@ define(['jquery',
                 activityType.runInteraction(annotation);
             };
 
+            /**
+             * Set of events to run after the video player is ready.
+             */
             const onReady = async () => {
                 if (player.support.playbackrate == false) {
                     $('#changerate').remove();
@@ -329,10 +387,18 @@ define(['jquery',
                 $('#timeline-items-wrapper').css('width', (minutes * 300) + 'px');
                 const relWidth = $('#timeline-items').width();
                 $('#minute-markers, #minute-markers-bg, #vseek').css('width', relWidth + 'px');
-                for (let i = start; i <= end; i += 60) {
-                    let percentage = (i - start) / totaltime * 100;
+                let startPercentage = 0;
+                let newStart = start;
+                if (start % 60 != 0) {
+                    startPercentage = (60 - (start % 60)) / totaltime * 100;
+                    newStart = start + (60 - (start % 60));
+                    $('#minute-markers, #minute-markers-bg').append(`<div class="minute-marker position-absolute"
+                        style="left: 0%;"><div class="text-white minute-label"></div></div>`);
+                }
+                for (let i = newStart; i <= end; i += 60) {
+                    let percentage = ((i - newStart) / totaltime * 100) + startPercentage;
                     let marker = '';
-                    // Format h:m (e.g 3h1m);
+                    // Format h:m (e.g 3h1m).
                     if (i >= 3600) {
                         marker = Math.floor(i / 3600) + 'h' + Math.floor((i % 3600) / 60) + 'm';
                     } else {
@@ -341,10 +407,17 @@ define(['jquery',
                     $('#minute-markers, #minute-markers-bg').append(`<div class="minute-marker position-absolute"
                          style="left: ${percentage}%;"><div class="text-white minute-label">${marker}</div></div>`);
                 }
-                getAnnotations();
 
+                if (end % 60 != 0) {
+                    $('#minute-markers, #minute-markers-bg').append(`<div class="minute-marker position-absolute"
+                        style="left: 100%;"><div class="text-white minute-label"></div></div>`);
+                }
+                getAnnotations();
             };
 
+            /**
+             * Run when video ended (i.e. arrives at 'end' time)
+             */
             const onEnded = () => {
                 player.pause();
                 $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
@@ -355,25 +428,27 @@ define(['jquery',
                     <i class="bi bi-arrow-repeat" style="font-size: x-large;"></i></button></div>`);
                 $('#video-nav #progress').css('width', '100%');
                 $('#scrollbar, #scrollhead-top').css('left', '100%');
-                // Focus on the restart button;
+                // Focus on the restart button.
                 $('#message #restart').focus();
 
-                // If the current time matches the timestamp of an annotation, highlight the annotation
+                // If the current time matches the timestamp of an annotation, highlight the annotation.
                 var currentAnnotation = annotations.find((annotation) => annotation.timestamp == end);
                 if (currentAnnotation) {
                     $('#annotation-list tr').removeClass('active');
                     $(`tr[data-id="${currentAnnotation.id}"]`).addClass('active');
-
-                    // Show tooltip for two seconds
-                    // toggle the tooltip to show the title
+                    // Show tooltip for two seconds.
                     $('#video-nav .annotation[data-id="' + currentAnnotation.id + '"] .item').tooltip('show');
-                    // Hide the tooltip after 2 seconds
                     setTimeout(function() {
                         $('#video-nav .annotation[data-id="' + currentAnnotation.id + '"] .item').tooltip('hide');
                     }, 2000);
                 }
             };
 
+            /**
+             * Execute when video is sought
+             * @param {Number} t seconds
+             * @returns
+             */
             const onSeek = async function(t) {
                 if (!playerReady) {
                     return;
@@ -393,13 +468,16 @@ define(['jquery',
             };
 
             var onPlayingInterval;
+            /**
+             * Excute when video plays (i.e. start or resume)
+             */
             const onPlaying = () => {
                 $('#message, #end-screen').remove();
                 $('#playpause').find('i').removeClass('bi-play-fill').addClass('bi-pause-fill');
                 var intervalFunction = async function() {
                     var thisTime = await player.getCurrentTime();
-                    var isPlaying = await player.isPlaying();
-                    var isEnded = await player.isEnded();
+                    const isPlaying = await player.isPlaying();
+                    const isEnded = await player.isEnded();
                     if (!isPlaying || isEnded) {
                         clearInterval(onPlayingInterval);
                         return;
@@ -418,7 +496,7 @@ define(['jquery',
                     }
                     dispatchEvent('timeupdate', {'time': thisTime});
                     $('#timeline-wrapper #currenttime').text(convertSecondsToHMS(thisTime, true));
-                    var percentage = (thisTime - start) / (totaltime) * 100;
+                    let percentage = (thisTime - start) / (totaltime) * 100;
                     $('#video-nav #progress').css('width', percentage + '%');
 
                     $("#scrollbar, #scrollhead-top").css('left', percentage + '%');
@@ -432,7 +510,7 @@ define(['jquery',
                     }
 
                     // If the current time matches the timestamp of an annotation, highlight the annotation
-                    var currentAnnotation = annotations.find(x => (thisTime - player.frequency) <= x.timestamp
+                    const currentAnnotation = annotations.find(x => (thisTime - player.frequency) <= x.timestamp
                         && (thisTime + player.frequency) >= x.timestamp);
                     if (currentAnnotation) {
                         $('#annotation-list tr').removeClass('active');
@@ -448,8 +526,8 @@ define(['jquery',
                     }
 
                     // If current time is within the skipsegment, seek to the end of the segment
-                    var skipsegments = annotations.filter((annotation) => annotation.type == 'skipsegment');
-                    var skip = skipsegments.find(x => Number(x.timestamp) < Number(thisTime)
+                    let skipsegments = annotations.filter((annotation) => annotation.type == 'skipsegment');
+                    let skip = skipsegments.find(x => Number(x.timestamp) < Number(thisTime)
                         && Number(x.title) > Number(thisTime));
                     if (skip) {
                         await player.seek(Number(skip.title));
@@ -459,12 +537,21 @@ define(['jquery',
                     }
                 };
                 if (player.type == 'yt' || player.type == 'wistia') {
-                    onPlayingInterval = setInterval(intervalFunction, 100);
+                    const update = async () => {
+                        await intervalFunction();
+                        if (await player.isPlaying() && !await player.isEnded()) {
+                            requestAnimationFrame(update);
+                        }
+                    };
+                    requestAnimationFrame(update);
                 } else {
                     intervalFunction();
                 }
             };
 
+            /**
+             * Excute when video is paused.
+             */
             const onPause = () => {
                 clearInterval(onPlayingInterval);
                 $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
@@ -501,6 +588,7 @@ define(['jquery',
                 onSeek(e.detail.time);
             });
 
+            // Post annotation update (add, edit, clone).
             $(document).on('annotationupdated', function(e) {
                 var updated = e.originalEvent.detail.annotation;
                 var action = e.originalEvent.detail.action;
@@ -542,14 +630,27 @@ define(['jquery',
                 }
             });
 
+            // Re-render annotation list and timeline after an annotation is deleted.
+            $(document).on('annotationdeleted', function(e) {
+                var annotation = e.originalEvent.detail.annotation;
+                activeid = null;
+                $(`tr[data-id="${annotation.id}"]`).addClass('deleted');
+                setTimeout(function() {
+                    annotations = annotations.filter(function(item) {
+                        return item.id != annotation.id;
+                    });
+                    renderAnnotationItems(annotations);
+                    addNotification(M.util.get_string('interactiondeleted', 'mod_interactivevideo'), 'success');
+                }, 1000);
+            });
+
             // Implement create annotation
-            $(document).on('click', '#addcontentdropdown a', async function(e) {
+            $(document).on('click', '#addcontentdropdown .dropdown-item', async function(e) {
                 if (!playerReady) {
                     return;
                 }
                 e.preventDefault();
-                $('#addcontentdropdown a').removeClass('active');
-                $(this).addClass('active');
+                $('#addcontentdropdown .dropdown-item').removeClass('active');
                 let ctype = $(this).data('type');
                 player.pause();
                 var timestamp = currentTime || await player.getCurrentTime();
@@ -598,25 +699,12 @@ define(['jquery',
                 ctRenderer[contenttype].cloneAnnotation(id);
             });
 
-            $(document).on('annotationdeleted', function(e) {
-                var annotation = e.originalEvent.detail.annotation;
-                activeid = null;
-                $(`tr[data-id="${annotation.id}"]`).addClass('deleted');
-                setTimeout(function() {
-                    annotations = annotations.filter(function(item) {
-                        return item.id != annotation.id;
-                    });
-                    renderAnnotationItems(annotations);
-                    addNotification(M.util.get_string('interactiondeleted', 'mod_interactivevideo'), 'success');
-                }, 1000);
-            });
-
             // Implement delete annotation.
             $(document).on('click', 'tr.annotation .delete', function(e) {
                 e.preventDefault();
                 player.pause();
                 var id = $(this).closest('.annotation').data('id');
-                var annotation = annotations.find(x => x.id == id);
+                var annotation = annotations.find(annotation => annotation.id == id);
                 Notification.saveCancel(
                     M.util.get_string('deleteinteraction', 'mod_interactivevideo'),
                     M.util.get_string('deleteinteractionconfirm', 'mod_interactivevideo'),
@@ -633,14 +721,13 @@ define(['jquery',
             $(document).on('click', 'tr.annotation  .title', async function(e) {
                 e.preventDefault();
                 var timestamp = $(this).closest('.annotation').data('timestamp');
-                await player.seek(timestamp, true);
                 // Update the progress bar
                 var percentage = (timestamp - start) / totaltime * 100;
                 replaceProgressBars(percentage);
-
+                await player.seek(timestamp, true);
                 var id = $(this).closest('.annotation').data('id');
 
-                var theAnnotation = annotations.find(x => x.id == id);
+                var theAnnotation = annotations.find(annotation => annotation.id == id);
 
                 runInteraction(theAnnotation);
             });
@@ -653,6 +740,7 @@ define(['jquery',
                 player.play();
             });
 
+            // Right click on the video nav or video timeline to add a new interaction.
             $(document).on('contextmenu', '#vseek, #video-timeline', async function(e) {
                 if (!playerReady) {
                     return;
@@ -667,6 +755,7 @@ define(['jquery',
                 $("#addcontent").trigger('click');
             });
 
+            // Right click on the scrollbar to add a new interaction.
             $(document).on('contextmenu', '#scrollbar, #scrollhead-top', async function(e) {
                 if (!playerReady) {
                     return;
@@ -677,6 +766,7 @@ define(['jquery',
                 $("#addcontent").trigger('click');
             });
 
+            // Click the play/pause button on the timeline region to pause/play video.
             $(document).on('click', '#playpause', async function(e) {
                 if (!playerReady) {
                     return;
@@ -696,6 +786,7 @@ define(['jquery',
                 }
             });
 
+            // Right click on the annotation indicator to edit the annotation.
             $(document).on('contextmenu', '#video-nav .annotation', function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -803,27 +894,32 @@ define(['jquery',
                 player.play();
             });
 
+            // Display tooltip on anntation indicator when annotation on the list is hovered.
             $(document).on('mouseover', 'tr.annotation', function() {
                 var id = $(this).data('id');
                 $(`#video-nav ul li[data-id="${id}"] .item`).trigger('mouseover');
             });
 
+            // Remove tooltip when annotation on the list is not hovered.
             $(document).on('mouseout', 'tr.annotation', function() {
                 var id = $(this).data('id');
                 $(`#video-nav ul li[data-id="${id}"] .item`).trigger('mouseout');
                 $('.tooltip').remove();
             });
 
+            // Highlight annotation on the list when annotation indicator is hovered.
             $(document).on('mouseover', '#video-nav ul li', function() {
                 var id = $(this).data('id');
                 $(`tr.annotation[data-id="${id}"]`).addClass('active');
             });
 
+            // Remove highlight when annotation indicator is not hovered.
             $(document).on('mouseout', '#video-nav ul li', function() {
                 var id = $(this).data('id');
                 $(`tr.annotation[data-id="${id}"]`).removeClass('active');
             });
 
+            // Validate timestamp when the timestamp field is changed.
             $(document).on('change', '.timestamp-input, .timestamp-field input', function() {
                 $(this).removeClass('is-invalid');
                 var parts = $(this).val().split(':');
@@ -841,59 +937,8 @@ define(['jquery',
                 }
             });
 
-            $('#contentmodal').on('show.bs.modal', function() {
-                player.pause();
-                $('#addcontentdropdown').addClass('modal-body');
-            });
-
-            $('#contentmodal').on('hide.bs.modal', function() {
-                $('#addcontentdropdown a').removeClass('active');
-                $('#addcontentdropdown').removeClass('modal-body');
-            });
-
-            $(document).on('click', '#fullscreen', function(e) {
-                e.preventDefault();
-                if ($(this).hasClass('fullscreen')) {
-                    $('#distractfreemodal').modal('hide');
-
-                } else {
-                    let modal = `<div class="modal fade p-0" id="distractfreemodal"
-                     role="dialog" aria-hidden="true" data-backdrop="static"
-                    data-keyboard="false">
-                    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
-                        <div class="modal-content rounded-0 p-3">
-                            <div class="modal-body px-1 px-sm-3" id="distractionfreebody">
-                <div class="d-flex w-100 align-items-center justify-content-center mt-5"><div class="spinner-grow text-secondary"
-                    style="width: 3rem; height: 3rem;" role="status">
-                <span class="sr-only">Loading...</span>
-                </div></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-                    $('body').append(modal);
-                    $('#distractfreemodal').modal('show');
-                }
-
-                $(this).toggleClass('fullscreen');
-
-                $('#distractfreemodal').on('shown.bs.modal', function() {
-                    $('body').addClass('distractionfreemode');
-                    let $wrapper = $('#wrapper').clone();
-                    $('#distractfreemodal').find('#distractionfreebody').html($wrapper);
-                    // Remove original wrapper
-                    $('#wrapper').remove();
-                });
-                $('#distractfreemodal').on('hidden.bs.modal', function() {
-                    $('body').removeClass('distractionfreemode');
-                    let $wrapper = $('#distractfreemodal #wrapper').clone();
-                    $('[role="main"]').append($wrapper);
-                    $('#distractfreemodal').remove();
-                });
-            });
-
-            const appendTimestamp = (seconds, rounded) => {
-                var formattedTime = convertSecondsToHMS(seconds, true, rounded);
+            const appendTimestampMarker = (seconds, rounded) => {
+                const formattedTime = convertSecondsToHMS(seconds, true, rounded);
                 $('#vseek #bar').append(`<div id="position-marker">
                     <div id="position" class="py-0 px-1" style="top:-25px;">${formattedTime}</div></div>`);
             };
@@ -911,7 +956,7 @@ define(['jquery',
                     'axis': 'x',
                     'grid': [secondLength, 0],
                     'start': function() {
-                        appendTimestamp($(this).data('timestamp'));
+                        appendTimestampMarker($(this).data('timestamp'));
                         $('.tooltip, #message').remove();
                         $('#timeline-items').addClass('no-pointer-events');
                     },
@@ -951,7 +996,8 @@ define(['jquery',
                         $('#scrollbar, #position-marker, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
                         const id = $(this).data('id');
                         targetAnnotation = annotations.find(x => x.id == id);
-                        const existingAnnotation = annotations.find(x => x.timestamp == Math.round(timestamp) && x.id != id);
+                        const roundedTimestamp = Math.round(timestamp);
+                        const existingAnnotation = annotations.find(x => x.timestamp == roundedTimestamp && x.id != id);
                         if (existingAnnotation) {
                             addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
                             renderAnnotationItems(annotations);
@@ -977,7 +1023,7 @@ define(['jquery',
                     'grid': [secondLength, 0],
                     'start': function() {
                         $('#message').remove();
-                        appendTimestamp($(this).data('timestamp'));
+                        appendTimestampMarker($(this).data('timestamp'));
                         $('#timeline-items').addClass('no-pointer-events');
                     },
                     'drag': async function(event, ui) {
@@ -993,9 +1039,10 @@ define(['jquery',
                         }
 
                         $('#scrollbar, #position-marker, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
-                        await player.seek(Math.round(timestamp));
+                        const roundedTimestamp = Math.round(timestamp);
+                        await player.seek(roundedTimestamp);
                         player.pause();
-                        $('#vseek #position').text(convertSecondsToHMS(Math.round(timestamp), true));
+                        $('#vseek #position').text(convertSecondsToHMS(roundedTimestamp, true));
                     },
                     'stop': async function(event, ui) {
                         $('#vseek #position-marker').remove();
@@ -1026,18 +1073,19 @@ define(['jquery',
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        const existingAnnotation = annotations.find(x => x.timestamp == Math.round(timestamp) && x.id != id);
+                        const roundedTimestamp = Math.round(timestamp);
+                        const existingAnnotation = annotations.find(x => x.timestamp == roundedTimestamp && x.id != id);
                         if (existingAnnotation) {
                             addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        if (targetAnnotation.timestamp == Math.round(timestamp)) {
+                        if (targetAnnotation.timestamp == roundedTimestamp) {
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        targetAnnotation.timestamp = Math.round(timestamp);
-                        targetAnnotation.title = Math.round(timestamp) + skipduration;
+                        targetAnnotation.timestamp = roundedTimestamp;
+                        targetAnnotation.title = roundedTimestamp + skipduration;
                         if (targetAnnotation.title > end) {
                             targetAnnotation.title = end;
                         }
@@ -1046,7 +1094,7 @@ define(['jquery',
                             annotation: targetAnnotation,
                             action: 'draft'
                         });
-                        await player.seek(Math.round(timestamp)); // Seek to the new position
+                        await player.seek(roundedTimestamp); // Seek to the new position
                         player.pause();
                         $('#scrollbar, #position-marker, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
                     }
@@ -1058,7 +1106,7 @@ define(['jquery',
                     'grid': [secondLength, 0],
                     'start': function() {
                         $('#message').remove();
-                        appendTimestamp($(this).data('timestamp'));
+                        appendTimestampMarker($(this).data('timestamp'));
                         $('#timeline-items').addClass('no-pointer-events');
                     },
                     'resize': async function(event, ui) {
@@ -1143,7 +1191,6 @@ define(['jquery',
                 });
             });
 
-            // Tested
             $('#scrollbar').draggable({
                 'containment': '#timeline-items',
                 'axis': 'x',
@@ -1152,21 +1199,24 @@ define(['jquery',
                     $('#timeline-items').addClass('no-pointer-events');
                     $("#message").remove();
                     if ($(this).hasClass('snap')) {
-                        appendTimestamp(Math.round(((ui.position.left) / $('#timeline-items').width()) * totaltime + start), true);
+                        appendTimestampMarker(Math.round(((ui.position.left) /
+                            $('#timeline-items').width()) * totaltime + start), true);
                     } else {
-                        appendTimestamp(((ui.position.left) / $('#timeline-items').width()) * totaltime + start, false);
+                        appendTimestampMarker(((ui.position.left) / $('#timeline-items').width()) * totaltime + start, false);
                     }
                 },
                 'drag': async function(event, ui) {
                     let timestamp = ((ui.position.left) / $('#timeline-items').width()) * totaltime + start;
+                    let percentage = (timestamp - start) / totaltime * 100;
                     if ($(this).hasClass('snap')) {
                         timestamp = Math.round(timestamp);
                     }
-                    await player.seek(timestamp);
-                    player.pause();
                     $('#vseek #position').text(convertSecondsToHMS(timestamp, true, $(this).hasClass('snap')));
                     $('#vseek #position-marker, #scrollhead-top, #scrollbar')
-                        .css('left', (timestamp - start) / totaltime * 100 + '%');
+                        .css('left', percentage + '%');
+                    await player.seek(timestamp);
+                    player.pause();
+
                 },
                 'stop': function(event, ui) {
                     $('#vseek #position-marker').remove();
@@ -1189,24 +1239,25 @@ define(['jquery',
                     $('#vseek').addClass('no-pointer-events');
                     $("#message").remove();
                     if ($('#scrollbar').hasClass('snap')) {
-                        appendTimestamp(Math.round(((ui.position.left) / $('#vseek').width()) * totaltime + start), true);
+                        appendTimestampMarker(Math.round(((ui.position.left) / $('#vseek').width()) * totaltime + start), true);
                     } else {
-                        appendTimestamp(((ui.position.left) / $('#vseek').width()) * totaltime + start, false);
+                        appendTimestampMarker(((ui.position.left) / $('#vseek').width()) * totaltime + start, false);
                     }
                 },
                 'drag': async function(event, ui) {
                     let timestamp = ((ui.position.left) / $('#vseek').width()) * totaltime + start;
+                    let percentage = (timestamp - start) / totaltime * 100;
                     if ($('#scrollbar').hasClass('snap')) {
                         timestamp = Math.round(timestamp);
                     }
                     if (timestamp < start) {
                         timestamp = start;
                     }
-                    await player.seek(timestamp);
-                    player.pause();
                     $('#vseek #position').text(convertSecondsToHMS(timestamp, true, $('#scrollbar').hasClass('snap')));
                     $('#vseek #position-marker, #scrollhead-top, #scrollbar')
-                        .css('left', (timestamp - start) / totaltime * 100 + '%');
+                        .css('left', percentage + '%');
+                    await player.seek(timestamp);
+                    player.pause();
                 },
                 'stop': function(event, ui) {
                     $('#vseek #position-marker').remove();
@@ -1225,7 +1276,7 @@ define(['jquery',
                 }
             });
 
-            // Resize timeline
+            // Resize timeline.
             $('#timeline-wrapper').resizable({
                 'handles': 'n',
                 'minHeight': 125,
@@ -1242,7 +1293,7 @@ define(['jquery',
                 }
             });
 
-            // Resize player
+            // Resize player region.
             $('#separator').draggable({
                 'axis': 'x',
                 'containment': '#wrapper',
@@ -1264,6 +1315,7 @@ define(['jquery',
                 }
             });
 
+            // Set player region width from the saved width in local storage.
             const playerWidth = localStorage.getItem('player-width');
             if (playerWidth && window.innerWidth > 992) {
                 $('#separator').css('left', playerWidth + 'px');
@@ -1271,6 +1323,7 @@ define(['jquery',
                 $('#content-region').css('width', 'calc(100% - ' + playerWidth + 'px)');
             }
 
+            // Set timeline height from saved height in local storage.
             const timelineHeight = localStorage.getItem('timeline-height');
             if (timelineHeight) {
                 $('#timeline-wrapper').css('height', timelineHeight + 'px');
@@ -1321,6 +1374,7 @@ define(['jquery',
                 $('#vseek #position-marker').css('left', relX + 'px');
             });
 
+            // Run interaction when annotation indicator is clicked.
             $(document).on('click', '#video-nav .annotation', async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -1330,6 +1384,7 @@ define(['jquery',
                 runInteraction(annotation);
             });
 
+            // Seek video on click on timeline or video nav.
             $(document).on('click', '#vseek #bar, #video-timeline', async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -1340,6 +1395,7 @@ define(['jquery',
                 $("#message, #end-screen").remove();
             });
 
+            // Implement timeline zoom out.
             $('#zoomout').on('click', function() {
                 let currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
                 let newLevel = parseInt(currentLevel) - 300;
@@ -1353,6 +1409,18 @@ define(['jquery',
                 dispatchEvent('annotationitemsrendered', {'annotations': annotations});
             });
 
+            // Implement timeline zoom in.
+            $('#zoomin').on('click', function() {
+                let currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
+                let newLevel = parseInt(currentLevel) + 300;
+                $('#timeline-items-wrapper').css('width', newLevel + 'px');
+                const relWidth = $('#timeline-items').width();
+                $('#minute-markers, #minute-markers-bg, #vseek').css('width', relWidth + 'px');
+                $('#zoomout').removeAttr('disabled');
+                dispatchEvent('annotationitemsrendered', {'annotations': annotations});
+            });
+
+            // Implement zoom in and zoom out on mouse scroll on timeline.
             $("#timeline").on('wheel', function(e) {
                 if (e.ctrlKey || e.metaKey) {
                     e.preventDefault();
@@ -1372,16 +1440,7 @@ define(['jquery',
                 document.getElementById('scrollbar').scrollHeight = this.scrollHeight;
             });
 
-            $('#zoomin').on('click', function() {
-                let currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
-                let newLevel = parseInt(currentLevel) + 300;
-                $('#timeline-items-wrapper').css('width', newLevel + 'px');
-                const relWidth = $('#timeline-items').width();
-                $('#minute-markers, #minute-markers-bg, #vseek').css('width', relWidth + 'px');
-                $('#zoomout').removeAttr('disabled');
-                dispatchEvent('annotationitemsrendered', {'annotations': annotations});
-            });
-
+            // Save timeline changes.
             $('#savedraft').on('click', function(e) {
                 e.stopImmediatePropagation();
                 let draftAnnotations = annotations.filter(x => x.status == 'draft');
@@ -1437,6 +1496,7 @@ define(['jquery',
 
             });
 
+            // Launch content selection modal.
             $('#addcontent').on('click', async function(e) {
                 e.preventDefault();
                 if (!playerReady) {
@@ -1445,6 +1505,17 @@ define(['jquery',
                 $('#contentmodal').modal('show');
             });
 
+            $('#contentmodal').on('show.bs.modal', function() {
+                player.pause();
+                $('#addcontentdropdown').addClass('modal-body');
+            });
+
+            $('#contentmodal').on('hide.bs.modal', function() {
+                $('#addcontentdropdown .dropdown-item').removeClass('active');
+                $('#addcontentdropdown').removeClass('modal-body');
+            });
+
+            // Inform user to save changes before close or unload the current page.
             window.addEventListener('beforeunload', (e) => {
                 if (annotations.find(x => x.status == 'draft')) {
                     const confirmationMessage = M.util.get_string('unsavedchanges', 'mod_interactivevideo');
@@ -1454,6 +1525,7 @@ define(['jquery',
                 return true;
             });
 
+            // Implement the rate change.
             $(document).on('click', '.changerate', function(e) {
                 e.preventDefault();
                 const rate = $(this).data('rate');
@@ -1467,6 +1539,7 @@ define(['jquery',
                 $(`.changerate[data-rate="${e.originalEvent.detail.rate}"]`).find('i').addClass('bi-check');
             });
 
+            // Observe timeline-wrapper width change.
             let timelineWrapper = document.getElementById('timeline-wrapper');
             let resizeObserver = new ResizeObserver(() => {
                 const relWidth = $('#timeline-items').width();

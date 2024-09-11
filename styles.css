@@ -25,6 +25,10 @@ html:has(.path-mod-interactivevideo) {
     opacity: 0 !important;
 }
 
+.path-mod-interactivevideo .navbar.fixed-top {
+    height: 70px;
+}
+
 .path-mod-interactivevideo.darkmode .navbar {
     .dropdown-toggle::after {
         color: #fff;
@@ -258,6 +262,7 @@ html:has(.path-mod-interactivevideo) {
     top: 0;
     z-index: 3;
     cursor: pointer;
+    background: #fff;
 }
 
 .path-mod-interactivevideo #video-wrapper #pausebutton {
@@ -310,30 +315,34 @@ html:has(.path-mod-interactivevideo) {
     max-height: 300px;
     border-radius: 0 0 0.5rem 0.5rem;
     overflow: auto;
-}
 
-.path-mod-interactivevideo #annotation-list .timestamp {
-    display: block;
-    text-align: center;
-    cursor: pointer;
+    .timestamp {
+        display: block;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    tr.active {
+        background-color: lightblue;
+        transition: all ease-in-out 1000ms;
+    }
+
+    tr.deleted {
+        background-color: #fce4ec;
+        transition: all ease-in-out 1000ms;
+    }
+
+    tr td {
+        vertical-align: middle;
+    }
+
+    tr td:first-child {
+        width: 0;
+    }
 }
 
 .path-mod-interactivevideo .toast-wrapper {
     z-index: 1053;
-}
-
-.path-mod-interactivevideo #annotation-list tr.active {
-    background-color: lightblue;
-    transition: all ease-in-out 1000ms;
-}
-
-.path-mod-interactivevideo #annotation-list tr.deleted {
-    background-color: #fce4ec;
-    transition: all ease-in-out 1000ms;
-}
-
-.path-mod-interactivevideo #annotation-list tr td {
-    vertical-align: middle;
 }
 
 .path-mod-interactivevideo #video-action {
@@ -531,6 +540,26 @@ html:has(.path-mod-interactivevideo) {
     padding: 1rem;
     height: 100%;
     overflow: auto;
+    z-index: 3;
+
+    #title-section {
+        top: 0;
+    }
+
+    #spinner {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    #play i {
+        font-size: 50px;
+        line-height: 50px;
+    }
+
+    #restart i {
+        font-size: 30px;
+        line-height: 30px;
+    }
 }
 
 .path-mod-interactivevideo .modalhasiframe .modal-body,
@@ -739,8 +768,8 @@ html:has(.path-mod-interactivevideo) {
 
 #page-mod-interactivevideo-view #start-screen #play,
 .path-mod-interactivevideo #end-screen #restart {
-    height: 50px;
-    width: 50px;
+    height: 46px;
+    width: 46px;
 }
 
 #page-mod-interactivevideo-view #start-screen #play i,
@@ -813,10 +842,19 @@ html:has(.path-mod-interactivevideo) {
     overflow: hidden !important;
 }
 
-.path-mod-interactivevideo #video-info .icon {
-    filter: invert(1);
-    height: 30px;
-    width: 30px;
+.path-mod-interactivevideo #video-info {
+    z-index: 4;
+    background: linear-gradient(135deg, black, transparent);
+
+    #play {
+        top: calc(50% - 25px);
+        left: calc(50% - 25px);
+    }
+
+    #play i {
+        font-size: 50px;
+        line-height: 50px;
+    }
 }
 
 .path-mod-interactivevideo #chapter-container-left {
@@ -830,6 +868,7 @@ html:has(.path-mod-interactivevideo) {
     top: 0;
     z-index: 100;
     overflow: auto;
+    width: calc(100% - 15px);
 }
 
 .path-mod-interactivevideo.darkmode {
@@ -889,11 +928,11 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-#page-mod-interactivevideo-interactions #addcontentdropdown a i {
+#page-mod-interactivevideo-interactions #addcontentdropdown span i {
     font-size: 2rem;
 }
 
-#page-mod-interactivevideo-interactions #addcontentdropdown a:hover * {
+#page-mod-interactivevideo-interactions #addcontentdropdown span:hover * {
     color: #fff !important;
 }
 
@@ -901,8 +940,8 @@ html:has(.path-mod-interactivevideo) {
     transition: all ease-in-out 300ms;
 }
 
-.path-mod-interactivevideo #playercontrol {
-    height: 30px;
+.path-mod-interactivevideo #controller {
+    height: 55px;
 }
 
 .path-mod-interactivevideo #wrapper.fullscreen #controller,
@@ -1029,7 +1068,7 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo.no-original-controls {
     video::-webkit-media-controls-panel, .w-bottom-bar {
-        display: none!important;
+        display: none !important;
     }
 }
 
@@ -1253,6 +1292,10 @@ html:has(.path-mod-interactivevideo) {
     display: none;
 }
 
+.path-mod-interactivevideo #interactivevideo-container {
+    top: 70px;
+}
+
 .path-mod-interactivevideo.iframe {
     #interactivevideo-container {
         padding: 0 !important;
@@ -1279,11 +1322,6 @@ html:has(.path-mod-interactivevideo) {
             border-radius: 0 !important;
             border: 0 !important;
         }
-    }
-
-    .path-mod-interactivevideo #controller {
-        margin-top: 0 !important;
-        border-radius: 0 !important;
     }
 }
 
@@ -1387,9 +1425,10 @@ html:has(.path-mod-interactivevideo) {
     top: -3px !important;
 }
 
-.path-mod-interactivevideo #video-nav:hover #seekhead {
+.path-mod-interactivevideo #video-nav #seekhead {
     height: 10px;
     width: 10px;
+    z-index: 1;
 }
 
 .path-mod-interactivevideo #video-nav #position {
@@ -1435,6 +1474,15 @@ html:has(.path-mod-interactivevideo) {
     border-radius: 2px;
     z-index: 600;
     pointer-events: none;
+}
+
+#page-mod-interactivevideo-interactions #separator {
+    cursor: col-resize;
+    left: 60%;
+
+    i {
+        top: 30vh;
+    }
 }
 
 #page-mod-interactivevideo-interactions #separator:hover {
@@ -1582,6 +1630,11 @@ html:has(.path-mod-interactivevideo) {
         transition: all ease-in-out 300ms;
     }
 
+    #vseek #scrollhead-top {
+        margin-left: -5px;
+        position: absolute;
+    }
+
     #vseek:hover #bar {
         opacity: 1;
     }
@@ -1611,6 +1664,8 @@ html:has(.path-mod-interactivevideo) {
 
     #annotation-timeline {
         position: relative;
+        display: none;
+        padding-bottom: 1rem;
     }
 
     >.ui-resizable-handle:hover {
@@ -1618,4 +1673,54 @@ html:has(.path-mod-interactivevideo) {
         background-color: #328cdb;
         z-index: 105;
     }
+}
+
+#page-mod-interactivevideo-interactions #top-region {
+    height: calc(100vh - 195px);
+    overflow: auto;
+    margin-top: 70px;
+
+    >.row {
+        min-width: 100%;
+        height: 100%;
+    }
+
+    #player-region {
+        width: 60%;
+    }
+
+    #content-region {
+        width: 40%;
+        height: 100%;
+    }
+}
+
+#page-mod-interactivevideo-interactions #contentmodal {
+    z-index: 1050;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+#page-mod-interactivevideo-interactions #minute-markers-bg-wrapper,
+#page-mod-interactivevideo-interactions #minute-markers-wrapper {
+    min-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-right: 3rem !important;
+    pointer-events: none;
+    z-index: 0;
+}
+
+#page-mod-interactivevideo-interactions #minute-markers-bg,
+#page-mod-interactivevideo-interactions #minute-markers {
+    font-size: x-small;
+    display: flex;
+    align-items: flex-end;
+}
+
+#page-mod-interactivevideo-interactions #minute-markers-bg {
+    height: 100%;
+}
+
+#page-mod-interactivevideo-interactions #minute-markers {
+    height: 15px;
 }

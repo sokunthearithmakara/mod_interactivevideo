@@ -24,6 +24,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core\plugininfo\mod;
+
 /**
  * Return if the plugin supports $feature.
  *
@@ -554,22 +556,63 @@ function interactivevideo_get_user_grades($moduleinstance, $userid = 0) {
  * Reset all user grades for the mod_interactivevideo module.
  *
  * @param stdClass $data The module instance object.
+ * @return array The status.
  */
 function interactivevideo_reset_userdata($data) {
     global $DB;
+    $status = [];
     $resetcompletion = $data->reset_completion;
     $courseid = $data->courseid;
+
     if ($resetcompletion) { // Reset completion and grade since they are related.
         $DB->delete_records_select(
             'interactivevideo_completion',
-            'cmid IN (SELECT id FROM {interactivevideo}  WHERE course = :courseid)',
+            'cmid IN (SELECT id FROM {interactivevideo} WHERE course = :courseid)',
             ['courseid' => $courseid]
         );
+
+        // Delete interactivevideo_log.
+        $DB->delete_records_select(
+            'interactivevideo_log',
+            'cmid IN (SELECT id FROM {interactivevideo} WHERE course = :courseid)',
+            ['courseid' => $courseid]
+        );
+
+        // Delete interactivevideo associated files in text1, text2, text3 and attachments areas.
+        $fs = get_file_storage();
+        // Get context ids for all interactivevideo instances in the course.
+        $coursemoduleids = $DB->get_fieldset_select(
+            'course_modules',
+            'id',
+            'module = :module AND course = :course',
+            ['module' => $DB->get_field('modules', 'id', ['name' => 'interactivevideo']), 'course' => $courseid]
+        );
+
+        $contextids = $DB->get_fieldset_select(
+            'context',
+            'id',
+            'instanceid IN (' . implode(',', $coursemoduleids) . ') AND contextlevel = :contextlevel',
+            ['contextlevel' => CONTEXT_MODULE]
+        );
+
+        foreach ($contextids as $contextid) {
+            $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text1');
+            $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text2');
+            $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text3');
+            $fs->delete_area_files($contextid, 'mod_interactivevideo', 'attachments');
+        }
+
         // Get all related modules and reset their grades.
         $interactivevideos = $DB->get_records('interactivevideo', ['course' => $courseid]);
         foreach ($interactivevideos as $interactivevideo) {
             interactivevideo_grade_item_update($interactivevideo, 'reset');
         }
+
+        $status[] = [
+            'component' => get_string('modulenameplural', 'interactivevideo'),
+            'item' => get_string('resetcompletion', 'interactivevideo'),
+            'error' => false,
+        ];
     }
 
     if ($data->reset_gradebook_grades) {
@@ -577,7 +620,15 @@ function interactivevideo_reset_userdata($data) {
         foreach ($interactivevideos as $interactivevideo) {
             interactivevideo_grade_item_update($interactivevideo, 'reset');
         }
+
+        $status[] = [
+            'component' => get_string('modulenameplural', 'interactivevideo'),
+            'item' => get_string('resetgrades', 'interactivevideo'),
+            'error' => false,
+        ];
     }
+
+    return $status;
 }
 
 /**

@@ -104,9 +104,9 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             [
                 'size' => '100',
                 'onkeydown' => 'return ((event.ctrlKey || event.metaKey) && event.key === \'v\') ' .
-                    '|| ((event.ctrlKey || event.metaKey) && event.key === \'c\') || ' .
+                    ' || ((event.ctrlKey || event.metaKey) && event.key === \'c\') || ' .
                     '((event.ctrlKey || event.metaKey) && event.key === \'x\') ' .
-                    '|| ((event.ctrlKey || event.metaKey) && event.key === \'a\') || event.key === \'Backspace\' ? true : false;',
+                    ' || ((event.ctrlKey || event.metaKey) && event.key === \'a\') || event.key === \'Backspace\' ? true : false;',
                 'placeholder' => get_string('videourlplaceholder', 'mod_interactivevideo'),
             ]
         );
@@ -360,9 +360,30 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             }
         }
 
+        // Validate the start and end time format.
+        if (!preg_match('/^([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $data['startassist'])) {
+            $errors['startassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
+        }
+
+        if (!preg_match('/^([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $data['endassist'])) {
+            $errors['endassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
+        }
+
         // End time must be greater than 0 & greater than start.
         if ($data['end'] < $data['start']) {
             $errors['endassist'] = get_string('endtimegreaterstarttime', 'mod_interactivevideo');
+        }
+
+        $endtime = explode(':', $data['endassist']);
+        $endtime = $endtime[0] * 3600 + $endtime[1] * 60 + $endtime[2];
+        if ($endtime != $data['end']) {
+            $errors['endassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
+        }
+
+        $starttime = explode(':', $data['startassist']);
+        $starttime = $starttime[0] * 3600 + $starttime[1] * 60 + $starttime[2];
+        if ($starttime != $data['start']) {
+            $errors['startassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
         }
 
         return $errors;

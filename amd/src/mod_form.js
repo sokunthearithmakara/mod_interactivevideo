@@ -22,13 +22,18 @@
  */
 define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], function($, notification, ModalForm, str) {
     return {
+        /**
+         * Init function on page loads.
+         * @param {Number} id module id
+         * @param {Number} usercontextid user context id
+         */
         'init': function(id, usercontextid) {
             var totaltime, player;
             var videowrapper = $('#video-wrapper');
             var endinput = $('input[name=end]');
             var startinput = $('input[name=start]');
-            var startassistinput = $('input[name=startassist');
-            var endassistinput = $('input[name=endassist');
+            var startassistinput = $('input[name=startassist]');
+            var endassistinput = $('input[name=endassist]');
             var totaltimeinput = $('input[name=totaltime]');
             var videourlinput = $('input[name=videourl]');
             var sourceinput = $('input[name=source]');
@@ -37,6 +42,12 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
             var deletefield = $("#fitem_id_delete");
             var videofile = $('input[name=videofile]');
             var videotype = $('input[name=type]');
+
+            /**
+             * Format seconds to HH:MM:SS.
+             * @param {Number} s seconds
+             * @returns
+             */
             const convertSecondsToHMS = (s) => {
                 var hours = Math.floor(s / 3600);
                 var minutes = Math.floor((s - (hours * 3600)) / 60);
@@ -49,17 +60,26 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 return result;
             };
 
+            /**
+             * Validate timestamp format.
+             * @param {String} string timestamp string
+             * @returns {Boolean}
+             */
             const validateTimestamp = (string) => {
-                // Make sure the timestamp format is hh:mm:ss
+                // Make sure the timestamp format is hh:mm:ss.
                 var regex = /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])$/;
                 if (!regex.test(string)) {
                     return false;
                 }
                 return true;
             };
+
+            /**
+             * Scripts to run when the player is ready.
+             */
             const whenPlayerReady = async function() {
                 videowrapper.show();
-                // Recalculate the ratio of the video
+                // Recalculate the ratio of the video.
                 const ratio = await player.ratio();
                 $("#video-wrapper").css('padding-bottom', (1 / ratio) * 100 + '%');
 
@@ -96,6 +116,22 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     + strings[0] + '</div>');
             });
 
+            const checkVideo = (url) => new Promise((resolve) => {
+                // Remove video element if it exists.
+                if (document.querySelector('video')) {
+                    document.querySelector('video').remove();
+                }
+                var video = document.createElement('video');
+                video.src = url;
+                video.addEventListener('canplay', function() {
+                    resolve(true);
+                });
+
+                video.addEventListener('error', function() {
+                    resolve(false);
+                });
+            });
+
             videourlinput.on('input', async function() {
                 videourlinput.removeClass('is-invalid');
                 videourlinput.next('.form-control-feedback').remove();
@@ -108,12 +144,13 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     videowrapper.hide();
                     return;
                 }
-                // Check if the video is a youtube video
-                var regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)(?:\/embed\/|\/watch\?v=|\/)([^\/]+)/g;
+
+                // YOUTUBE:: Check if the video is a youtube video.
+                let regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube.com|youtu.be)(?:\/embed\/|\/watch\?v=|\/)([^/]+)/g;
                 var match = regex.exec(url);
                 if (match) {
                     videowrapper.show();
-                    // Show loader while the video is loading
+                    // Show loader while the video is loading.
                     videowrapper.html('<div id="player" class="w-100"></div>');
                     videotype.val('yt');
                     require(['mod_interactivevideo/player/yt'], function(VP) {
@@ -122,7 +159,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     return;
                 }
 
-                // Extract id from the URL
+                // VIMEO:: Extract id from the URL.
                 regex = /(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com)\/(?:channels\/[A-Za-z0-9]+\/|)([^\/]+)/g;
                 match = regex.exec(url);
                 var vid = match ? match[1] : null;
@@ -139,7 +176,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     return;
                 }
 
-                // Check if the video is from daily motion.
+                // DAILYMOTION:: Check if the video is from daily motion.
                 regex = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^\/]+)/g;
                 match = regex.exec(url);
                 if (match) {
@@ -153,10 +190,10 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     return;
                 }
 
-                // Check if the video is from wistia https://sokunthearithmakara.wistia.com/medias/0b3dgsil85
-                regex = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^\/]+)/g;
-                match = regex.exec(url);
-                var mediaId = match ? match[1] : null;
+                // WISTIA:: Check if the video is from wistia e.g. https://sokunthearithmakara.wistia.com/medias/kojs3bi9bf.
+                const regexWistia = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^/]+)/g;
+                match = regexWistia.exec(url);
+                const mediaId = match ? match[1] : null;
                 if (mediaId) {
                     videowrapper.show();
                     videotype.val('wistia');
@@ -166,25 +203,9 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     return;
                 }
 
-                // Check if the link is a direct video link and video is "canplay"
-                const checkVideo = new Promise((resolve) => {
-                    // Remove video element if it exists
-                    if (document.querySelector('video')) {
-                        document.querySelector('video').remove();
-                    }
-                    var video = document.createElement('video');
-                    video.src = url;
-                    video.addEventListener('canplay', function() {
-                        resolve(true);
-                    });
-
-                    video.addEventListener('error', function() {
-                        resolve(false);
-                    });
-                });
-
-                if (await checkVideo) {
-                    // Show loader while the video is loading
+                // VIDEO URL:: Check if the link is a direct video link and video is "canplay".
+                if (await checkVideo(url)) {
+                    // Show loader while the video is loading.
                     videowrapper.html('<video id="player" class="w-100"></video>');
                     videotype.val('html5video');
                     require(['mod_interactivevideo/player/html5video'], function(VP) {
@@ -193,7 +214,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     return;
                 }
 
-                // Invalid video url
+                // Invalid video url.
                 const strings = await str.get_strings([
                     {key: 'invalidvideourl', component: 'mod_interactivevideo'},
                     {key: 'error', component: 'core'}
@@ -202,7 +223,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 videowrapper.hide();
             });
 
-            startassistinput.on('change', async function() {
+            startassistinput.on('change blur', async function() {
                 startassistinput.removeClass('is-invalid');
                 startassistinput.next('.form-control-feedback').remove();
                 if (startassistinput.val() == '') {
@@ -241,7 +262,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 }
             });
 
-            endassistinput.on('change', async function() {
+            endassistinput.on('change blur', async function() {
                 endassistinput.removeClass('is-invalid');
                 endassistinput.next('.form-control-feedback').remove();
                 if (endassistinput.val() == '') {
@@ -279,7 +300,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 }
             });
 
-            // Upload video to get draft item id
+            // Upload video to get draft item id.
             $(document).on('click', '#id_upload', async function() {
                 var data = {
                     contextid: M.cfg.contextid,
@@ -300,7 +321,6 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
                 form.addEventListener(form.events.FORM_SUBMITTED, async (e) => {
                     var url = e.detail.url;
-                    window.console.log(url);
                     videowrapper.html('<video id="player" class="w-100"></video>');
                     require(['mod_interactivevideo/player/html5video'], function(VP) {
                         player = new VP(url, 0, null, true);
@@ -348,39 +368,37 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
             });
 
             // DOM ready
-            $(document).ready(function() {
-                setTimeout(function() {
-                    if (videourlinput.val() != '') {
-                        videourlinput.trigger('input');
+            $(function() {
+                if (videourlinput.val() != '') {
+                    videourlinput.trigger('input');
+                    uploadfield.hide();
+                    deletefield.hide();
+                }
+                if (sourceinput.val() == 'url') {
+                    uploadfield.hide();
+                    deletefield.hide();
+                } else {
+                    if (videoinput.val() != '' && videoinput.val() != '0') {
                         uploadfield.hide();
-                        deletefield.hide();
-                    }
-                    if (sourceinput.val() == 'url') {
-                        uploadfield.hide();
-                        deletefield.hide();
+                        deletefield.show();
+                        var url = videofile.val();
+                        videowrapper.html('<video id="player" class="w-100"></video>');
+                        require(['mod_interactivevideo/player/html5video'], function(VP) {
+                            player = new VP(url, 0, null, true);
+                        });
                     } else {
-                        if (videoinput.val() != '' && videoinput.val() != '0') {
-                            uploadfield.hide();
-                            deletefield.show();
-                            var url = videofile.val();
-                            videowrapper.html('<video id="player" class="w-100"></video>');
-                            require(['mod_interactivevideo/player/html5video'], function(VP) {
-                                player = new VP(url, 0, null, true);
-                            });
-                        } else {
-                            uploadfield.show();
-                            deletefield.hide();
-                        }
+                        uploadfield.show();
+                        deletefield.hide();
                     }
+                }
 
-                    if ($('[name=completionunlocked]').val() == '0') {
-                        $('#warning').removeClass('d-none');
-                        $('[name=videourl], [name=startassist], [name=endassist]').prop('readonly', 'true');
-                        $('#fitem_id_source, #fitem_id_delete, #fitem_id_upload').hide();
-                        $('#id_upload').prop('disabled', 'true');
-                        $('#id_delete').prop('disabled', 'true');
-                    }
-                }, 1000);
+                if ($('[name=completionunlocked]').val() == '0') {
+                    $('#warning').removeClass('d-none');
+                    $('[name=videourl], [name=startassist], [name=endassist]').prop('readonly', 'true');
+                    $('#fitem_id_source, #fitem_id_delete, #fitem_id_upload').hide();
+                    $('#id_upload').prop('disabled', 'true');
+                    $('#id_delete').prop('disabled', 'true');
+                }
             });
 
             startassistinput.val(convertSecondsToHMS(startinput.val()));

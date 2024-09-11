@@ -1334,6 +1334,9 @@ export default class Form extends Base {
                     </div>
                 </h5>
                 <div class="d-flex align-items-center">
+                    <button class="btn mx-2 p-0" id="print">
+                        <i class="bi bi-printer fa-fw fs-25px"></i>
+                    </button>
                     <button class="btn mx-2 p-0 close">
                         <i class="bi bi-x-lg fa-fw fs-25px"></i>
                     </button>
@@ -1349,6 +1352,15 @@ export default class Form extends Base {
             <i class="bi bi-table fs-25px" data-toggle="tooltip"
              title="${M.util.get_string('responses', 'ivplugin_form')}"></i>
             </button>`);
+
+        $(document).on('click', '#print', function() {
+            var divContents = document.querySelector('#responseview #form-preview').innerHTML;
+            var originalContents = document.body.innerHTML;
+
+            document.body.innerHTML = divContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+        });
 
         this.render(annotation, 'json').then(async (ct) => {
             let logs = [];

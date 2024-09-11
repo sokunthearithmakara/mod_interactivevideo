@@ -189,7 +189,7 @@ class Yt {
      * @param {Number} time
      * @return {Boolean}
      */
-    seek(time) {
+    async seek(time) {
         player.seekTo(time, true);
         dispatchEvent('iv:playerSeek', {time: time});
         return true;

@@ -24,12 +24,23 @@ import $ from 'jquery';
 import Fragment from 'core/fragment';
 import {dispatchEvent} from 'core/event_dispatcher';
 
+/**
+ * Return main formatted content of the annotation
+ * @param {Object} annotation - The annotation object
+ * @param {String} [format='html'] - The format of the content, either 'html' or 'json'
+ * @returns {Promise<String|Object>} - The formatted content as a string or parsed JSON object
+ */
 const renderContent = async function(annotation, format = 'html') {
-    const args = {
+    const annotationArgs = {
         ...annotation,
         contextid: M.cfg.contextid
     };
-    const fragment = await Fragment.loadFragment('mod_interactivevideo', 'getcontent', M.cfg.contextid, args);
+    let fragment;
+    try {
+        fragment = await Fragment.loadFragment('mod_interactivevideo', 'getcontent', M.cfg.contextid, annotationArgs);
+    } catch (error) {
+        throw new Error('Failed to load fragment content');
+    }
     if (format === 'html') {
         return fragment;
     } else {
@@ -37,6 +48,12 @@ const renderContent = async function(annotation, format = 'html') {
     }
 };
 
+/**
+ * Format content text
+ * @param {String} text unformatted text
+ * @param {Boolean} shorttext short string or text
+ * @returns formatted text
+ */
 const formatText = async function(text, shorttext = false) {
     try {
         const response = await $.ajax({
@@ -57,6 +74,28 @@ const formatText = async function(text, shorttext = false) {
     }
 };
 
+/**
+ * Displays the content of an annotation based on the specified display options.
+ *
+ * @async
+ * @function defaultDisplayContent
+ * @param {Object} annotation - The annotation object containing details to be displayed.
+ * @param {Object} player - The video player instance.
+ * @returns {Promise<void>}
+ *
+ * @example
+ * const annotation = {
+ *   id: 1,
+ *   displayoptions: 'popup',
+ *   hascompletion: 1,
+ *   xp: 10,
+ *   completed: false,
+ *   formattedtitle: 'Sample Annotation',
+ *   prop: '{"icon": "bi bi-info-circle"}'
+ * };
+ * const player = videojs('my-video');
+ * defaultDisplayContent(annotation, player);
+ */
 const defaultDisplayContent = async function(annotation, player) {
     const isDarkMode = $('body').hasClass('darkmode');
     // Play pop sound
@@ -102,7 +141,7 @@ const defaultDisplayContent = async function(annotation, player) {
     <i class="${JSON.parse(annotation.prop).icon} mr-2 d-none d-md-inline"></i>${annotation.formattedtitle}</h5>
                             <div class="btns d-flex align-items-center">
                             ${completionbutton}
-                            <button class="btn mx-2 p-0" id="close-${annotation.id}" aria-label="Close" >
+                            <button class="btn mx-2 p-0" id="close-${annotation.id}" aria-label="Close">
                             <i class="bi bi-x-lg fa-fw fs-25px"></i>
                             </button>
                             </div>`;
@@ -110,7 +149,7 @@ const defaultDisplayContent = async function(annotation, player) {
     $('#annotation-modal').modal('hide');
 
     // Handle annotation close event:: when user click on the close button of the annotation
-    $(document).on('click', `#title #close-${annotation.id}`, async function(e) {
+    $(document).off('click', `#close-${annotation.id}`).on('click', `#close-${annotation.id}`, async function(e) {
         window.console.log('annotation close event');
         e.preventDefault();
         $(this).closest("#annotation-modal").modal('hide');
@@ -127,9 +166,8 @@ const defaultDisplayContent = async function(annotation, player) {
         }
     });
 
-    switch (displayoptions) {
-        case 'popup':
-            var modal = `<div class="modal fade ${$('body').hasClass('iframe') ? 'modal-fullscreen' : ''}"
+    const handlePopupDisplay = (annotation, messageTitle) => {
+        let modal = `<div class="modal fade ${$('body').hasClass('iframe') ? 'modal-fullscreen' : ''}"
              id="annotation-modal" role="dialog" aria-labelledby="annotation-modal"
          aria-hidden="true" data-backdrop="static" data-keyboard="false">
          <div id="message" data-id="${annotation.id}" data-placement="popup"
@@ -142,43 +180,52 @@ const defaultDisplayContent = async function(annotation, player) {
                                         </div>
                                     </div>
                                     </div>`;
-            $('#wrapper').append(modal);
-            $('#annotation-modal').modal('show');
-            $('#annotation-modal').on('hide.bs.modal', function() {
-                $('#annotation-modal').remove();
-            });
+        $('#wrapper').append(modal);
+        $('#annotation-modal').modal('show');
+        $('#annotation-modal').on('hide.bs.modal', function() {
+            $('#annotation-modal').remove();
+        });
 
-            $('#annotation-modal').on('shown.bs.modal', function() {
-                $('#annotation-modal .modal-body').fadeIn(300);
-                return Promise.resolve();
-            });
-            break;
+        $('#annotation-modal').on('shown.bs.modal', function() {
+            $('#annotation-modal .modal-body').fadeIn(300);
+            return Promise.resolve();
+        });
+    };
 
-        case 'inline':
-            // Cover the video with a message on a white background div
-            $('#video-wrapper').append(`<div id="message" style="z-index:105;top:100%" data-placement="inline"
+    const handleInlineDisplay = (annotation, messageTitle) => {
+        $('#video-wrapper').append(`<div id="message" style="z-index:105;top:100%" data-placement="inline"
          data-id="${annotation.id}">
         <div id="title" class="modal-header shadow-sm pr-0">${messageTitle}</div><div class="modal-body" id="content">
         </div></div>`);
-            $(`#message[data-id='${annotation.id}']`).animate({
-                top: '0',
-            }, 300, 'linear', function() {
-                return Promise.resolve();
-            });
+        $(`#message[data-id='${annotation.id}']`).animate({
+            top: '0',
+        }, 300, 'linear', function() {
+            return Promise.resolve();
+        });
+    };
+
+    const handleBottomDisplay = (annotation, messageTitle, isDarkMode) => {
+        $('#annotation-content').empty();
+        $('#annotation-content').append(`<div id="message" class="fade show mt-3 ${!isDarkMode ? 'border' : ''}
+                 rounded-lg bg-white" data-placement="bottom" data-id="${annotation.id}">
+                 <div id='title' class='modal-header shadow-sm pr-0'>${messageTitle}</div>
+                <div class="modal-body" id="content"></div></div>`);
+        $('html, body, #page.drawers, .modal-body').animate({
+            scrollTop: $("#annotation-content").offset().top
+        }, 1000, 'swing', function() {
+            return Promise.resolve();
+        });
+    };
+
+    switch (displayoptions) {
+        case 'popup':
+            handlePopupDisplay(annotation, messageTitle);
+            break;
+        case 'inline':
+            handleInlineDisplay(annotation, messageTitle);
             break;
         case 'bottom':
-            $('#annotation-content').empty();
-            // Display the content below the video
-            $('#annotation-content').append(`<div id="message" class="fade show mt-3 ${!isDarkMode ? 'border' : ''}
-                 rounded-lg bg-white" data-placement="bottom" data-id="${annotation.id}">
-                 <div id="title" class="modal-header shadow-sm pr-0">${messageTitle}</div>
-                <div class="modal-body" id="content"></div></div>`);
-            // Scroll to annotation-content
-            $('html, body, #page.drawers, .modal-body').animate({
-                scrollTop: $("#annotation-content").offset().top
-            }, 1000, 'swing', function() {
-                return Promise.resolve();
-            });
+            handleBottomDisplay(annotation, messageTitle, isDarkMode);
             break;
     }
 

@@ -112,6 +112,7 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
         $item->annotate_ids('user', 'cbusermodified');
 
         if ($userinfo) {
+            // Completion data.
             $completiondata = new backup_nested_element('completiondata');
             $completion = new backup_nested_element('completion', ["id"], [
                 "timecreated",
@@ -129,6 +130,38 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
 
             // Define id annotations.
             $completion->annotate_ids('user', 'userid');
+
+            // Log data.
+            $logdata = new backup_nested_element('logdata');
+            $log = new backup_nested_element('log', ["id"], [
+                'userid',
+                'cmid',
+                'annotationid',
+                'attachments',
+                'intg1',
+                'intg2',
+                'intg3',
+                'char1',
+                'char2',
+                'char3',
+                'text1',
+                'text2',
+                'text3',
+                'timecreated',
+                'timemodified',
+            ]);
+
+            $interactivevideo->add_child($logdata);
+            $logdata->add_child($log);
+            $log->set_source_table('interactivevideo_log', ['cmid' => backup::VAR_ACTIVITYID], 'id ASC');
+
+            // Define id annotations.
+            $log->annotate_ids('user', 'userid');
+
+            $log->annotate_files('mod_interactivevideo', 'attachments', 'id');
+            $log->annotate_files('mod_interactivevideo', 'text1', 'id');
+            $log->annotate_files('mod_interactivevideo', 'text2', 'id');
+            $log->annotate_files('mod_interactivevideo', 'text3', 'id');
         }
 
         // Define file annotations.

@@ -1,188 +1,132 @@
 {{!
 This file is part of Moodle - http://moodle.org/
-
 Moodle is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
-
 Moodle is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
-
 You should have received a copy of the GNU General Public License
 along with Moodle. If not, see
-<http: //www.gnu.org/licenses />.
+<http : //www.gnu.org/licenses />.
 }}
 {{!
 @template mod_interactivevideo/editor
-
 HTML body for the interaction page.
-
 Example context (json):
 {
 }
 }}
 <div id="wrapper">
-  <div
-    style="
-      height: calc(100vh - 195px);
-      overflow: auto;
-      top: 70px;
-      margin-top: 70px;
-    "
-    id="top-region"
-  >
-    <div class="row m-0 position-relative" style="min-height: 100%">
-      <div class="p-3" id="player-region" style="width: 60%">
-        {{! Player }}
-        <div id="video-wrapper" class="bg-black">
-          <div id="annotation-canvas">
-            {{#html5}}
-            <video id="player" class="w-100"></video>
-            {{/html5}} {{^html5}}
-            <div id="player" class="w-100 p-0"></div>
-            {{/html5}}
-          </div>
+    <div id="top-region">
+        <div class="row m-0 position-relative">
+            <div class="p-3" id="player-region">
+                {{! Player }}
+                <div id="video-wrapper" class="bg-black">
+                    <div id="annotation-canvas">
+                        {{#html5}}
+                        <video id="player" class="w-100">
+                        </video>
+                    {{/html5}} {{^html5}}
+                    <div id="player" class="w-100 p-0"></div>
+                {{/html5}}
+            </div>
         </div>
         <div id="annotation-content" class="w-100 position-relative"></div>
-      </div>
-      <div
-        id="separator"
-        class="d-none border-left d-lg-flex align-items-center justify-content-center h-100 position-absolute z-index-1"
-        style="cursor: col-resize; left: 60%"
-      >
-        <i style="top: 30vh" class="position-absolute bi bi-grip-vertical"></i>
-      </div>
-      <div
-        class="p-3 mt-3 mt-lg-0 position-relative"
-        id="content-region"
-        style="width: 40%"
-      >
-        <div
-          class="w-100 h-100 overflow-auto border rounded-lg"
-          id="contentblock"
-        >
-          {{! action bar }}
-          <div
-            id="video-action"
-            class="px-3 py-2 bg-light d-flex align-items-center justify-content-between mx-auto w-100 position-sticky"
-          >
-            <div class="text-truncate">
-              <span class="h4 mb-0 text-truncate font-weight-bold"
-                >{{title}}
-              </span>
-            </div>
-            <div class="d-flex">
-              <div class="btn border-0" id="xp">
-                <span class="font-weight-bold">0 </span>
-                <i class="bi bi-star ml-1"></i>
-              </div>
-            </div>
-          </div>
-          {{! content item list }}
-          <div id="annotationwrapper" class="overflow-auto bg-white">
-            <table class="table table-sm w-100 table-hover small">
-              <tbody id="annotation-list">
-                <tr>
-                  <td>
-                    <div class="loader w-100" style="height: 100px"></div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          {{! content item template }}
-          <table>
-            <tr
-              id="annotation-template"
-              class="annotation listItem border-bottom d-none"
-              data-timestamp="0"
-              data-id="0"
-              data-type=""
-            >
-              <td style="width: 0px">
-                <span
-                  data-editable="timestamp"
-                  title="{{#str}}goto, mod_interactivevideo{{/str}}"
-                  class="timestamp bg-light px-2 py-1 rounded-sm text-truncate"
-                  >0
-                </span>
-                <input
-                  type="text"
-                  name="timestampassist"
-                  data-field="timestamp"
-                  class="form-control form-control-sm d-none"
-                >
-              </td>
-              <td>
-                <div
-                  class="w-100 d-flex align-items-center justify-content-between"
-                >
-                  <div
-                    class="d-flex align-items-center flex-grow-1 type-name rotatey-360"
-                  >
-                    <button class="border-0 btn btn-sm type-icon mr-2" title="">
-                      <i class="fa fa-fw"></i>
-                    </button>
-                    <a
-                      data-editable="title"
-                      href="javascript:void(0)"
-                      class="title font-weight-bold"
-                      >title
-                    </a>
-                    <input
-                      type="text"
-                      data-field="title"
-                      class="form-control form-control-sm d-none"
-                    >
-                  </div>
-                  <div class="btns d-flex align-items-center">
-                    <span
-                      data-editable="xp"
-                      title="{{#str}}xppoint, mod_interactivevideo{{/str}}"
-                      class="border-0 btn btn-sm xp"
-                    >
-                      <span>12</span>
-                      <i class="bi bi-star ml-1"> </i>
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      data-field="xp"
-                      class="form-control form-control-sm d-none"
-                    >
-                    <button
-                      title="{{#str}}clone, mod_interactivevideo{{/str}}"
-                      class="border-0 btn btn-sm copy"
-                    >
-                      <i class="bi bi-copy"></i>
-                    </button>
-                    <button
-                      title="{{#str}}edit, mod_interactivevideo{{/str}}"
-                      class="border-0 btn btn-sm edit"
-                    >
-                      <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button
-                      class="border-0 btn btn-sm text-danger delete"
-                      title="{{#str}}delete, mod_interactivevideo{{/str}}"
-                    >
-                      <i class="bi bi-trash3-fill"></i>
-                    </button>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          </table>
-        </div>
-      </div>
     </div>
-  </div>
+    <div id="separator"
+         class="d-none border-left d-lg-flex align-items-center justify-content-center h-100 position-absolute z-index-1">
+        <i class="position-absolute bi bi-grip-vertical"></i>
+    </div>
+    <div class="p-3 mt-3 mt-lg-0 position-relative" id="content-region">
+        <div class="w-100 h-100 overflow-auto border rounded-lg" id="contentblock">
+            {{! action bar }}
+            <div id="video-action"
+                 class="px-3 py-2 bg-light d-flex align-items-center justify-content-between mx-auto w-100 position-sticky">
+                <div class="text-truncate">
+                    <span class="h4 mb-0 text-truncate font-weight-bold">{{title}}</span>
+                </div>
+                <div class="d-flex">
+                    <div class="btn border-0" id="xp">
+                        <span class="font-weight-bold">0</span>
+                        <i class="bi bi-star ml-1"></i>
+                    </div>
+                </div>
+            </div>
+            {{! content item list }}
+            <div id="annotationwrapper" class="overflow-auto bg-white">
+                <table class="table table-sm w-100 table-hover small">
+                    <tbody id="annotation-list">
+                        <tr>
+                            <td>
+                                <div class="loader w-100 mt-6"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {{! content item template }}
+            <table>
+                <tr id="annotation-template"
+                    class="annotation listItem border-bottom d-none"
+                    data-timestamp="0"
+                    data-id="0"
+                    data-type="">
+                    <td>
+                        <span data-editable="timestamp"
+                              title="{{#str}}goto, mod_interactivevideo{{/str}}"
+                              class="timestamp bg-light px-2 py-1 rounded-sm text-truncate">0</span>
+                        <input type="text"
+                               name="timestampassist"
+                               data-field="timestamp"
+                               class="form-control form-control-sm d-none">
+                    </td>
+                    <td>
+                        <div class="w-100 d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center flex-grow-1 type-name rotatey-360">
+                                <button class="border-0 btn btn-sm type-icon mr-2" title="">
+                                    <i class="fa fa-fw"></i>
+                                </button>
+                                <span data-editable="title" class="title font-weight-bold text-primary cursor-pointer">title</span>
+                                <input type="text"
+                                       data-field="title"
+                                       class="form-control form-control-sm d-none">
+                            </div>
+                            <div class="btns d-flex align-items-center">
+                                <span data-editable="xp"
+                                      title="{{#str}}xppoint, mod_interactivevideo{{/str}}"
+                                      class="border-0 btn btn-sm xp">
+                                    <span>12</span>
+                                    <i class="bi bi-star ml-1"></i>
+                                </span>
+                                <input type="number"
+                                       min="0"
+                                       data-field="xp"
+                                       class="form-control form-control-sm d-none">
+                                <button title="{{#str}}clone, mod_interactivevideo{{/str}}"
+                                        class="border-0 btn btn-sm copy">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                                <button title="{{#str}}edit, mod_interactivevideo{{/str}}"
+                                        class="border-0 btn btn-sm edit">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="border-0 btn btn-sm text-danger delete"
+                                        title="{{#str}}delete, mod_interactivevideo{{/str}}">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
 </div>
-
+</div>
+</div>
 {{! content type modal }}
 {{> mod_interactivevideo/addcontenttype }}
-
 {{> mod_interactivevideo/editortimeline }}

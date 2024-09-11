@@ -37,6 +37,7 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
         $paths[] = new restore_path_element('annotationitems', '/activity/interactivevideo/items/item');
         if ($userinfo) {
             $paths[] = new restore_path_element('completiondata', '/activity/interactivevideo/completiondata/completion');
+            $paths[] = new restore_path_element('logdata', '/activity/interactivevideo/logdata/log');
         }
 
         // Return the paths wrapped into standard activity structure.
@@ -156,6 +157,24 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
     }
 
     /**
+     * Process a log data restore
+     *
+     * @param mixed $data
+     * @return void
+     */
+    protected function process_logdata($data) {
+        global $DB;
+
+        $data = (object)$data;
+        $oldid = $data->id;
+        $data->cmid = $this->get_new_parentid('interactivevideo');
+        $data->userid = $this->get_mappingid('user', $data->userid);
+        $data->annotationid = $this->get_mappingid('annotationitems', $data->annotationid);
+        $newitemid = $DB->insert_record('interactivevideo_log', $data);
+        $this->set_mapping('logdata', $oldid, $newitemid, true);
+    }
+
+    /**
      * Actions to be executed after the restore is completed
      */
     protected function after_execute() {
@@ -164,5 +183,9 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
         $this->add_related_files('mod_interactivevideo', 'endscreentext', null);
         $this->add_related_files('mod_interactivevideo', 'video', null);
         $this->add_related_files('mod_interactivevideo', 'content', 'annotationitems');
+        $this->add_related_files('mod_interactivevideo', 'text1', 'logdata');
+        $this->add_related_files('mod_interactivevideo', 'text2', 'logdata');
+        $this->add_related_files('mod_interactivevideo', 'text3', 'logdata');
+        $this->add_related_files('mod_interactivevideo', 'attachments', 'logdata');
     }
 }

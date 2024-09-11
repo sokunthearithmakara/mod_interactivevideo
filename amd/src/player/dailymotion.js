@@ -159,7 +159,7 @@ class DailyMotion {
                 }
             };
         } else {
-            dailymotion.createPlayer("player", dmOptions).then(function(pl) {
+            window.dailymotion.createPlayer("player", dmOptions).then(function(pl) {
                 player = pl;
                 dailymotionEvents(player);
                 dailymotion = window.dailymotion;

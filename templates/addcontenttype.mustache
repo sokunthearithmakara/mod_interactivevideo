@@ -23,24 +23,27 @@
     {
     }
 }}
-<div class="modal fade" id="contentmodal" role="dialog" aria-labelledby="contentmodal" aria-hidden="true"
-    style="z-index: 1050; background: rgba(0,0,0,0.5);">
+<div class="modal fade" id="contentmodal" role="dialog" aria-labelledby="contentmodal" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content rounded-lg">
             <div class="modal-header align-items-center">
                 <h5 class="modal-title">{{#str}}selectacontenttypetoadd, mod_interactivevideo{{/str}}</h5>
                 <button type="button" class="btn p-0 " data-dismiss="modal" aria-label="Close">
-                   <i class="bi bi-x-lg fa-fw" style="font-size: x-large;"></i>
+                   <i class="bi bi-x-lg fa-fw fs-25px"></i>
                 </button>
             </div>
             <div class="px-0" id="addcontentdropdown">
                 {{#contenttype}}
-                <a class="dropdown-item px-4 py-3 border-bottom d-flex w-100 {{^description}}align-items-center{{/description}} {{^description}}align-items-start{{/description}}"
-                    href="javascript:void(0)" data-type="{{{name}}}"><i
-                        class="mr-3 {{{icon}}} {{^hascompletion}}text-secondary{{/hascompletion}}"></i>
-                    <div><span class="font-weight-bold">{{{title}}}</span>{{#description}}<p
-                            class="font-weight-light text-muted mb-0">{{{description}}}</p>{{/description}}</div>
-                </a>
+                    <span class="cursor-pointer dropdown-item px-4 py-3 border-bottom d-flex w-100 {{^description}}align-items-center{{/description}} {{^description}}align-items-start{{/description}}"
+                        data-type="{{{name}}}">
+                        <i class="mr-3 {{{icon}}} {{^hascompletion}}text-secondary{{/hascompletion}}"></i>
+                        <div>
+                            <span class="font-weight-bold">{{{title}}}</span>
+                            {{#description}}
+                            <p class="font-weight-light text-muted mb-0">{{{description}}}</p>
+                            {{/description}}
+                        </div>
+                    </span>
                 {{/contenttype}}
             </div>
         </div>

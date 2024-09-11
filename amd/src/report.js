@@ -61,6 +61,23 @@ const init = (cmid, groupid) => {
     $.when(getContentTypes, getReportData).done((ct, data) => {
         contentTypes = JSON.parse(ct[0]);
         data = data[0];
+        /**
+         * Configuration options for initializing a DataTable.
+         *
+         * @type {Object}
+         * @property {Array} data - The data to be displayed in the table.
+         * @property {boolean} deferRender - If true, the table will defer rendering of rows until they are needed.
+         * @property {string} rowId - The property to use as the unique identifier for each row.
+         * @property {number} pageLength - The number of rows to display per page.
+         * @property {Array} order - The initial sorting order of the table.
+         * @property {Array} columns - Configuration for each column in the table.
+         * @property {Object} language - Customization of the language strings used by the DataTable.
+         * @property {Function} stateSaveParams - Function to modify the state saving parameters.
+         * @property {boolean} stateSave - If true, the table state will be saved in local storage.
+         * @property {string} dom - The layout of the table controls.
+         * @property {Array} buttons - Configuration for the export buttons.
+         * @property {Function} initComplete - Function to execute when the table initialization is complete.
+         */
         var datatableOptions = {
             "data": data,
             "deferRender": true,
@@ -158,7 +175,7 @@ const init = (cmid, groupid) => {
             "language": {
                 "lengthMenu": "_MENU_",
                 "zeroRecords": M.util.get_string('nofound', "mod_interactivevideo"),
-                "search": M.util.get_string('search', "mod_interactivevideo"),
+                "search": `<span class="d-none d-md-inline">${M.util.get_string('search', "mod_interactivevideo")}</span>`,
                 "info": M.util.get_string('datatableinfo', "mod_interactivevideo"),
                 "infoEmpty": M.util.get_string('datatableinfoempty', "mod_interactivevideo"),
                 "infoFiltered": M.util.get_string('datatableinfofiltered', "mod_interactivevideo"),
@@ -179,7 +196,8 @@ const init = (cmid, groupid) => {
                 return data;
             },
             stateSave: true,
-            "dom": `Blft<'row'<'col-sm-6'i><'col-sm-6'p>>`,
+            "dom": `<'d-flex w-100 justify-content-between`
+                + `'<'d-flex align-items-start'Bl>'<''f>>t<'row'<'col-sm-6'i><'col-sm-6'p>>`,
             "buttons": [
                 {
                     extend: "copyHtml5",
@@ -264,22 +282,22 @@ const init = (cmid, groupid) => {
          aria-hidden="true" data-backdrop="static" data-keyboard="false">
          <div id="message" data-id="${theAnnotation.id}" data-placement="popup"
           class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
-                                    <div class="modal-content rounded-lg">
-                                        <div class="modal-header d-flex align-items-center shadow-sm pr-0" id="title">
-                                            <h5 class="modal-title text-truncate mb-0">${theAnnotation.formattedtitle
-            + " @ " + convertSecondsToHMS(theAnnotation.timestamp)}</h5>
-                                            <div class="btns d-flex align-items-center">
-                                                <button class="btn mx-2 p-0 close" aria-label="Close" data-dismiss="modal">
-                                                <i class="bi bi-x-lg fa-fw" style="font-size: x-large;"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="modal-body" id="content">
-                                        <div class="loader w-100 mt-5"></div>
-                                        </div>
-                                        </div>
-                                    </div>
-                                    </div>`;
+            <div class="modal-content rounded-lg">
+                <div class="modal-header d-flex align-items-center shadow-sm" id="title">
+                    <h5 class="modal-title text-truncate mb-0">${theAnnotation.formattedtitle
++ " @ " + convertSecondsToHMS(theAnnotation.timestamp)}</h5>
+                    <div class="btns d-flex align-items-center">
+                        <button class="btn close-modal p-0" aria-label="Close" data-dismiss="modal">
+                        <i class="bi bi-x-lg fa-fw fs-25px"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-body" id="content">
+                <div class="loader w-100 mt-5"></div>
+                </div>
+                </div>
+            </div>
+            </div>`;
         $('body').append(modal);
         $('#annotation-modal').modal('show');
         $('#annotation-modal').on('hide.bs.modal', function() {
@@ -294,7 +312,7 @@ const init = (cmid, groupid) => {
                 theAnnotation.completed = true;
                 new Module().displayReportView(theAnnotation, tabledatajson);
             });
-            $(this).find('.close').focus();
+            $(this).find('.close-modal').focus();
         });
     });
 
@@ -316,6 +334,15 @@ const init = (cmid, groupid) => {
     });
 };
 
+
+/**
+ * Renders annotation logs in a DataTable with specified options.
+ *
+ * @param {Object} data - The data to be displayed in the table.
+ * @param {Array} data.rows - The rows of data to be displayed.
+ * @param {string} node - The DOM node selector where the table will be rendered.
+ * @param {string} title - The title used for export options.
+ */
 const renderAnnotationLogs = (data, node, title) => {
     let tableOptions = {
         "data": data.rows,

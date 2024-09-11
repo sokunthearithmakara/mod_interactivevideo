@@ -82,7 +82,6 @@ $PAGE->set_context($modulecontext);
 $PAGE->set_pagelayout('embedded');
 $PAGE->add_body_class('page-interactions');
 
-
 $contentoptions = interactivevideo_util::get_all_activitytypes();
 
 // Sort the content types by title.

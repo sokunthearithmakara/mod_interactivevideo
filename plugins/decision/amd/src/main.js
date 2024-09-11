@@ -68,7 +68,7 @@ export default class Decision extends Base {
                         placeholder="00:00:00" style="max-width: 120px;" class="form-control timestamp-input">
                         <div class="input-group-append">
                         <button class="btn add-dest btn-secondary" type="button"><i class="bi bi-plus-lg fs-unset"></i></button>
-                        <button class="btn btn-danger disabled" disabled type="button">
+                        <button class="btn btn-danger delete-dest disabled" disabled type="button">
                             <i class="bi bi-trash3-fill fs-unset"></i></button></div></div>`);
                 } else {
                     dest = JSON.parse(dest);
@@ -108,26 +108,21 @@ export default class Decision extends Base {
         body.on('click', '.input-group .add-dest', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            var target = $(this).closest('.input-group');
-            target.after(`<div class="input-group mb-1">
-                            <input type="text" class="form-control">
-                            <input value="${self.convertSecondsToHMS(self.start)}"
-                             placeholder="00:00:00" type="text" style="max-width: 120px;"
-                             class="form-control timestamp-input">
-                            <div class="input-group-append">
-                            <button class="btn add-dest btn-secondary" type="button"><i class="bi bi-plus-lg"></i></button>
-                            <button class="btn btn-danger delete-dest" type="button">
-                            <i class="bi bi-trash3-fill"></i></button>
-                            </div>
-                        </div>`);
-            $('[type="text"]').trigger('input');
+            let $thisrow = $(this);
+            let $parent = $thisrow.closest('.input-group');
+            let $row = $parent.clone();
+            $row.find('input').val('');
+            $row.find('input.timestamp-input').val(self.convertSecondsToHMS(self.start));
+            $row.find('.delete-dest').removeClass('disabled').removeAttr('disabled');
+            $parent.after($row);
+            $parent.find('[type="text"]').trigger('input');
         });
 
         body.on('click', '.input-group .delete-dest', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(this).closest('.input-group').remove();
-            $('[type="text"]').trigger('input');
+            $('.input-group [type="text"]').trigger('input');
         });
 
         body.on('input', '.input-group [type="text"]', function() {

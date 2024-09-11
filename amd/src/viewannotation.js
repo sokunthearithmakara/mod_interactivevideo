@@ -23,8 +23,9 @@
 
 define([
     'jquery', 'core/event_dispatcher', 'core/toast', 'mod_interactivevideo/libraries/jquery-ui'
-], function($, {dispatchEvent}, Toast) {
-    let ctRenderer = {};
+], function($, eventDispatcher, Toast) {
+    const {dispatchEvent} = eventDispatcher;
+    const ctRenderer = {};
     let annotations, // Array of annotations.
         totaltime, // Video total time.
         activityType, // Current activityType.
@@ -32,12 +33,12 @@ define([
         contentTypes, // Array of available content types.
         displayoptions, // Display options.
         releventAnnotations, // Array of annotations that are not skipped.
-        player;
+        player; // Video player instance.
 
     const $videoNav = $('#video-nav');
     const $interactionNav = $('#interactions-nav');
 
-    const convertSecondsToMinutes = (seconds) => {
+    const formatTime = (seconds) => {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const remainingSeconds = seconds % 60;
@@ -54,7 +55,7 @@ define([
         return string;
     };
 
-    const renderAnnotationItems = async (annos, start, totaltime) => {
+    const renderAnnotationItems = async(annos, start, totaltime) => {
         releventAnnotations = annos;
 
         let actualduration = totaltime;
@@ -80,7 +81,7 @@ define([
 
         $(".metadata").empty();
         $(".metadata").append(`<span class="d-inline-block mr-3">
-            <i class="bi bi-stopwatch mr-2"></i>${convertSecondsToMinutes(Math.ceil(actualduration))}</span>
+            <i class="bi bi-stopwatch mr-2"></i>${formatTime(Math.ceil(actualduration))}</span>
             <span class="d-inline-block mr-3">
         <i class="bi bi-bullseye mr-2"></i>${completedAnnos.length} / ${actualAnnotationCounts}</span>
         <span class="d-inline-block"><i class="bi bi-star mr-2"></i>${xpEarned} / ${xp}</span>`);
@@ -101,15 +102,10 @@ define([
             }
             return;
         }
-        const render = new Promise((resolve) => {
-            annos.forEach(async (x) => {
-                const renderer = ctRenderer[x.type];
-                renderer.renderItemOnVideoNavigation(x);
-            });
-            resolve();
-        });
-
-        await render;
+        for (const x of annos) {
+            const renderer = ctRenderer[x.type];
+            await renderer.renderItemOnVideoNavigation(x);
+        }
         dispatchEvent('annotationitemsrendered', {'annotations': annos});
         $('.annolistinchapter').empty();
         const chapteritems = releventAnnotations.filter(x => x.type != 'skipsegment' && x.hascompletion == 1);
@@ -134,7 +130,29 @@ define([
     };
 
     return {
+        /**
+         * Render annotation items on the video navigation and chapter list.
+         */
         renderAnnotationItems: renderAnnotationItems,
+        /**
+         * Initialize the view annotation on page loads.
+         * @param {string} url - The video url.
+         * @param {number} cmid - The course module id.
+         * @param {number} interaction - The interaction id.
+         * @param {number} course - The course id.
+         * @param {number} userid - The user id.
+         * @param {number} start - The start time of the video.
+         * @param {number} end - The end time of the video.
+         * @param {number} completionpercentage - The completion percentage.
+         * @param {number} gradeiteminstance - The grade item instance.
+         * @param {number} grademax - The grade max.
+         * @param {string} vtype - The video type.
+         * @param {boolean} preventskip - Prevent user from skipping the video.
+         * @param {number} moment - The moment to share.
+         * @param {object} doptions - The display options.
+         * @param {string} token - The token.
+         * @return {void}
+         */
         init: function(
             url, cmid, interaction, course, userid, start = 0, end,
             completionpercentage, gradeiteminstance, grademax, vtype,
@@ -155,6 +173,11 @@ define([
 
             let playerReady = false;
 
+            /**
+             * Function to convert seconds to HH:MM:SS format.
+             * @param {number} seconds
+             * @returns {string}
+             */
             const convertSecondsToHMS = (seconds) => {
                 const h = Math.floor(seconds / 3600);
                 const m = Math.floor(seconds % 3600 / 60);
@@ -162,12 +185,22 @@ define([
                 return (h > 0 ? h + ':' : '') + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
             };
 
+            /**
+             * Function to replace the progress bars on the video navigation.
+             * @param {number} percentage
+             * @returns {void}
+             */
             const replaceProgressBars = (percentage) => {
                 percentage = percentage > 100 ? 100 : percentage;
-                $videoNav.find('#progress').replaceWith(`<div id="progress" style="width: ${percentage}%;"></div>`);
+                $videoNav.find('#progress').css('width', percentage + '%');
                 $videoNav.find('#seekhead').css('left', percentage + '%');
             };
 
+            /**
+             * Function to get all annotations from the database and render them.
+             * @param {function} callback
+             * @returns {void}
+             */
             const getAnnotations = (callback) => {
                 // Get all interaction items.
                 const annnoitems = $.ajax({
@@ -216,119 +249,20 @@ define([
                     annotations = JSON.parse(annos[0]);
                     progress = JSON.parse(progress[0]);
                     contentTypes = JSON.parse(ct[0]);
-                    // Get only annotations within the start and end times.
-                    // Remove the skip segments that are completely outside the start and end times.
-                    // Remove the annotations whose content type is not in the contentTypes.
-                    annotations = annotations.filter(x => {
-                        const inContentType = contentTypes.some(y => y.name === x.type);
-                        if (!inContentType) {
-                            return false;
-                        }
 
-                        if (x.type === 'skipsegment') {
-                            return !(x.timestamp > end || x.title < start);
-                        }
-
-                        return (x.timestamp >= start && x.timestamp <= end) || x.timestamp < 0;
-                    });
-
-                    const completedItems = progress.completeditems == '' ? [] : JSON.parse(progress.completeditems);
-                    annotations = annotations.map(x => {
-                        // First, let's make sure numbers are treated as numbers.
-                        x.timestamp = Number(x.timestamp);
-                        x.xp = Number(x.xp);
-                        if (x.type == 'skipsegment') {
-                            x.title = Number(x.title);
-                        }
-                        // Properties must be stringified so it can be passed through Fragment.
-                        x.prop = JSON.stringify(contentTypes.find(y => y.name == x.type));
-
-                        x.completed = completedItems.indexOf(x.id) > -1;
-
-                        // Handle the skip segments that are half inside the start and end times.
-                        if (x.type == 'skipsegment') {
-                            if (x.timestamp < start && x.title > start) {
-                                x.timestamp = start;
-                            }
-                            if (x.title > end && x.timestamp < end) {
-                                x.title = end;
-                            }
-                        }
-
-                        const advanced = JSON.parse(x.advanced);
-                        x.rerunnable = advanced && advanced.replaybehavior === '1';
-
-                        return x;
-                    });
-
-                    // Sort by timestamp.
+                    annotations = filterAnnotations(annotations, contentTypes, start, end);
+                    annotations = processAnnotations(annotations, contentTypes, progress, start, end);
                     annotations.sort((a, b) => a.timestamp - b.timestamp);
 
-                    const skipsegments = annotations.filter(x => x.type == 'skipsegment');
-
-                    releventAnnotations = [];
-                    annotations.forEach(x => {
-                        let shouldAdd = true;
-                        skipsegments.forEach(y => {
-                            if (Number(x.timestamp) > Number(y.timestamp) && Number(x.timestamp) < Number(y.title)) {
-                                shouldAdd = false;
-                            }
-                        });
-                        if (shouldAdd) {
-                            releventAnnotations.push(x);
-                        }
-                    });
+                    releventAnnotations = getRelevantAnnotations(annotations, start, end, contentTypes);
 
                     if (releventAnnotations.length > 0 && !releventAnnotations.find(x => x.type == 'chapter')) {
-                        // Add a dummy chapter at the start of the video.
-                        releventAnnotations.unshift({
-                            id: 0,
-                            title: M.util.get_string('startchapter', 'mod_interactivevideo'),
-                            formattedtitle: M.util.get_string('startchapter', 'mod_interactivevideo'),
-                            timestamp: start,
-                            type: 'chapter',
-                            prop: JSON.stringify(contentTypes.find(x => x.name == 'chapter')),
-                            xp: 0,
-                            completed: true,
-                            hide: true
-                        });
+                        prependDummyChapter(releventAnnotations, start, contentTypes);
                     }
 
-                    const getRenderers = new Promise((resolve) => {
-                        const chapterContentType = contentTypes.find(x => x.name == 'chapter');
-                        // We want to use only the content types that are being used in the annotations
-                        contentTypes = contentTypes.filter(x => releventAnnotations.map(y => y.type).includes(x.name));
-                        if (contentTypes.length == 0) {
-                            // Remove the chapter toggle
-                            $('#chaptertoggle, #chapter-container-left, #chapter-container-right').remove();
-                            resolve(ctRenderer);
-                        } else {
-                            $('#chaptertoggle, #chapter-container-left, #chapter-container-right').removeClass('d-none');
-                        }
-                        if (!contentTypes.find(x => x.name == 'chapter')) {
-                            // Include the chapterContentType
-                            contentTypes.push(chapterContentType);
-                        }
-                        var count = 0;
-                        contentTypes.forEach(x => {
-                            require([x.amdmodule], function(Type) {
-                                ctRenderer[x.name] = new Type(player, releventAnnotations, interaction, course, userid,
-                                    completionpercentage, gradeiteminstance, grademax, vtype, preventskip, totaltime, start,
-                                    end, x, cmid, token);
-                                try {
-                                    ctRenderer[x.name].init();
-                                } catch (error) {
-                                    // Do nothing.
-                                }
-                                count++;
-                                if (count == contentTypes.length) {
-                                    resolve(ctRenderer);
-                                }
-                            });
-                        });
-                    });
-
-                    await getRenderers;
+                    await initializeContentTypeRenderers(
+                        contentTypes, releventAnnotations, player, interaction, course, userid,
+                        completionpercentage, gradeiteminstance, grademax, vtype, preventskip, totaltime, start, end, cmid, token);
 
                     await renderAnnotationItems(releventAnnotations, start, totaltime);
                     $("#play").removeClass('d-none');
@@ -336,9 +270,177 @@ define([
                     $("#video-info").toggleClass('d-none d-flex');
                     callback();
                 });
+
+                /**
+                 * Filters annotations based on content types and a time range.
+                 *
+                 * @param {Array} annotations - The list of annotations to filter.
+                 * @param {Array} contentTypes - The list of content types to include.
+                 * @param {number} start - The start time of the range.
+                 * @param {number} end - The end time of the range.
+                 * @returns {Array} - The filtered list of annotations.
+                 */
+                function filterAnnotations(annotations, contentTypes, start, end) {
+                    return annotations.filter(annotation => {
+                        const inContentType = contentTypes.some(y => y.name === annotation.type);
+                        if (!inContentType) {
+                            return false;
+                        }
+
+                        if (annotation.type === 'skipsegment') {
+                            return !(annotation.timestamp > end || annotation.title < start);
+                        }
+
+                        return (annotation.timestamp >= start && annotation.timestamp <= end) || annotation.timestamp < 0;
+                    });
+                }
+
+                /**
+                 * Maps and processes annotations based on provided content types, progress, and time range.
+                 *
+                 * @param {Array} annotations - The list of annotations to be processed.
+                 * @param {Array} contentTypes - The list of content types to match with annotations.
+                 * @param {Object} progress - The progress object containing completed items.
+                 * @param {number} start - The start time of the segment.
+                 * @param {number} end - The end time of the segment.
+                 * @returns {Array} - The processed list of annotations.
+                 */
+                function processAnnotations(annotations, contentTypes, progress, start, end) {
+                    const completedItems = progress.completeditems == '' ? [] : JSON.parse(progress.completeditems);
+                    const contentTypeMap = new Map(contentTypes.map(ct => [ct.name, ct]));
+                    return annotations.map(annotation => {
+                        annotation.timestamp = Number(annotation.timestamp);
+                        annotation.xp = Number(annotation.xp);
+                        if (annotation.type == 'skipsegment') {
+                            annotation.title = Number(annotation.title);
+                            if (annotation.timestamp < start && annotation.title > start) {
+                                annotation.timestamp = start;
+                            }
+                            if (annotation.title > end && annotation.timestamp < end) {
+                                annotation.title = end;
+                            }
+                        }
+                        annotation.prop = JSON.stringify(contentTypeMap.get(annotation.type));
+                        annotation.completed = completedItems.indexOf(annotation.id) > -1;
+
+                        let advanced;
+                        try {
+                            advanced = JSON.parse(annotation.advanced);
+                        } catch (e) {
+                            advanced = null;
+                        }
+                        annotation.rerunnable = advanced && advanced.replaybehavior === '1';
+
+                        return annotation;
+                    });
+                }
+
+                /**
+                 * Filters and returns relevant annotations within a specified time range,
+                 * excluding those that fall within skip segments.
+                 *
+                 * @param {Array} annotations - The list of annotations to filter.
+                 * @returns {Array} - The filtered list of relevant annotations.
+                 */
+                function getRelevantAnnotations(annotations) {
+                    const skipsegments = annotations.filter(annotation => annotation.type == 'skipsegment');
+                    let releventAnnotations = [];
+                    annotations.forEach(annotation => {
+                        let shouldAdd = true;
+                        skipsegments.forEach(skipsegment => {
+                            if (Number(annotation.timestamp) > Number(skipsegment.timestamp)
+                                && Number(annotation.timestamp) < Number(skipsegment.title)) {
+                                shouldAdd = false;
+                            }
+                        });
+                        if (shouldAdd) {
+                            releventAnnotations.push(annotation);
+                        }
+                    });
+                    return releventAnnotations;
+                }
+
+                /**
+                 * Adds a dummy chapter annotation to the beginning of the relevant annotations array.
+                 *
+                 * @param {Array} releventAnnotations - The array of relevant annotations to which the dummy chapter will be added.
+                 * @param {number} start - The timestamp at which the dummy chapter starts.
+                 * @param {Array} contentTypes - The array of content types to find the chapter type from.
+                 */
+                function prependDummyChapter(releventAnnotations, start, contentTypes) {
+                    releventAnnotations.unshift({
+                        id: 0,
+                        title: M.util.get_string('startchapter', 'mod_interactivevideo'),
+                        formattedtitle: M.util.get_string('startchapter', 'mod_interactivevideo'),
+                        timestamp: start,
+                        type: 'chapter',
+                        prop: JSON.stringify(contentTypes.find(x => x.name == 'chapter')),
+                        xp: 0,
+                        completed: true,
+                        hide: true
+                    });
+                }
+
+
+                /**
+                 * Asynchronously loads and initializes content type renderers for interactive video annotations.
+                 *
+                 * @param {Array} contentTypes - Array of content type objects.
+                 * @param {Array} releventAnnotations - Array of relevant annotation objects.
+                 * @param {Object} player - The video player instance.
+                 * @param {Object} interaction - The interaction object.
+                 * @param {Object} course - The course object.
+                 * @param {number} userid - The user ID.
+                 * @param {number} completionpercentage - The completion percentage.
+                 * @param {number} gradeiteminstance - The grade item instance.
+                 * @param {number} grademax - The maximum grade.
+                 * @param {string} vtype - The video type.
+                 * @param {boolean} preventskip - Flag to prevent skipping.
+                 * @param {number} totaltime - The total time of the video.
+                 * @param {number} start - The start time of the video.
+                 * @param {number} end - The end time of the video.
+                 * @param {number} cmid - The course module ID.
+                 * @param {string} token - The authentication token.
+                 * @returns {Promise<Object>} A promise that resolves to an object containing the initialized contenttype renderers.
+                 */
+                async function initializeContentTypeRenderers(contentTypes, releventAnnotations,
+                    player, interaction, course, userid,
+                    completionpercentage, gradeiteminstance, grademax, vtype, preventskip, totaltime, start, end, cmid, token) {
+                    const chapterContentType = contentTypes.find(x => x.name == 'chapter');
+                    contentTypes = contentTypes.filter(x => releventAnnotations.map(y => y.type).includes(x.name));
+                    if (contentTypes.length == 0) {
+                        $('#chaptertoggle, #chapter-container-left, #chapter-container-right').remove();
+                        return;
+                    } else {
+                        $('#chaptertoggle, #chapter-container-left, #chapter-container-right').removeClass('d-none');
+                    }
+                    if (!contentTypes.find(x => x.name == 'chapter')) {
+                        contentTypes.push(chapterContentType);
+                    }
+                    return Promise.all(contentTypes.map(contentType => {
+                        return new Promise((resolve) => {
+                            require([contentType.amdmodule], function(Type) {
+                                ctRenderer[contentType.name] = new Type(player, releventAnnotations, interaction, course, userid,
+                                    completionpercentage, gradeiteminstance, grademax, vtype, preventskip, totaltime, start,
+                                    end, contentType, cmid, token);
+                                try {
+                                    ctRenderer[contentType.name].init();
+                                } catch (error) {
+                                    // Do nothing.
+                                }
+                                resolve(ctRenderer[contentType.name]);
+                            });
+                        });
+                    })).then(() => ctRenderer);
+                }
             };
 
-            const runInteraction = async (annotation) => {
+            /**
+             * Run the interaction.
+             * @param {object} annotation annotation object
+             * @returns {void}
+             */
+            const runInteraction = async(annotation) => {
                 lastanno = annotation;
                 // Remove the previous message but keep the one below the video.
                 $('#annotation-modal').modal('hide');
@@ -363,7 +465,17 @@ define([
                 activityType.runInteraction(annotation);
             };
 
-            const shareMoment = async () => {
+            /**
+             * Shares a specific moment in the video by seeking to the given timestamp and playing the video.
+             * If the timestamp is within the valid range, it hides the start screen, seeks to the timestamp,
+             * plays the video, runs the relevant annotation interaction, and updates the progress bars.
+             * Finally, it removes the timestamp parameter from the URL.
+             *
+             * @async
+             * @function shareMoment
+             * @returns {Promise<void>} A promise that resolves when the video has been successfully sought and played.
+             */
+            const shareMoment = async() => {
                 if (!moment) {
                     return;
                 }
@@ -373,15 +485,13 @@ define([
                 if (time && !isNaN(time) && time >= start && time <= end) {
                     // Hide the start screen.
                     $('#video-wrapper #start-screen').hide(0);
+                    replaceProgressBars(((time - start) / totaltime) * 100);
                     await player.seek(time);
                     player.play();
                     const theAnnotation = releventAnnotations.find(x => x.timestamp == time);
                     if (theAnnotation) {
                         runInteraction(theAnnotation);
                     }
-
-                    replaceProgressBars(((time - start) / totaltime) * 100);
-
                 }
                 urlParams.delete('t');
                 const newurl = window.location.protocol
@@ -389,7 +499,24 @@ define([
                 window.history.replaceState(null, null, newurl);
             };
 
-            const onReady = async () => {
+            /**
+             * Initializes the video player and its controls when the player is ready.
+             *
+             * This function performs the following tasks:
+             * - Checks if the player supports playback rate and quality adjustments, and updates the UI accordingly.
+             * - Sets the background image of the start screen if a poster image is available.
+             * - Adjusts the background of the video block to be transparent.
+             * - Retrieves the video duration and updates the end time if necessary.
+             * - Calculates the total playback time and updates the duration display.
+             * - Recalculates the aspect ratio of the video and updates the video wrapper's padding.
+             * - Sets the player as ready and focuses on the start button.
+             * - Initializes the seek head draggable functionality, allowing users to seek through the video.
+             *
+             * @async
+             * @function onReady
+             * @returns {Promise<void>} A promise that resolves when the player is fully initialized and ready.
+             */
+            const onReady = async() => {
                 if (player.support.playbackrate == false) {
                     $('#changerate').remove();
                 } else {
@@ -426,30 +553,51 @@ define([
                     'containment': '#video-nav',
                     'axis': 'x',
                     'cursor': 'col-resize',
-                    'start': function() {
+                    'start': function(event, ui) {
                         $(this).addClass('active');
                         $('#taskinfo').addClass('no-pointer-events');
                         $("#message, #end-screen").remove();
+                        $("#seek").append('<div id="position"><div id="timelabel"></div></div>');
+                        let $position = $('#position');
+                        const relX = ui.position.left;
+                        $position.css('left', (relX) + 'px');
+                        var percentage = relX / $(this).width();
+                        var time = Math.round(percentage * totaltime);
+                        var formattedTime = convertSecondsToHMS(time);
+                        $position.find('#timelabel').text(formattedTime);
                     },
                     'drag': async function(event, ui) {
                         let timestamp = ((ui.position.left) / $('#video-nav').width()) * totaltime + start;
+                        let percentage = ui.position.left / $('#video-nav').width();
+                        replaceProgressBars(percentage * 100);
+                        $('#seek #position').css('left', ui.position.left + 'px');
+                        $('#seek #position #timelabel').text(convertSecondsToHMS(timestamp - start));
                         await player.seek(timestamp);
                         player.pause();
                     },
-                    'stop': async function(event, ui) {
+                    'stop': async function() {
                         setTimeout(function() {
                             $('#taskinfo').removeClass('no-pointer-events');
                         }, 200);
                         setTimeout(function() {
                             $('#seekhead').removeClass('active');
+                            $('#seek #position').remove();
                         }, 1000);
-                        let percentage = ui.position.left / $('#video-nav').width();
-                        replaceProgressBars(percentage * 100);
                         player.play();
                     }
                 });
             };
 
+
+            /**
+             * Handles the event when the video player is paused.
+             *
+             * This function performs the following actions:
+             * - Checks if the player is ready. If not, it exits early.
+             * - Clears the interval timer.
+             * - Updates the play/pause button icon to indicate 'play'.
+             * - Sets the tooltip of the play/pause button to 'play'.
+             */
             const onPaused = () => {
                 if (!playerReady) {
                     return;
@@ -459,6 +607,23 @@ define([
                 $('#playpause').attr('data-original-title', M.util.get_string('play', 'mod_interactivevideo'));
             };
 
+
+            /**
+             * Handles the end of the video playback.
+             *
+             * @param {number} t - The current time of the video playback. If not provided, defaults to the end time.
+             *
+             * @returns {void}
+             *
+             * This function performs the following actions:
+             * - Checks if the player is ready.
+             * - Finds the relevant annotation at the end of the video.
+             * - If the annotation exists and is not the last one, pauses the player and runs the interaction.
+             * - Toggles the tooltip to show the annotation title and hides it after 2 seconds.
+             * - Updates the UI to show the end screen and restart button.
+             * - Clears the interval and pauses the player.
+             * - Updates the play/pause button to show the play icon.
+             */
             const onEnded = (t) => {
                 if (!playerReady) {
                     return;
@@ -480,7 +645,7 @@ define([
                             .removeClass('active');
                     }, 2000);
                 }
-
+                $('#currenttime').text(convertSecondsToHMS(totaltime));
                 $('#restart').removeClass('d-none').fadeIn(300);
                 $('#end-screen').removeClass('d-none').fadeIn(300);
                 $('#progress').css('width', '100%');
@@ -491,7 +656,13 @@ define([
                 $('#playpause').attr('data-original-title', M.util.get_string('play', 'mod_interactivevideo'));
             };
 
-            const onSeek = async (t) => {
+            /**
+             * Handles the seek event for the video player.
+             *
+             * @param {number} t - The time to seek to. If not provided, the current time of the player will be used.
+             * @returns {Promise<void>} - A promise that resolves when the seek operation is complete.
+             */
+            const onSeek = async(t) => {
                 if (!playerReady) {
                     return;
                 }
@@ -510,7 +681,20 @@ define([
             };
 
             let interval;
-            const onPlaying = async () => { // Use with player timeupdate event.
+            /**
+             * Handles the 'playing' event of the video player.
+             * This function is triggered when the video is playing and performs various actions such as:
+             * - Resetting the annotation content.
+             * - Handling fullscreen mode for mobile themes.
+             * - Hiding modals and messages.
+             * - Updating the play/pause button state.
+             * - Managing the video progress and annotations.
+             *
+             * @async
+             * @function onPlaying
+             * @returns {Promise<void>} A promise that resolves when the function completes.
+             */
+            const onPlaying = async() => { // Use with player timeupdate event.
                 // Reset the annotation content.
                 if (!playerReady) {
                     return;
@@ -574,18 +758,16 @@ define([
                             }
                         }
                     }
-
-                    // Pause video on spacebar pressed
-                    $(document).on('keydown', function(e) {
-                        if (e.keyCode == 32) {
-                            e.preventDefault();
-                            player.pause();
-                        }
-                    });
                 };
 
                 if (player.type == 'yt' || player.type == 'wistia') {
-                    interval = setInterval(intervalFunction, player.frequency * 100);
+                    const update = async() => {
+                        await intervalFunction();
+                        if (await player.isPlaying() && !await player.isEnded()) {
+                            requestAnimationFrame(update);
+                        }
+                    };
+                    requestAnimationFrame(update);
                 } else {
                     intervalFunction();
                 }
@@ -726,7 +908,7 @@ define([
 
                 $position.css('left', (relX) + 'px');
                 var percentage = relX / $(this).width();
-                var time = Math.round(percentage * end);
+                var time = Math.round(percentage * totaltime);
                 var formattedTime = convertSecondsToHMS(time);
                 $position.find('#timelabel').text(formattedTime);
             });
@@ -738,7 +920,7 @@ define([
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
                 var percentage = relX / $(this).width();
-                var time = Math.round(percentage * end);
+                var time = Math.round(percentage * totaltime);
                 var formattedTime = convertSecondsToHMS(time);
                 $('#position').css('left', (relX) + 'px');
                 $('#position #timelabel').text(formattedTime);
@@ -760,15 +942,18 @@ define([
                     return;
                 }
                 const timestamp = $(this).data('timestamp');
+                replaceProgressBars(((timestamp - start) / totaltime) * 100);
                 player.play();
                 if (player.type == 'yt') {
                     clearInterval(interval);
                 }
                 await player.seek(Number(timestamp));
-                replaceProgressBars(((timestamp - start) / totaltime) * 100);
+                player.pause();
                 const id = $(this).data('id');
                 const theAnnotation = releventAnnotations.find(x => x.id == id);
-                runInteraction(theAnnotation);
+                setTimeout(() => {
+                    runInteraction(theAnnotation);
+                }, 500);
                 lastanno = theAnnotation;
             });
 
@@ -792,13 +977,13 @@ define([
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
                 var percentage = relX / $(this).width();
+                replaceProgressBars(percentage * 100);
                 // Gotta check if this affects anything.
                 if (player.type == 'yt') {
                     clearInterval(interval);
                 }
                 player.pause(); // Especially for vimeo.
                 await player.seek((percentage * totaltime) + start);
-                replaceProgressBars(percentage * 100);
                 player.play();
             });
 
@@ -822,7 +1007,6 @@ define([
                 $('#end-screen').fadeOut(300);
                 $(this).addClass('d-none');
                 $videoNav.removeClass('d-none');
-                replaceProgressBars(0);
                 player.play();
             });
 
@@ -919,18 +1103,6 @@ define([
                 player.setQuality(quality);
                 $('.changequality').find('i').removeClass('bi-check');
                 $(this).find('i').addClass('bi-check');
-            });
-
-            $(document).on('interactionrun', function(e) {
-                window.console.log(e);
-            });
-
-            $(document).on('interactionclose', function(e) {
-                window.console.log(e);
-            });
-
-            $(document).on('interactionCompletionUpdated', function(e) {
-                window.console.log(e);
             });
 
             $(document).on('iv:playerReady', function() {

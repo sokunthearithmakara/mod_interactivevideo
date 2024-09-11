@@ -50,7 +50,7 @@ class restore_interactivevideo_activity_task extends restore_activity_task {
         $contents = [];
         $contents[] = new restore_decode_content('interactivevideo', ['intro', 'endscreentext'], 'interactivevideo');
         $contents[] = new restore_decode_content('interactivevideo_items', ['content'], 'interactivevideo_items');
-
+        $contents[] = new restore_decode_content('interactivevideo_log', ['text1', 'text2', 'text3'], 'interactivevideo_log');
         return $contents;
     }
 
