@@ -50,7 +50,7 @@ class main extends \ivplugin_richtext\main {
      */
     public function get_content($arg) {
         $code = $arg["content"];
-        $padding = $arg["char1"] && $arg["char1"] != "null" ? $arg["char1"] : "calc(90vh - 60px)";
+        $padding = $arg["char1"] && $arg["char1"] != "null" ? $arg["char1"] : "calc(90dvh - 60px)";
         return '<div class="preview-iframe w-100" style="padding-bottom: ' . $padding . ';" >' . $code . '</div>';
     }
 }

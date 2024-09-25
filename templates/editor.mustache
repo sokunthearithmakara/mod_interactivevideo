@@ -24,12 +24,16 @@ Example context (json):
         <div class="row m-0 position-relative">
             <div class="p-3" id="player-region">
                 {{! Player }}
-                <div id="video-wrapper" class="bg-black">
+                <div id="video-wrapper">
                     <div id="annotation-canvas">
+                        <div id="video-block"
+                             class="position-absolute w-100 h-100"
+                             style="z-index: 2"></div>
                         {{#html5}}
                         <video id="player" class="w-100">
                         </video>
-                    {{/html5}} {{^html5}}
+                    {{/html5}}
+                    {{^html5}}
                     <div id="player" class="w-100 p-0"></div>
                 {{/html5}}
             </div>
@@ -89,7 +93,8 @@ Example context (json):
                                 <button class="border-0 btn btn-sm type-icon mr-2" title="">
                                     <i class="fa fa-fw"></i>
                                 </button>
-                                <span data-editable="title" class="title font-weight-bold text-primary cursor-pointer">title</span>
+                                <span data-editable="title"
+                                      class="title font-weight-bold text-primary cursor-pointer">title</span>
                                 <input type="text"
                                        data-field="title"
                                        class="form-control form-control-sm d-none">

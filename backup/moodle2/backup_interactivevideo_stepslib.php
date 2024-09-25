@@ -137,6 +137,7 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
                 'userid',
                 'cmid',
                 'annotationid',
+                'completionid',
                 'attachments',
                 'intg1',
                 'intg2',

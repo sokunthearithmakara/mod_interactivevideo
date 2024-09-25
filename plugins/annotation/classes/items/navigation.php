@@ -93,7 +93,7 @@ class navigation extends \core_form\dynamic_form {
             'timestamp',
             get_string('invalidtimestampformat', 'ivplugin_annotation'),
             'regex',
-            '/^([0-9]{2}):([0-5][0-9]):([0-5][0-9])$/',
+            '/^([0-9]{2}):([0-5][0-9]):([0-5][0-9])(\.\d{2})?$/',
             'client'
         );
         $mform->setDefault('timestamp', '00:00:00');

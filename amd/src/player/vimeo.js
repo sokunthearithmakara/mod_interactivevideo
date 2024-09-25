@@ -24,6 +24,14 @@ import {dispatchEvent} from 'core/event_dispatcher';
 let player;
 
 class Vimeo {
+    /**
+     * Constructs a Vimeo player instance.
+     *
+     * @param {string} url - The URL of the Vimeo video.
+     * @param {number} start - The start time of the video in seconds.
+     * @param {number} end - The end time of the video in seconds.
+     * @param {boolean} showControls - Flag to show or hide video controls.
+     */
     constructor(url, start, end, showControls) {
         this.type = 'vimeo';
         this.start = start;
@@ -33,27 +41,26 @@ class Vimeo {
             quality: false,
         };
         // Documented at https://developer.vimeo.com/player/sdk/reference
-        var VimeoPlayer;
-        var regex = /(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com)\/(?:video\/|)([^\/]+)/g;
+        let VimeoPlayer;
+        var regex = /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(?:video\/)?([^/]+)/g;
         this.videoId = regex.exec(url)[1];
-        // Get poster image using oEmbed
+        // Get poster image using oEmbed.
         var posterUrl = 'https://vimeo.com/api/oembed.json?url=https%3A//vimeo.com/' + this.videoId;
-        var self = this;
         fetch(posterUrl)
             .then(response => response.json())
             .then(data => {
                 var poster = data.thumbnail_url;
-                // Change the dimensions of the poster image to 16:9
+                // Change the dimensions of the poster image to 16:9.
                 poster = poster.replace(/_\d+x\d+/, '_720x405');
-                self.posterImage = poster;
+                this.posterImage = poster;
             });
-
-        var option = {
+        let self = this;
+        const option = {
             url: url,
             width: 1080,
             height: 720,
             autoplay: false,
-            quality: showControls ? '540p' : 'auto', // Reduce quality in editor
+            quality: showControls ? '540p' : 'auto', // Reduce quality in editor.
             controls: showControls,
             loop: false,
             muted: false,
@@ -74,13 +81,10 @@ class Vimeo {
         };
 
         const vimeoEvents = (player) => {
-            player.on('error', function(e) {
-                dispatchEvent('iv:playerError', {error: e});
-            });
-
             player.on('loaded', async function() {
                 let duration = await player.getDuration();
                 end = !end ? duration : Math.min(end, duration);
+                self.aspectratio = await self.ratio();
                 dispatchEvent('iv:playerReady');
             });
 
@@ -89,7 +93,9 @@ class Vimeo {
                 let currentTime = await player.getCurrentTime();
                 if (isEnded || (end && currentTime >= end)) {
                     dispatchEvent('iv:playerEnded');
-                    player.pause();
+                    if (player) {
+                        player.pause();
+                    }
                 } else if (await player.getPaused()) {
                     dispatchEvent('iv:playerPaused');
                 } else {
@@ -104,6 +110,14 @@ class Vimeo {
             player.on('playbackratechange', function(e) {
                 dispatchEvent('iv:playerRateChange', {rate: e.playbackRate});
             });
+
+            player.on('bufferstart', function() {
+                dispatchEvent('iv:playerPaused');
+            });
+
+            player.on('bufferend', function() {
+                dispatchEvent('iv:playerPlaying');
+            });
         };
         if (!VimeoPlayer) {
             require(['https://player.vimeo.com/api/player.js'], function(Player) {
@@ -116,65 +130,148 @@ class Vimeo {
             vimeoEvents(player);
         }
     }
+    /**
+     * Plays the video using the Vimeo player instance.
+     * If the player is not initialized, logs an error to the console.
+     */
     play() {
-        player.play();
+        if (player) {
+            player.play();
+        } else {
+            window.console.error('Player is not initialized.');
+        }
     }
+    /**
+     * Pauses the Vimeo player.
+     *
+     * This method calls the `pause` function on the `player` object to pause the video playback.
+     */
     pause() {
         player.pause();
     }
+    /**
+     * Stops the video playback and sets the current time to the specified start time.
+     *
+     * @param {number} starttime - The time in seconds to which the video should be set before pausing.
+     */
     stop(starttime) {
         player.setCurrentTime(starttime);
         player.pause();
     }
+    /**
+     * Seeks the video to a specified time.
+     *
+     * @param {number} time - The time in seconds to seek to.
+     * @returns {Promise<number>} A promise that resolves to the time sought to.
+     */
     async seek(time) {
         await player.setCurrentTime(time);
         return time;
     }
+    /**
+     * Retrieves the current playback time of the video.
+     *
+     * @returns {Promise<number>} A promise that resolves to the current time in seconds.
+     */
     async getCurrentTime() {
-        const time = await player.getCurrentTime();
-        return time;
+        return player.getCurrentTime();
     }
+    /**
+     * Asynchronously retrieves the duration of the video.
+     *
+     * @returns {Promise<number>} A promise that resolves to the duration of the video in seconds.
+     */
     async getDuration() {
         const duration = await player.getDuration();
         return duration;
     }
+    /**
+     * Checks if the Vimeo player is paused.
+     *
+     * @returns {Promise<boolean>} A promise that resolves to a boolean indicating whether the player is paused.
+     */
     async isPaused() {
         const paused = await player.getPaused();
         return paused;
     }
+    /**
+     * Checks if the Vimeo player is currently playing.
+     *
+     * @returns {Promise<boolean>} A promise that resolves to `true` if the player is playing, otherwise `false`.
+     */
     async isPlaying() {
         const paused = await player.getPaused();
         return !paused;
     }
+    /**
+     * Checks if the Vimeo player has ended.
+     *
+     * @async
+     * @function isEnded
+     * @returns {Promise<boolean>} A promise that resolves to a boolean indicating whether the player has ended.
+     */
     async isEnded() {
         const ended = await player.getEnded();
         return ended;
     }
+    /**
+     * Calculates the aspect ratio of the video.
+     * If the video's aspect ratio is greater than 16:9, it returns the actual aspect ratio.
+     * Otherwise, it returns the 16:9 aspect ratio.
+     *
+     * @returns {Promise<number>} The aspect ratio of the video.
+     */
     async ratio() {
         const width = await player.getVideoWidth();
         const height = await player.getVideoHeight();
-        if (width / height > 16 / 9) {
-            return width / height;
+        return width / height;
+    }
+    /**
+     * Destroys the Vimeo player instance if it is initialized.
+     * If the player is not initialized, logs an error message to the console.
+     */
+    destroy() {
+        if (player) {
+            player.destroy();
         } else {
-            return 16 / 9;
+            window.console.error('Player is not initialized.');
         }
     }
-    destroy() {
-        player.destroy();
-    }
+    /**
+     * Asynchronously retrieves the current state of the video player.
+     *
+     * @returns {Promise<string>} A promise that resolves to a string indicating the player's state, either 'paused' or 'playing'.
+     */
     async getState() {
         const paused = await player.getPaused();
         return paused ? 'paused' : 'playing';
     }
+    /**
+     * Sets the playback rate for the Vimeo player.
+     *
+     * @param {number} rate - The desired playback rate.
+     *                        This should be a value supported by the Vimeo player.
+     */
     setRate(rate) {
         player.setPlaybackRate(rate);
     }
+    /**
+     * Mutes the Vimeo player by setting the volume to 0.
+     */
     mute() {
         player.setVolume(0);
     }
+    /**
+     * Unmutes the Vimeo player by setting the volume to 1.
+     */
     unMute() {
         player.setVolume(1);
     }
+    /**
+     * Returns the original Vimeo player instance.
+     *
+     * @returns {Object} The Vimeo player instance.
+     */
     originalPlayer() {
         return player;
     }

@@ -25,6 +25,12 @@ html:has(.path-mod-interactivevideo) {
     opacity: 0 !important;
 }
 
+.path-mod-interactivevideo .sticky-left-0 {
+    left: 0;
+    position: sticky!important;
+    z-index: 2;
+}
+
 .path-mod-interactivevideo .navbar.fixed-top {
     height: 70px;
 }
@@ -263,6 +269,10 @@ html:has(.path-mod-interactivevideo) {
     z-index: 3;
     cursor: pointer;
     background: #fff;
+}
+
+.path-mod-interactivevideo.darkmode #video-wrapper .video-block {
+    background: var(--ivdark);
 }
 
 .path-mod-interactivevideo #video-wrapper #pausebutton {
@@ -557,7 +567,7 @@ html:has(.path-mod-interactivevideo) {
     }
 
     #restart i {
-        font-size: 30px;
+        font-size: 25px;
         line-height: 30px;
     }
 }
@@ -569,7 +579,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo .modal:not(.moodle-has-zindex) .modal-body {
-    min-height: 50vh;
+    min-height: 50dvh;
 }
 
 .path-mod-interactivevideo .modalhasiframe .modal-body .no-overflow,
@@ -586,7 +596,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo .modalhasiframe .modal-body {
-    height: calc(100vh - 3rem);
+    height: calc(100dvh - 3rem);
 }
 
 .path-mod-interactivevideo #message.hasiframe #iframe {
@@ -609,7 +619,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo #annotation-content #message #iframe {
-    min-height: 50vh;
+    min-height: 50dvh;
     position: relative;
 }
 
@@ -617,12 +627,23 @@ html:has(.path-mod-interactivevideo) {
     border-radius: 1rem;
 }
 
+#page-mod-interactivevideo-view #wrapper {
+    max-width: 100%;
+    transition: max-width ease-in-out 300ms;
+}
+
+#page-mod-interactivevideo-view.limited-width #wrapper,
+#page-mod-interactivevideo-view #annotation-content {
+    max-width: clamp(300px, 100%, 1100px);
+    transition: max-width ease-in-out 300ms;
+}
+
 .path-mod-interactivevideo #wrapper.fullscreen #video-wrapper,
 .path-mod-interactivevideo #wrapper.fullscreen .video-block {
     position: absolute;
     top: 0;
     width: 100%;
-    height: calc(100vh - 55px);
+    height: calc(100dvh - 55px);
     padding: 0;
     border-radius: 0;
     border: none !important;
@@ -630,7 +651,7 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo #wrapper.fullscreen.no-videonav #video-wrapper,
 .path-mod-interactivevideo #wrapper.fullscreen.no-videonav .video-block {
-    height: calc(100vh);
+    height: calc(100dvh);
 }
 
 .path-mod-interactivevideo #taskinfo .btn-control {
@@ -794,7 +815,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo .modal .hasiframe .modal-body {
-    min-height: calc(90vh - 60px);
+    min-height: calc(90dvh - 60px);
 }
 
 .path-mod-interactivevideo div#player iframe {
@@ -860,7 +881,7 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo #chapter-container-left {
     transition: left ease-in-out 300ms;
     max-width: 400px;
-    z-index: 100;
+    z-index: 1031;
 }
 
 .path-mod-interactivevideo [data-region="chapterwrapper"] {
@@ -872,11 +893,6 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo.darkmode {
-    #chapter-container-right [data-region="chapterwrapper"] {
-        background: rgba(0, 0, 0, 0.15);
-        color: #fff;
-    }
-
     #chapter-container-left [data-region="chapterwrapper"] {
         background: rgba(0, 0, 0, 0.95);
         color: #fff;
@@ -936,12 +952,10 @@ html:has(.path-mod-interactivevideo) {
     color: #fff !important;
 }
 
-.path-mod-interactivevideo #chapter-container-right {
-    transition: all ease-in-out 300ms;
-}
-
 .path-mod-interactivevideo #controller {
     height: 55px;
+    z-index: 1032;
+    width: 100%;
 }
 
 .path-mod-interactivevideo #wrapper.fullscreen #controller,
@@ -951,7 +965,6 @@ html:has(.path-mod-interactivevideo) {
     margin: 0;
     left: 0;
     border-radius: 0 !important;
-    z-index: 1001;
 }
 
 .path-mod-interactivevideo [data-region="chapterlists"] .chapter.active-chapter>div {
@@ -963,22 +976,8 @@ html:has(.path-mod-interactivevideo) {
     left: -100%;
 }
 
-.path-mod-interactivevideo #interactivevideo-container #chapter-container-right {
-    display: none;
-}
-
-.path-mod-interactivevideo #interactivevideo-container.chapter-open #chapter-container-right {
-    display: block;
-    left: 0;
-
-    @media (max-width: 1199.98px) {
-        display: none;
-        left: -100%;
-    }
-}
-
 .path-mod-interactivevideo #interactivevideo-container.chapter-open #chapter-container-left {
-    left: -100%;
+    left: 0;
 
     @media (max-width: 1199.98px) {
         display: block;
@@ -986,52 +985,27 @@ html:has(.path-mod-interactivevideo) {
     }
 }
 
-.path-mod-interactivevideo #interactivevideo-container.chapter-open.fullscreen #chapter-container-left,
-.path-mod-interactivevideo #interactivevideo-container.chapter-open.fullscreen #chapter-container-right {
+@media (min-width: 1199.98px) {
+    .path-mod-interactivevideo #interactivevideo-container {
+        transition: left ease 300ms, width ease 300ms;
+        left: 0;
+        width: 100%;
+    }
+
+    .path-mod-interactivevideo #interactivevideo-container.chapter-open {
+        left: 400px;
+        width: calc(100% - 400px);
+        transition: left ease 300ms, width ease 300ms;
+    }
+}
+
+.path-mod-interactivevideo #interactivevideo-container.chapter-open.fullscreen #chapter-container-left {
     display: block;
     left: 0;
 }
 
 .path-mod-interactivevideo .fullscreen #chapterbutton {
     margin: 0 0.2rem !important;
-}
-
-.path-mod-interactivevideo .show-drawer-right #interactivevideo-container {
-    #chapter-container-right {
-        display: none;
-        left: -100%;
-    }
-
-    #chapter-container-left {
-        display: block;
-        left: -100%;
-    }
-}
-
-.path-mod-interactivevideo .show-drawer-right #interactivevideo-container.chapter-open {
-    #chapter-container-left {
-        display: block;
-        left: 0;
-    }
-}
-
-.path-mod-interactivevideo .show-drawer-left #interactivevideo-container {
-    #chapter-container-right {
-        display: none;
-        left: -100%;
-    }
-
-    #chapter-container-left {
-        display: block;
-        left: -100%;
-    }
-}
-
-.path-mod-interactivevideo .show-drawer-left #interactivevideo-container.chapter-open {
-    #chapter-container-left {
-        display: block;
-        left: 0;
-    }
 }
 
 .path-mod-interactivevideo #closechapter {
@@ -1079,7 +1053,11 @@ html:has(.path-mod-interactivevideo) {
 }
 
 #page-mod-interactivevideo-view.mobiletheme #message .modal-content {
-    height: 100vh;
+    height: 100dvh;
+}
+
+#page-mod-interactivevideo-view {
+    overflow-x: hidden;
 }
 
 .path-mod-interactivevideo .preview-iframe {
@@ -1103,12 +1081,12 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo .modalhasiframe.editor-iframe .modal-body {
     height: unset;
-    max-height: calc(100vh - 7rem);
+    max-height: calc(100dvh - 7rem);
     overflow-y: hidden;
 
     iframe {
         max-width: 100% !important;
-        max-height: calc(100vh - 7rem);
+        max-height: calc(100dvh - 7rem);
     }
 }
 
@@ -1216,13 +1194,13 @@ html:has(.path-mod-interactivevideo) {
         max-width: 100%;
         width: 100%;
         justify-content: start;
-        max-height: 100vh;
-        height: 100vh;
+        max-height: 100dvh;
+        height: 100dvh;
         margin: 0;
     }
 
     .modal-body {
-        height: 100vh;
+        height: 100dvh;
     }
 }
 
@@ -1230,8 +1208,8 @@ html:has(.path-mod-interactivevideo) {
     max-width: 100% !important;
     width: 100% !important;
     justify-content: start;
-    max-height: 100vh;
-    height: 100vh;
+    max-height: 100dvh;
+    height: 100dvh;
     margin: 0;
 }
 
@@ -1241,7 +1219,7 @@ html:has(.path-mod-interactivevideo) {
     }
 
     .modal-body {
-        height: 100vh;
+        height: 100dvh;
         padding: 1rem;
         scrollbar-width: thin;
     }
@@ -1292,7 +1270,7 @@ html:has(.path-mod-interactivevideo) {
     display: none;
 }
 
-.path-mod-interactivevideo #interactivevideo-container {
+.path-mod-interactivevideo:not(.iframe.mobiletheme) #interactivevideo-container {
     top: 70px;
 }
 
@@ -1341,6 +1319,10 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo:not(.iframe) .alternative {
     padding-bottom: calc(55px + 1rem) !important;
+}
+
+.path-mod-interactivevideo:not(.iframe) .alternative:has(.no-videonav) {
+    padding-bottom: 1rem !important;
 }
 
 .path-mod-interactivevideo .modal-header.ui-draggable-handle {
@@ -1481,7 +1463,7 @@ html:has(.path-mod-interactivevideo) {
     left: 60%;
 
     i {
-        top: 30vh;
+        top: 30dvh;
     }
 }
 
@@ -1676,7 +1658,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 #page-mod-interactivevideo-interactions #top-region {
-    height: calc(100vh - 195px);
+    height: calc(100dvh - 195px);
     overflow: auto;
     margin-top: 70px;
 
@@ -1723,4 +1705,14 @@ html:has(.path-mod-interactivevideo) {
 
 #page-mod-interactivevideo-interactions #minute-markers {
     height: 15px;
+}
+
+#page-mod-interactivevideo-report .completiontablewrapper {
+    max-height: calc(100dvh - 200px);
+}
+
+#page-mod-interactivevideo-view #video-info .h1 {
+    border-left: 5px solid var(--ivdanger);
+    padding-left: 0.3em;
+    margin-top: 0.3em;
 }

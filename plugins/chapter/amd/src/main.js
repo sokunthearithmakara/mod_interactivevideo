@@ -133,6 +133,15 @@ export default class Chapter extends Base {
         });
     }
 
+    /**
+     * Renders the edit item for the annotations list.
+     *
+     * @param {Array} annotations - The list of annotations.
+     * @param {jQuery} listItem - The jQuery object representing the list item.
+     * @param {Object} item - The item to be rendered.
+     * @param {number} item.timestamp - The timestamp of the item.
+     * @returns {jQuery} The modified list item.
+     */
     renderEditItem(annotations, listItem, item) {
         listItem = super.renderEditItem(annotations, listItem, item);
         listItem.find('.type-name').addClass('justify-content-center');

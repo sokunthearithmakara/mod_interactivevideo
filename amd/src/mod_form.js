@@ -52,26 +52,11 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 var hours = Math.floor(s / 3600);
                 var minutes = Math.floor((s - (hours * 3600)) / 60);
                 var seconds = s - (hours * 3600) - (minutes * 60);
-                seconds = Math.round(seconds * 100) / 100;
-
+                seconds = seconds.toFixed(2);
                 var result = (hours < 10 ? "0" + hours : hours);
                 result += ":" + (minutes < 10 ? "0" + minutes : minutes);
                 result += ":" + (seconds < 10 ? "0" + seconds : seconds);
                 return result;
-            };
-
-            /**
-             * Validate timestamp format.
-             * @param {String} string timestamp string
-             * @returns {Boolean}
-             */
-            const validateTimestamp = (string) => {
-                // Make sure the timestamp format is hh:mm:ss.
-                var regex = /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])$/;
-                if (!regex.test(string)) {
-                    return false;
-                }
-                return true;
             };
 
             /**
@@ -80,11 +65,14 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
             const whenPlayerReady = async function() {
                 videowrapper.show();
                 // Recalculate the ratio of the video.
-                const ratio = await player.ratio();
+                let ratio = player.aspectratio;
+                if (ratio < 1) {
+                    ratio = 1;
+                }
                 $("#video-wrapper").css('padding-bottom', (1 / ratio) * 100 + '%');
 
                 const duration = await player.getDuration();
-                totaltime = Math.ceil(duration);
+                totaltime = Number(duration.toFixed(2));
                 totaltimeinput.val(totaltime);
                 if (Number(endinput.val()) > 0 && Number(endinput.val()) > totaltime) {
                     endinput.val(totaltime);
@@ -93,10 +81,10 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
                 if (Number(startinput.val()) > 0 && Number(startinput.val()) > totaltime) {
                     startinput.val(0);
-                    startassistinput.val('00:00:00');
+                    startassistinput.val('00:00:00.00');
                 }
 
-                if (endassistinput.val() == '00:00:00' || endassistinput.val() == '') {
+                if (endassistinput.val() == '00:00:00.00' || endassistinput.val() == '') {
                     endassistinput.val(convertSecondsToHMS(totaltime));
                     endinput.val(totaltime);
                 }
@@ -234,15 +222,8 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     {key: 'starttimelessthanendtime', component: 'mod_interactivevideo'},
                     {key: 'invalidtimestampformat', component: 'mod_interactivevideo'},
                 ]);
-                if (!validateTimestamp(startassistinput.val())) {
-                    startassistinput.addClass('is-invalid');
-                    startassistinput.after('<div class="form-control-feedback invalid-feedback d-inline">'
-                        + strings[2] + '</div>');
-                    startassistinput.val('00:00:00');
-                    return;
-                }
                 var parts = startassistinput.val().split(':');
-                var time = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+                var time = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
                 startinput.val(time);
                 if (Number(startinput.val()) > totaltime) {
                     startassistinput.addClass('is-invalid');
@@ -273,15 +254,8 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     {key: 'endtimegreaterstarttime', component: 'mod_interactivevideo'},
                     {key: 'invalidtimestampformat', component: 'mod_interactivevideo'},
                 ]);
-                if (!validateTimestamp(endassistinput.val())) {
-                    endassistinput.addClass('is-invalid');
-                    endassistinput.after('<div class="form-control-feedback invalid-feedback d-inline">'
-                        + strings[2] + '</div>');
-                    endassistinput.val('00:00:00');
-                    return;
-                }
                 var parts = endassistinput.val().split(':');
-                var time = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+                var time = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
                 endinput.val(time);
                 if (Number(endinput.val()) > totaltime) {
                     endassistinput.addClass('is-invalid');

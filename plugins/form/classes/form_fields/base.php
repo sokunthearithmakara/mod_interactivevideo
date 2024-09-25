@@ -115,7 +115,7 @@ class base extends \core_form\dynamic_form {
                 'editor',
                 'helptext',
                 get_string('helptext', 'ivplugin_form'),
-                ['rows' => 7],
+                ['rows' => 10],
                 $this->editor_options()
             );
             $mform->setType('helptext', PARAM_RAW);

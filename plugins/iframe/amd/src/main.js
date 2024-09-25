@@ -168,27 +168,6 @@ export default class Iframe extends Base {
                 }, 1000);
             }
         }, 1000);
-
-    }
-
-    /**
-     * Override the postContentRenderEditor method
-     * @param {Object} modal The modal object
-     * @return {void}
-     */
-    postContentRenderEditor(modal) {
-        var modalbody = modal.getRoot();
-        modalbody.addClass('modalhasiframe editor-iframe');
-        var interval = setInterval(() => {
-            if ($('.modalhasiframe iframe').length > 0) {
-                clearInterval(interval);
-                // Remove the loading background because some iframe has transparent content
-                setTimeout(() => {
-                    $('.modalhasiframe .modal-body iframe').css('background', 'none');
-                }, 100);
-            }
-        }, 1000);
-
     }
 
     /**

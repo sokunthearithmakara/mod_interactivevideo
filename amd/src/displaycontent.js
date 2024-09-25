@@ -150,7 +150,6 @@ const defaultDisplayContent = async function(annotation, player) {
 
     // Handle annotation close event:: when user click on the close button of the annotation
     $(document).off('click', `#close-${annotation.id}`).on('click', `#close-${annotation.id}`, async function(e) {
-        window.console.log('annotation close event');
         e.preventDefault();
         $(this).closest("#annotation-modal").modal('hide');
         const targetMessage = $(this).closest("#message");

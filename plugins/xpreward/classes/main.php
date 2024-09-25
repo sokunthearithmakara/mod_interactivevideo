@@ -52,9 +52,9 @@ class main extends \ivplugin_richtext\main {
         global $OUTPUT;
         $star = $arg["xp"];
         $icon = $OUTPUT->image_url('star', 'ivplugin_xpreward');
-        return '<div id="xpreward" class="text-center shadow bg-white rounded mx-auto overflow-hidden position-absolute h-50
-         d-flex flex-column justify-content-between" style="width: min-content;max-height:200px;"><img src="' . $icon .
-            '" alt="star" class="p-2" style="max-height: calc(100% - 35px);width: fit-content;margin: auto;">
+        return '<div id="xpreward" class="text-center shadow bg-white rounded mx-auto overflow-hidden position-absolute
+         d-flex flex-column justify-content-between" style="width: min-content;max-height:200px; height: 90%; max-width: 300px;"><img src="' . $icon .
+            '" alt="star" class="p-2" style="max-height: calc(100% - 35px);margin: auto;">
           <button id="claimxp" class="btn text-nowrap btn-primary btn-block rounded-0" style="height: 35px;">'
             . get_string('claimxp', 'ivplugin_xpreward', $star) . '</button></div>';
     }

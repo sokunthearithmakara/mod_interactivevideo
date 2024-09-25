@@ -21,20 +21,20 @@ Example context (json):
 <div id="interactivevideo-container"
      class="container-fluid {{#darkmode}}p-sm-3{{/darkmode}} {{^darkmode}}p-sm-3{{/darkmode}} alternative position-absolute">
     <div class="row justify-content-center mx-0">
-        <div class="col-lg-12 col-xl-8 px-0">
-            <div id="wrapper" class="position-relative">
+        <div class="col-12 px-0">
+            <div id="wrapper" class="position-relative mx-auto" style="width: calc((-125px - 2.5rem + 100dvh)* 1.78);">
                 <div id="video-wrapper"
-                     class="d-flex align-items-center justify-content-center bg-black">
+                     class="d-flex align-items-center justify-content-center {{^darkmode}}border{{/darkmode}}">
                     {{#displayoptions.hidemainvideocontrols}}
-                    <span class="rotatex-360 btn border-0 btn-sm btn-control btn-secondary rounded-circle position-absolute"
+                    <span class="rotatex-360 btn border-0 btn-sm btn-control btn-secondary rounded-circle position-absolute px-0"
                           id="fullscreen"
                           data-toggle="tooltip"
                           data-trigger="hover"
-                          title="{{#str}}togglefullscreen,mod_interactivevideo{{/str}}"><i class="fa fa-expand"></i></span>
+                          title="{{#str}}togglefullscreen,mod_interactivevideo{{/str}}"><i class="bi bi-fullscreen"></i></span>
                 {{/displayoptions.hidemainvideocontrols}}
                 {{^displayoptions.disablechapternavigation}}
                 <div id="chapter-container-left"
-                     class="d-none sticky-top position-absolute w-100 h-100">
+                     class="d-none sticky-top position-fixed w-100 h-100">
                     <div data-region="chapterwrapper"
                          class="d-flex w-100 position-absolute h-100 flex-column shadow">
                         <div class="w-100 p-3 d-flex flex-column">
@@ -61,7 +61,7 @@ Example context (json):
                      class="bg-secondary w-100 d-flex align-items-center justify-content-between p-3 overflow-hidden position-sticky">
                     <div class="d-flex flex-column justify-content-center">
                         <div class="metadata d-block d-md-none"></div>
-                        <h2 class="line-height-100 mb-0">{{title}}</h2>
+                        <h2 class="line-height-100 mb-0 title">{{title}}</h2>
                     </div>
                     <div id="spinner" class="spinner-grow text-white" role="status">
                         <span class="sr-only">Loading...</span>
@@ -106,7 +106,7 @@ Example context (json):
              class="bg-secondary w-100 d-flex align-items-center justify-content-between p-3 overflow-hidden position-sticky">
             <div class="d-flex flex-column justify-content-center">
                 <div class="metadata d-block d-md-none"></div>
-                <span class="h1 line-height-100 mb-0">{{title}}</span>
+                <span class="h1 line-height-100 mb-0 title">{{title}}</span>
             </div>
             <button class="btn btn-danger rounded-circle pulse bg-white position-sticky"
                     id="restart">
@@ -132,7 +132,7 @@ Example context (json):
 </div>
 </div>
 {{^displayoptions.hidemainvideocontrols}}
-<div class="w-100 mt-0 mt-md-2 bg-dark d-flex flex-column p-0 justify-content-center"
+<div class="mt-0 mt-md-2 bg-dark d-flex flex-column p-0 justify-content-center w-100"
      id="controller">
     <div id="taskinfo"
          class="flex-column align-items-center justify-content-end w-100 px-3 bg-transparent">
@@ -216,6 +216,11 @@ Example context (json):
               data-toggle="tooltip"
               data-trigger="focus"
               title="{{#str}}sharethismoment,mod_interactivevideo{{/str}}"><i class="bi bi-share"></i></span>
+        <span class="btn border-0 btn-sm btn-control text-white py-0 px-1 mx-1 rotate d-none d-xl-inline"
+              id="expand"
+              data-toggle="tooltip"
+              data-trigger="focus"
+              title="{{#str}}resize,mod_interactivevideo{{/str}}"><i class="bi bi-file"></i></span>
         <span class="btn border-0 btn-sm btn-control text-white py-0 px-1 mx-1"
               id="fullscreen"
               data-toggle="tooltip"
@@ -228,21 +233,7 @@ Example context (json):
 </div>
 {{! Content }}
 <div id="annotation-content"
-     class="w-100 position-relative overflow-hidden border-0"></div>
+     class="position-relative overflow-hidden border-0 mx-auto"></div>
 </div>
-{{^displayoptions.disablechapternavigation}}
-<div class="d-none col-lg-12 col-xl-4 overflow-hidden"
-     id="chapter-container-right">
-    <div data-region="chapterwrapper"
-         class="d-flex position-absolute h-100 flex-column {{^darkmode}}border{{/darkmode}} rounded-lg">
-        <div class="w-100 p-3 d-flex flex-column">
-            <div class="metadata"></div>
-            <span class="h4 mt-2 mb-0 text-truncate">{{title}}</span>
-        </div>
-        <ul data-region="chapterlists" class="list-group w-100 rounded-0">
-        </ul>
-    </div>
-</div>
-{{/displayoptions.disablechapternavigation}}
 </div>
 </div>

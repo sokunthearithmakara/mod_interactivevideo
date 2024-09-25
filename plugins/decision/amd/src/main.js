@@ -25,23 +25,40 @@ import Base from 'mod_interactivevideo/type/base';
 
 export default class Decision extends Base {
     /**
-     * Initialize the interaction type
-     * @returns {void}
+     * Initializes the decision plugin for interactive videos.
+     *
+     * This method sets up event listeners and handles the logic for decision points
+     * within the video. If the video is not in edit mode, it filters out decision
+     * annotations and prevents skipping certain decision points based on their
+     * properties.
+     *
+     * @method init
+     * @memberof DecisionPlugin
+     * @instance
+     *
+     * @example
+     * // Initialize the decision plugin
+     * decisionPlugin.init();
      */
     init() {
         if (!this.isEditMode()) {
-            $(document).on('timeupdate', (e) => {
-                const decisions = this.annotations.filter((d) => d.type == 'decision');
+            const decisions = this.annotations.filter((d) => d.type == 'decision');
+            const notSkip = decisions.filter((d) => d.char1 != 1);
+            if (notSkip.length == 0) {
+                return;
+            }
+            var self = this;
+            $(document).on('timeupdate', function(e) {
                 const cantSkip = decisions.filter((d) => d.char1 != 1 && !d.viewed);
                 cantSkip.sort((a, b) => a.timestamp - b.timestamp);
-
                 if (cantSkip.length == 0) {
                     return;
                 }
                 const t = Number(e.originalEvent.detail.time);
                 const firstCantSkip = cantSkip[0];
-                if (t >= Number(firstCantSkip.timestamp)) {
-                    this.player.seek(Number(firstCantSkip.timestamp));
+                if (t > Number(firstCantSkip.timestamp)) {
+                    self.player.seek(Number(firstCantSkip.timestamp));
+                    self.player.pause();
                 }
             });
         }
@@ -49,6 +66,13 @@ export default class Decision extends Base {
         // We want to hide the interactions on the navigation if decision elements do not allow skipping.
     }
 
+    /**
+     * Handles the loading of the edit form and initializes the destination list.
+     *
+     * @param {HTMLElement} form - The form element that is being edited.
+     * @param {Event} event - The event that triggered the form load.
+     * @returns {Object} An object containing the form and event.
+     */
     onEditFormLoaded(form, event) {
         let self = this;
         let body = super.onEditFormLoaded(form, event);
@@ -144,6 +168,7 @@ export default class Decision extends Base {
         });
         return {form, event};
     }
+
     /**
      * Run the interaction
      * @param {object} annotation The annotation object
@@ -185,7 +210,8 @@ export default class Decision extends Base {
         });
         $html += '</div>';
         let $message = $(`<div id="message" style="z-index:1005;display:none;" data-id="${annotation.id}">
-            <div class="modal-body p-0" id="content">${$html}</div></div>`);
+            <div class="modal-body p-0 border" id="content">${$html}</div></div>`);
+        $('#video-wrapper').find("#message").remove();
         $('#video-wrapper').append($message);
         $message.fadeIn(300, 'swing', function() {
             if (annotation.char1 == 1) {

@@ -23,30 +23,40 @@
 import $ from 'jquery';
 import Iframe from 'ivplugin_iframe/main';
 export default class PdfViewer extends Iframe {
+    /**
+     * Renders the container for the given annotation.
+     *
+     * @param {Object} annotation - The annotation object.
+     * @param {string} annotation.id - The ID of the annotation.
+     */
     renderContainer(annotation) {
         let $message = $(`#message[data-id='${annotation.id}']`);
         $message.addClass("hasiframe");
         super.renderContainer(annotation);
     }
-    postContentRenderEditor(modal) {
-        var modalbody = modal.getRoot();
-        modalbody.addClass('modalhasiframe');
-        var interval = setInterval(() => {
-            if ($('.modalhasiframe iframe').length > 0) {
-                // Remove the loading background because some iframe has transparent content
-                $('.modalhasiframe .modal-body iframe').on('load', function() {
-                    setTimeout(() => {
-                        $('.modalhasiframe .modal-body iframe').css('background', 'none');
-                    });
-                });
-                clearInterval(interval);
-            }
-        }, 1000);
-    }
+    /**
+     * Runs the interaction for the given annotation.
+     *
+     * @param {Object} annotation - The annotation object containing interaction details.
+     * @param {number} annotation.id - The unique identifier for the annotation.
+     * @param {boolean} annotation.completed - Indicates if the annotation has been completed.
+     * @param {number} annotation.hascompletion - Indicates if the annotation has completion tracking.
+     * @param {string} annotation.completiontracking - The type of completion tracking for the annotation.
+     * @param {string} annotation.displayoptions - The display options for the annotation.
+     *
+     * @returns {Promise<void>} - A promise that resolves when the interaction is complete.
+     */
     async runInteraction(annotation) {
         this.player.pause();
 
         let self = this;
+        /**
+         * Monitors a PDF viewer within an iframe and toggles completion status based on the number of pages viewed.
+         *
+         * @param {Object} annotation - The annotation object containing the ID and completion status.
+         * @param {string} annotation.id - The unique identifier for the annotation.
+         * @param {boolean} annotation.completed - The completion status of the annotation.
+         */
         const pdfCheck = (annotation) => {
             var iframeinterval = setInterval(() => {
                 var iframe = document.querySelector(`#message[data-id='${annotation.id}'] iframe`);

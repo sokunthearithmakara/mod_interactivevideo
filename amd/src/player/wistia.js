@@ -26,6 +26,14 @@ import {dispatchEvent} from 'core/event_dispatcher';
 let player;
 
 class Wistia {
+    /**
+     * Constructs a new Wistia player instance.
+     *
+     * @param {string} url - The URL of the Wistia video.
+     * @param {number} start - The start time of the video in seconds.
+     * @param {number} end - The end time of the video in seconds.
+     * @param {boolean} showControls - Flag indicating whether to show video controls.
+     */
     constructor(url, start, end, showControls) {
         this.type = 'wistia';
         this.start = start;
@@ -37,24 +45,25 @@ class Wistia {
         if (!showControls) {
             $('body').addClass('no-original-controls');
         }
-        var regex = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^\/]+)/g;
-        var match = regex.exec(url);
-        var videoId = match[1];
+        const regex = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^\/]+)/g;
+        const match = regex.exec(url);
+        const videoId = match[1];
         this.videoId = videoId;
         $("#player").html(`<div class="wistia_embed wistia_async_${videoId} wmode=transparent
-             controlsVisibleOnLoad=${showControls} playButton=${showControls} videoFoam=false
-              fullscreenButton=false volume=0" style="height:100%;width:100%"></div>`);
-        var self = this;
+             controlsVisibleOnLoad=${showControls} playButton=${showControls} videoFoam=false silentAutoPlay=allow playsinline=true
+              fullscreenButton=false time=${start} fitStrategy=contain" style="height:100%;width:100%"></div>`);
+        let self = this;
         $.get('https://fast.wistia.com/oembed.json?url=' + url)
             .then(function(data) {
                 self.posterImage = data.thumbnail_url;
             });
-        var ready = false;
-        var wistiaOptions = {
+        let ready = false;
+        const wistiaOptions = {
             id: videoId,
             onReady: function(video) {
                 player = video;
                 end = !end ? video.duration() : Math.min(end, video.duration());
+                self.aspectratio = self.ratio();
                 if (start > 0) {
                     video.play();
                     video.time(start);
@@ -65,12 +74,11 @@ class Wistia {
                             dispatchEvent('iv:playerReady');
                         }
                     });
-
                 } else {
                     ready = true;
                     dispatchEvent('iv:playerReady');
                 }
-                video.volume(1);
+                video.unmute();
 
                 video.on("pause", () => {
                     if (!ready) {
@@ -140,66 +148,155 @@ class Wistia {
             window._wq.push(wistiaOptions);
         }
     }
+    /**
+     * Plays the Wistia video player.
+     *
+     * This method triggers the play action on the Wistia player instance.
+     */
     play() {
         player.play();
     }
+    /**
+     * Pauses the Wistia video player.
+     *
+     * This method calls the `pause` function on the Wistia player instance,
+     * effectively pausing the video playback.
+     */
     pause() {
         player.pause();
     }
+    /**
+     * Stops the video playback and sets the playback time to the specified start time.
+     *
+     * @param {number} starttime - The time (in seconds) to set the video playback to after pausing.
+     */
     stop(starttime) {
         player.pause();
         player.time(starttime);
     }
+    /**
+     * Seeks the video player to a specified time.
+     *
+     * @param {number} time - The time in seconds to seek to.
+     * @returns {number} The time that was sought to.
+     */
     seek(time) {
         player.time(time);
         dispatchEvent('iv:playerSeek', {time: time});
         return time;
     }
+    /**
+     * Retrieves the current playback time of the video player.
+     *
+     * @returns {number} The current time of the video in seconds.
+     */
     getCurrentTime() {
         return player.time();
     }
+    /**
+     * Retrieves the duration of the video.
+     *
+     * @returns {number} The duration of the video in seconds.
+     */
     getDuration() {
         return player.duration();
     }
+    /**
+     * Checks if the video player is currently paused.
+     *
+     * @returns {boolean} True if the player is paused, false otherwise.
+     */
     isPaused() {
         return player.state() === 'paused';
     }
+    /**
+     * Checks if the video player is currently playing.
+     *
+     * @returns {boolean} True if the player is in the 'playing' state, otherwise false.
+     */
     isPlaying() {
         return player.state() === 'playing';
     }
+    /**
+     * Checks if the video player has reached the end of the video.
+     *
+     * @returns {boolean} True if the video has ended, otherwise false.
+     */
     isEnded() {
         return player.state() === 'ended';
     }
+    /**
+     * Calculates the aspect ratio for the video player.
+     * If the player's aspect ratio is greater than 16:9, it returns the player's aspect ratio.
+     * Otherwise, it returns the default aspect ratio of 16:9.
+     *
+     * @returns {number} The aspect ratio of the video player.
+     */
     ratio() {
-        if (player.aspect() > 16 / 9) {
-            return player.aspect();
-        } else {
-            return 16 / 9;
-        }
+        return player.aspect();
     }
+
+    /**
+     * Destroys the Wistia player instance by removing it from the DOM.
+     */
     destroy() {
         player.remove();
     }
+    /**
+     * Retrieves the current state of the player.
+     *
+     * @returns {Object} The current state of the player.
+     */
     getState() {
         return player.state();
     }
+    /**
+     * Sets the playback rate of the video player.
+     *
+     * @param {number} rate - The desired playback rate.
+     */
     setRate(rate) {
         player.playbackRate(rate);
     }
+    /**
+     * Mutes the Wistia player.
+     */
     mute() {
         player.mute();
     }
+    /**
+     * Unmutes the video player.
+     */
     unMute() {
         player.unmute();
     }
+    /**
+     * Returns the original Wistia player instance.
+     *
+     * @returns {Object} The Wistia player instance.
+     */
     originalPlayer() {
         return player;
     }
+    /**
+     * Sets the video quality for the player and dispatches a quality change event.
+     *
+     * @param {string} quality - The desired video quality to set.
+     * @returns {string} The quality that was set.
+     */
     setQuality(quality) {
         player.videoQuality(quality);
         dispatchEvent('iv:playerQualityChange', {quality: quality});
         return quality;
     }
+    /**
+     * Retrieves the available video qualities and the current quality setting.
+     *
+     * @returns {Object} An object containing:
+     * - `qualities` {Array<string>}: List of available video quality options.
+     * - `qualitiesLabel` {Array<string>}: List of labels corresponding to the video quality options.
+     * - `currentQuality` {string|number}: The current video quality setting.
+     */
     getQualities() {
         return {
             qualities: ['auto', '360', '540', '720', '1080', '2160'],

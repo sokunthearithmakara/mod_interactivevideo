@@ -57,6 +57,7 @@ class submitform_form extends \core_form\dynamic_form {
         $data = new \stdClass();
         $data->id = $this->optional_param('id', 0, PARAM_INT);
         $data->contextid = $this->optional_param('contextid', null, PARAM_INT);
+        $data->completionid = $this->optional_param('completionid', null, PARAM_INT);
         $data->annotationid = $this->optional_param('annotationid', null, PARAM_INT);
         $data->type = $this->optional_param('type', null, PARAM_TEXT);
         $data->courseid = $this->optional_param('courseid', null, PARAM_INT);
@@ -194,6 +195,9 @@ class submitform_form extends \core_form\dynamic_form {
         $mform->setAttributes($attributes);
         $mform->addElement('hidden', 'contextid', null);
         $mform->setType('contextid', PARAM_INT);
+
+        $mform->addElement('hidden', 'completionid', null);
+        $mform->setType('completionid', PARAM_INT);
 
         $mform->addElement('hidden', 'submissionid', null);
         $mform->setType('submissionid', PARAM_INT);
@@ -709,9 +713,17 @@ class submitform_form extends \core_form\dynamic_form {
                         'data-type' => 'week',
                         'min' => $field->minlength,
                         'max' => $field->maxlength,
+                        'placeholder' => 'YYYY-W##',
                     ]);
                     $mform->setType($field->fieldid, PARAM_TEXT);
                     $mform->setDefault($field->fieldid, $field->default);
+                    $mform->addRule(
+                        $field->fieldid,
+                        get_string('invalidformat', 'ivplugin_form'),
+                        'regex',
+                        '/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/',
+                        'client'
+                    );
                     $mform->disabledIf($field->fieldid, 'reviewing', 'eq', 1);
                     break;
                 case 'month':
@@ -719,9 +731,17 @@ class submitform_form extends \core_form\dynamic_form {
                         'size' => 100,
                         'id' => $field->fieldid,
                         'data-type' => 'month',
+                        'placeholder' => 'YYYY-MM',
                     ]);
                     $mform->setType($field->fieldid, PARAM_TEXT);
                     $mform->setDefault($field->fieldid, $field->default);
+                    $mform->addRule(
+                        $field->fieldid,
+                        get_string('invalidformat', 'ivplugin_form'),
+                        'regex',
+                        '/^([0-9]{4})-(0[1-9]|1[1-2])$/',
+                        'client'
+                    );
                     $mform->disabledIf($field->fieldid, 'reviewing', 'eq', 1);
                     break;
                 case 'date':
@@ -815,6 +835,7 @@ class submitform_form extends \core_form\dynamic_form {
         }
 
         $data['contextid'] = (int)$data['contextid'];
+        $data['completionid'] = (int)$data['completionid'];
         $newdraftitemid = file_get_unused_draft_itemid();
         $filemanagerfields = array_filter($formjson, function ($field) {
             return $field->type == 'filemanager';

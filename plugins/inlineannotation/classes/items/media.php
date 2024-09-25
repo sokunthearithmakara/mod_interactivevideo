@@ -76,6 +76,7 @@ class media extends \core_form\dynamic_form {
         $data->style = $this->optional_param('style', null, PARAM_TEXT);
         $data->rounded = $this->optional_param('rounded', 0, PARAM_INT);
         $data->autoplay = $this->optional_param('autoplay', 0, PARAM_INT);
+        $data->showcontrol = $this->optional_param('showcontrol', 0, PARAM_INT);
         $data->shadow = $this->optional_param('shadow', 0, PARAM_INT);
         $data->label = $this->optional_param('label', null, PARAM_TEXT);
         $data->gotourl = $this->optional_param('gotourl', null, PARAM_URL);
@@ -229,6 +230,16 @@ class media extends \core_form\dynamic_form {
         );
         $mform->hideIf('autoplay', 'type', 'eq', 'image');
         $mform->hideIf('autoplay', 'type', 'eq', 'file');
+
+        $elementarray[] = $mform->createElement(
+            'advcheckbox',
+            'showcontrol',
+            '',
+            get_string('showcontrol', 'ivplugin_inlineannotation'),
+            ['group' => 1],
+            [0, 1]
+        );
+        $mform->hideIf('showcontrol', 'type', 'neq', 'video');
 
         $mform->addGroup($elementarray, '', '');
 

@@ -70,7 +70,8 @@ class interactivevideo_util {
     public static function copy_item($id, $contextid) {
         global $DB, $CFG;
         $record = $DB->get_record('interactivevideo_items', ['id' => $id]);
-        $record->title = $record->title . ' (copy)';
+        $record->timestamp = $record->timestamp + 0.01;
+        $record->title = $record->title . ' (' . get_string('copynoun', 'mod_interactivevideo') . ')';
         $record->id = $DB->insert_record('interactivevideo_items', $record);
         // Handle related files "content" field.
         require_once($CFG->libdir . '/filelib.php');
@@ -156,11 +157,15 @@ class interactivevideo_util {
         $interactivevideo,
         $userid,
         $completeditems,
+        $completiondetails,
+        $markdone,
+        $type,
+        $details = '',
         $completed = 0,
         $percentage = 0,
         $grade = 0,
         $gradeiteminstance = 0,
-        $xp = 0
+        $xp = 0,
     ) {
         global $DB, $CFG, $SESSION;
         // If guess user, save progress in the session; otherwise in the database.
@@ -171,15 +176,48 @@ class interactivevideo_util {
                 'completed' => $completed,
                 'percentage' => $percentage,
                 'xp' => $xp,
+                'completiondetails' => $completiondetails,
             ];
             return $SESSION->ivprogress[$interactivevideo];
         }
         $record = $DB->get_record('interactivevideo_completion', ['cmid' => $interactivevideo, 'userid' => $userid]);
         $record->completeditems = $completeditems;
-        $record->timecompleted = $completed > 0 ? time() : 0;
+        $record->timecompleted = $completed;
         $record->completionpercentage = $percentage;
         $record->xp = $xp;
+        $completion = json_decode($completiondetails);
+        $cdetails = json_decode($record->completiondetails);
+        if ($markdone) {
+            $cdetails[] = $completiondetails;
+        } else {
+            // Remove the detail item with the same id.
+            $cdetails = array_filter($cdetails, function ($item) use ($completion) {
+                $item = json_decode($item);
+                return $item->id != $completion->id;
+            });
+        }
+        $record->completiondetails = json_encode($cdetails);
         $DB->update_record('interactivevideo_completion', $record);
+
+        // Add/delete details to interactivevideo_log table.
+        if (!$markdone) {
+            $DB->delete_records_select('interactivevideo_log', "annotationid = :annotationid AND userid = :userid", [
+                'annotationid' => $completion->id,
+                'userid' => $userid,
+            ]);
+        } else {
+            if ($completion->hasDetails) {
+                $log = new stdClass();
+                $log->userid = $userid;
+                $log->cmid = $interactivevideo;
+                $log->char1 = $type;
+                $log->annotationid = $completion->id;
+                $log->timecreated = time();
+                $log->text1 = $details;
+                $log->timemodified = time();
+                $DB->insert_record('interactivevideo_log', $log);
+            }
+        }
 
         // Update completion state.
         $cm = get_coursemodule_from_instance('interactivevideo', $interactivevideo);
@@ -226,7 +264,7 @@ class interactivevideo_util {
         if ($group == 0) {
             // Get all enrolled users (student only).
             $sql = "SELECT " . $fields . ", ac.timecompleted, ac.timecreated,
-             ac.completionpercentage, ac.completeditems, ac.xp
+             ac.completionpercentage, ac.completeditems, ac.xp, ac.completiondetails, ac.id as completionid
                     FROM {user} u
                     LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
                     WHERE u.id IN (SELECT userid FROM {role_assignments} WHERE contextid = :contextid AND roleid = 5)
@@ -235,7 +273,7 @@ class interactivevideo_util {
         } else {
             // Get users in group (student only).
             $sql = "SELECT " . $fields . ", ac.timecompleted, ac.timecreated,
-             ac.completionpercentage, ac.completeditems, ac.xp
+             ac.completionpercentage, ac.completeditems, ac.xp, ac.completiondetails, ac.id as completionid
                     FROM {user} u
                     LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
                     WHERE u.id IN (SELECT userid FROM {groups_members} WHERE groupid = :groupid)

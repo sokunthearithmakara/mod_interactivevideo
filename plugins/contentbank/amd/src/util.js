@@ -22,6 +22,14 @@
  */
 import $ from 'jquery';
 import Ajax from 'core/ajax';
+/**
+ * Fetches content from the content bank and updates the target element if provided.
+ *
+ * @param {number} id - The ID of the content item to fetch.
+ * @param {number} contextid - The context ID where the content item resides.
+ * @param {string} [target] - The optional target element selector to update with the fetched content.
+ * @returns {Promise} A promise that resolves with the response or updates the target element with the fetched content.
+ */
 const getcontent = (id, contextid, target) => {
     Ajax.call([{
         args: {
@@ -41,6 +49,22 @@ const getcontent = (id, contextid, target) => {
     });
 };
 
+/**
+ * Initializes event listeners for content bank interactions.
+ *
+ * @param {number} contextid - The context ID for the content bank.
+ *
+ * This function sets up click event handlers for elements within the content bank container.
+ * It handles the selection of content items, updates the preview area, and manages xAPI event detection.
+ *
+ * Event Listeners:
+ * - Click on content item details: Selects the item and updates the hidden input with the content ID.
+ * - Click on content item view: Selects the item, updates the preview area, and sets up xAPI event detection.
+ *
+ * xAPI Event Detection:
+ * - Monitors for xAPI events (completed, answered) emitted by the content.
+ * - Displays a notification if such events are detected.
+ */
 const init = (contextid) => {
     $(document).on('click', '.contentbank-container .contentbank-item .contentbank-item-details', function(e) {
         e.preventDefault();
@@ -101,6 +125,15 @@ const init = (contextid) => {
     });
 };
 
+/**
+ * Refreshes the content bank by fetching and displaying content items.
+ *
+ * @param {number} id - The ID of the content to be highlighted.
+ * @param {number} coursecontextid - The context ID of the course.
+ * @param {boolean} [edit=true] - Whether to show edit options for the content items.
+ * @param {Function} [callback] - Optional callback function to be executed after refreshing the content bank.
+ * @returns {Promise<void>} - A promise that resolves when the content bank is refreshed.
+ */
 const refreshContentBank = async (id, coursecontextid, edit = true, callback) => {
     $('#contentbank-preview').empty();
     let contentbankitems = await Ajax.call([{

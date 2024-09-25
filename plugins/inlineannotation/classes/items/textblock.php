@@ -169,7 +169,7 @@ class textblock extends \core_form\dynamic_form {
             return count($font) === 2;
         });
         // Add default font.
-        array_unshift($availablefonts, [get_string('default', 'mod_interactivevideo'), '']);
+        array_unshift($availablefonts, [get_string('defaultfont', 'ivplugin_inlineannotation'), '']);
         $availablefonts = array_column($availablefonts, 0, 1);
         $mform->addElement('select', 'textfont', get_string('textfont', 'ivplugin_inlineannotation'), $availablefonts);
         $mform->setType('textfont', PARAM_TEXT);

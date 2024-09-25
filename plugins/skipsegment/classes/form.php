@@ -30,7 +30,9 @@ class form extends \mod_interactivevideo\form\base_form {
      */
     public function set_data_for_dynamic_submission(): void {
         $data = $this->set_data_default();
-        $data->titleassist = gmdate("H:i:s", (int)$data->title);
+        $decimal = $data->title - (int)$data->title;
+        $data->titleassist = gmdate("H:i:s", (int)$data->title) .
+            ($decimal ? '.' . str_pad((string)round($decimal * 100), 2, '0', STR_PAD_LEFT) : '');
         $this->set_data($data);
     }
 
@@ -46,24 +48,19 @@ class form extends \mod_interactivevideo\form\base_form {
 
         $mform->addElement('hidden', 'title');
         $mform->setType('title', PARAM_FLOAT);
-        $mform->addRule('title', get_string('required'), 'required', null, 'client');
-        $starttime = $this->optional_param('timestamp', 0, PARAM_INT);
-        $mform->setDefault('title', $this->optional_param('title', $starttime, PARAM_INT));
         $mform->addElement(
             'text',
             'titleassist',
             '<i class="bi bi-stopwatch mr-2"></i>' . get_string('endtime', 'ivplugin_skipsegment'),
-            ['placeholder' => '00:00:00']
+            ['placeholder' => '00:00:00.00']
         );
         $mform->setType('titleassist', PARAM_TEXT);
-        $starttimeformatted = gmdate("H:i:s", $starttime);
-        $mform->setDefault('titleassist', $this->optional_param('timestampassist', $starttimeformatted, PARAM_TEXT));
         $mform->addRule('titleassist', get_string('required'), 'required', null, 'client');
         $mform->addRule(
             'titleassist',
-            get_string('invalidtimestamp', 'ivplugin_skipsegment'),
+            get_string('invalidtimestamp', 'mod_interactivevideo'),
             'regex',
-            '/^([0-5][0-9]):([0-5][0-9]):([0-5][0-9])$/',
+            '/^([0-9]{2}):([0-5][0-9]):([0-5][0-9])(\.\d{2})?$/',
             'client'
         );
         $this->advanced_form_fields(false, true, true, true);

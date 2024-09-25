@@ -34,5 +34,24 @@
 function xmldb_interactivevideo_upgrade($oldversion) {
     global $DB;
     $dbman = $DB->get_manager();
+    if ($oldversion < 2024071416) {
+
+        // Define field completionid to be added to interactivevideo_log.
+        $table = new xmldb_table('interactivevideo_log');
+        $field = new xmldb_field('completionid', XMLDB_TYPE_INTEGER, '20', null, null, null, null, 'annotationid');
+
+        // Conditionally launch add field completionid.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $key = new xmldb_key('completionid', XMLDB_KEY_FOREIGN, ['completionid'], 'interactivevideo_completion', ['id']);
+
+        // Launch add key completionid.
+        $dbman->add_key($table, $key);
+
+        // Interactivevideo savepoint reached.
+        upgrade_mod_savepoint(true, 2024071416, 'interactivevideo');
+    }
     return true;
 }

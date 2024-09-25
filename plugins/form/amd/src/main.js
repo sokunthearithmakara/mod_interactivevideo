@@ -177,6 +177,18 @@ export default class Form extends Base {
         $('form .fitem textarea:visible').trigger('input');
         $('form .fitem [data-type="datetime"]').attr('type', 'datetime-local');
         $('form .fitem [data-type="range"]').attr('type', 'range').removeClass('form-control').addClass('form-control-range');
+        $(document).off('click', 'form .fitem .filemanager.fm-noitems')
+            .on('click', 'form .fitem .filemanager.fm-noitems', function(e) {
+                e.stopImmediatePropagation();
+                if ($('#wrapper').hasClass('fullscreen')) {
+                    setTimeout(() => {
+                        const uploadModal = $('.moodle-dialogue-base[aria-hidden="false"]');
+                        // Move modal from body to current form.
+                        uploadModal.appendTo('#wrapper');
+                        $('body > .moodle-dialogue-base[aria-hidden="false"]').remove();
+                    }, 300);
+                }
+            });
     }
 
     /**
@@ -521,6 +533,7 @@ export default class Form extends Base {
             type: self.prop.name,
             courseid: self.course,
             annotationid: self.interaction,
+            completionid: self.completionid,
             editing: self.isEditMode() ? 1 : 0,
             formjson: JSON.stringify(formjson),
         };
@@ -550,7 +563,18 @@ export default class Form extends Base {
             previewform.addEventListener(previewform.events.FORM_SUBMITTED, e => {
                 e.preventDefault();
                 e.stopImmediatePropagation(); // Important; otherwise, event will repeat multiple times.
-                self.toggleCompletion(annotation.id, 'mark-done', 'automatic');
+                let details = {};
+                const completeTime = new Date();
+                details.xp = annotation.xp;
+                details.duration = completeTime.getTime() - $('#video-wrapper').data('timestamp');
+                details.timecompleted = completeTime.getTime();
+                const completiontime = completeTime.toLocaleString();
+                let duration = self.formatTime(details.duration / 1000);
+                details.reportView = `<span data-toggle="tooltip" data-html="true" class="cursor-pointer"
+                 data-title='<span class="d-flex flex-column align-items-start"><span><i class="bi bi-calendar mr-2"></i>
+                 ${completiontime}</span><span><i class="bi bi-stopwatch mr-2"></i>${duration}</span></span>'>
+                 <i class="bi bi-list-check text-success"></i><br><span>${annotation.xp}</span></span>`;
+                self.toggleCompletion(annotation.id, 'mark-done', 'automatic', details);
                 formdata.reviewing = 1;
                 if (annotation.char2 == 1 && (annotation.text1 == 0 || annotation.text1 > new Date().getTime() / 1000)) {
                     $('#editsubmission').show();
@@ -607,6 +631,7 @@ export default class Form extends Base {
                                 previewForm(formjson);
                             }
                         }
+
                         return;
                     })
                     .catch(() => {
@@ -1227,14 +1252,11 @@ export default class Form extends Base {
      */
     renderForm(annotation, f, response, node) {
         let self = this;
-        const getFormJson = () => {
-            self.render(annotation, 'json').then((content) => {
-                return new Promise((resolve) => {
-                    let formfields = content.fields;
-                    resolve(formfields);
-                });
-            }).catch(() => {
-                // Do nothing.
+        const getFormJson = async () => {
+            const content = await self.render(annotation, 'json');
+            return new Promise((resolve) => {
+                let formfields = content.fields;
+                resolve(formfields);
             });
         };
 
@@ -1277,6 +1299,7 @@ export default class Form extends Base {
 
         if (!f) {
             getFormJson().then((fields) => {
+                window.console.log(fields);
                 return render(fields);
             }).catch(() => {
                 // Do nothing.
@@ -1708,6 +1731,51 @@ export default class Form extends Base {
             return;
         }).catch(() => {
             // Do nothing.
+        });
+    }
+    /**
+     * Data to show when the report viewer clicks on the completion checkmark
+     * @param {Object} annotation the current annotation
+     * @param {Number} userid the user id
+     * @returns {Promise}
+     */
+    async getCompletionData(annotation, userid) {
+        let self = this;
+        let response = await Ajax.call([{
+            args: {
+                userid: userid,
+                cmid: annotation.annotationid,
+                annotationid: annotation.id,
+                contextid: M.cfg.contextid,
+            },
+            contextid: M.cfg.contextid,
+            methodname: 'ivplugin_form_get_log',
+        }])[0];
+        window.console.log(response);
+        response = JSON.parse(response.record);
+        window.console.log(response);
+        let modal = `<div class="modal fade ${$('body').hasClass('iframe') ? 'modal-fullscreen' : ''}"
+        id="annotation-modal" role="dialog" aria-labelledby="annotation-modal"
+    aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div id="message" data-id="${annotation.id}" data-placement="popup"
+     class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+                               <div class="modal-content rounded-lg">
+                                   <div class="modal-header d-flex align-items-center shadow-sm pr-0" id="title">
+                                       <button class="btn mx-2 p-0 ml-auto" data-dismiss="modal" aria-label="Close">
+                                        <i class="bi bi-x-lg fa-fw fs-25px"></i>
+                                        </button>
+                                   </div>
+                                   <div class="modal-body" id="form-preview"></div>
+                                   </div>
+                               </div>
+                               </div>`;
+        $('body').append(modal);
+        $('#annotation-modal').modal('show');
+        $('#annotation-modal').on('shown.bs.modal', function() {
+            self.renderForm(annotation, null, response, '.modal-content');
+        });
+        $('#annotation-modal').on('hidden.bs.modal', function() {
+            $('#annotation-modal').remove();
         });
     }
 }

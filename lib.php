@@ -66,6 +66,7 @@ function interactivevideo_supports($feature) {
 function interactivevideo_display_options($moduleinstance) {
     $options = [];
     $options['darkmode'] = $moduleinstance->darkmode;
+    $options['usefixedratio'] = $moduleinstance->usefixedratio;
     $options['disablechapternavigation'] = $moduleinstance->disablechapternavigation;
     $options['preventskipping'] = $moduleinstance->preventskipping;
     $options['useoriginalvideocontrols'] = $moduleinstance->useoriginalvideocontrols;
@@ -283,6 +284,9 @@ function interactivevideo_delete_instance($id) {
 
     // Delete all the completion records.
     $DB->delete_records('interactivevideo_completion', ['cmid' => $id]);
+
+    // Delete all the logs.
+    $DB->delete_records('interactivevideo_log', ['cmid' => $id]);
 
     return true;
 }

@@ -53,21 +53,24 @@ export default class Annotation extends Base {
             const updateAspectRatio = async (video, reset) => {
                 let elem = video ? $('#player') : $(`#annotation-canvas[data-id='${item.id}']`);
                 if ($("#wrapper").hasClass('fullscreen')) {
-                    let ratio = await this.player.ratio();
+                    let ratio = 16 / 9;
+                    if (!this.displayoptions.usefixedratio || this.displayoptions.usefixedratio == 0) {
+                        ratio = this.player.aspectratio;
+                    }
                     let videowrapperaspect = videoWrapper.width() / videoWrapper.height();
                     let gap = '- 55px';
                     if ($("#wrapper").hasClass('no-videonav')) {
                         gap = '';
                     }
                     if (videowrapperaspect > ratio) {
-                        elem.css('height', `calc(100vh ${gap})`);
-                        elem.css('width', `calc((100vh ${gap}) * ${ratio})`);
+                        elem.css('height', `calc(100dvh ${gap})`);
+                        elem.css('width', `calc((100dvh ${gap}) * ${ratio})`);
                         elem.css('top', '0');
-                        elem.css('left', `calc((100vw - (100vh ${gap}) * ${ratio}) / 2)`);
+                        elem.css('left', `calc((100dvw - (100dvh ${gap}) * ${ratio}) / 2)`);
                     } else if (videowrapperaspect < ratio) {
-                        elem.css('width', '100vw');
-                        elem.css('height', `${100 / ratio}vw`);
-                        elem.css('top', `calc((100vh ${gap} - 100vw / ${ratio}) / 2)`);
+                        elem.css('width', '100dvw');
+                        elem.css('height', `${100 / ratio}dvw`);
+                        elem.css('top', `calc((100dvh ${gap} - 100dvw / ${ratio}) / 2)`);
                         elem.css('left', '0');
                     }
                 } else {
@@ -242,10 +245,10 @@ export default class Annotation extends Base {
          * @param {Object} elem jQuery element
          */
         const updatePositionInfo = (elem) => {
-            let w = parseFloat(elem.outerWidth());
-            let hw = parseFloat(elem.outerHeight());
-            let t = parseFloat(elem.position().top) < 0 ? 0 : parseFloat(elem.position().top);
-            let l = parseFloat(elem.position().left) < 0 ? 0 : parseFloat(elem.position().left);
+            let w = elem.outerWidth();
+            let hw = elem.outerHeight();
+            let t = elem.position().top < 0 ? 0 : elem.position().top;
+            let l = elem.position().left < 0 ? 0 : elem.position().left;
             let z = elem.css('z-index');
             let s = elem.data('start');
             let e = elem.data('end');
@@ -566,6 +569,233 @@ export default class Annotation extends Base {
                 ${formattedTime}</div></div>`);
         };
 
+        const renderImage = (wrapper, item, prop, id, position) => {
+            var parts = prop.timestamp.split(':');
+            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            if (prop.gotourl != '') {
+                wrapper.append(`<a href="${prop.gotourl}" target="_blank"><img src="${prop.url}" id="${id}"
+                         class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
+                         ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/></a>`);
+            } else {
+                wrapper.append(`<img src="${prop.url}" id="${id}"
+                             ${timestamp > 0 ? ' data-timestamp="' + timestamp + '"' : ''}
+                              class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}
+                              ${timestamp > 0 ? 'cursor-pointer' : ''}"
+                               ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/>`);
+            }
+            if (!self.isEditMode()) {
+                if (prop.gotourl == '' && timestamp == 0) {
+                    wrapper.removeClass('resizable');
+                    wrapper.addClass('no-pointer');
+                } else {
+                    wrapper.addClass('clickable');
+                }
+            }
+            wrapper.css(position);
+            wrapper.css('height', 'auto');
+            $videoWrapper.append(wrapper);
+        };
+
+        const renderFile = (wrapper, item, prop, id, position) => {
+            var wrapperhtml = ``;
+            wrapperhtml = `<a id="${id}"
+                    class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
+                    annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatey-180" href="${prop.url}"
+                     target="_blank"><i class="bi bi-paperclip fs-unset"></i>${prop.formattedlabel != "" ?
+                    `<span style="margin-left:0.25em;">${prop.formattedlabel}` : ''}</a>`;
+            wrapper.append(`<div class="d-flex h-100">${wrapperhtml}</div>`);
+            position.width = 0;
+            wrapper.css(position);
+            $videoWrapper.append(wrapper);
+            recalculatingTextSize(wrapper, true);
+        };
+
+        const renderNavigation = (wrapper, item, prop, id, position) => {
+            var parts = prop.timestamp.split(':');
+            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+
+            wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0"
+                         class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
+                          annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''}"
+                           data-timestamp="${timestamp}">${prop.formattedlabel}</span></div>`);
+
+            position.width = 0;
+
+            wrapper.css(position);
+            $videoWrapper.append(wrapper);
+            recalculatingTextSize(wrapper, true);
+        };
+
+        const renderText = (wrapper, item, prop, id, position) => {
+            if (prop.url != undefined && prop.url != '') {
+                wrapper.append(`<a id="${id}"
+                     class="annotation-content text-nowrap ${prop.shadow == '1' ? 'text-shadow' : ''} d-block"
+                      href="${prop.url}" target="_blank">${prop.formattedlabel}</a>`);
+            } else {
+                if (!self.isEditMode() || !$('#content-region').hasClass('no-pointer-events')) {
+                    wrapper.addClass('no-pointer');
+                }
+                wrapper.append(`<div id="${id}"
+                     class="annotation-content text-nowrap ${prop.shadow == '1' ? 'text-shadow' : ''}
+                     ">${prop.formattedlabel}</div>`);
+            }
+            wrapper.position.width = 0;
+            wrapper.css(position);
+            var style = {
+                'font-weight': prop.bold == '1' ? 'bold' : 'normal',
+                'font-style': prop.italic == '1' ? 'italic' : 'normal',
+                'text-decoration': prop.underline == '1' ? 'underline' : 'none',
+                'color': prop.textcolor,
+                'background': prop.bgcolor,
+                'border-width': prop.borderwidth,
+                'border-color': prop.bordercolor,
+                'border-style': 'solid',
+                'font-family': prop.textfont != '' ? prop.textfont : 'inherit',
+            };
+            wrapper.find('.annotation-content').css(style);
+            $videoWrapper.append(wrapper);
+            recalculatingTextSize(wrapper);
+        };
+
+        const renderTextBlock = (wrapper, item, prop, id, position) => {
+            var textparts = prop.formattedlabel.split('\r\n');
+            var textblock = '<div class="d-flex flex-column">';
+            textparts.forEach((part) => {
+                if (part.trim() == '') {
+                    return;
+                }
+                textblock += `<span class="text-row text-nowrap text-${prop.alignment}"
+                         style="font-family: ${prop.textfont != '' ? prop.textfont : 'inherit'}">${part}</span>`;
+            });
+            textblock += '</div>';
+            if (prop.url != undefined && prop.url != '') {
+                wrapper.append(`<a id="${id}"
+                             class="annotation-content d-block ${prop.shadow == '1' ? 'text-shadow' : ''}"
+                              href="${prop.url}" target="_blank">${textblock}</a>`);
+                wrapper.addClass('clickable');
+            } else {
+                if (!self.isEditMode() || !$('#content-region').hasClass('no-pointer-events')) {
+                    wrapper.addClass('no-pointer');
+                }
+                wrapper.append(`<div id="${id}"
+                             class="annotation-content ${prop.shadow == '1' ? 'text-shadow' : ''}
+                             ">${textblock}</div>`);
+            }
+            wrapper.position.width = 0;
+            wrapper.css(position);
+            var style = {
+                'font-size': item.position.fontSize,
+                'line-height': item.position.lineHeight,
+                'font-weight': prop.bold == '1' ? 'bold' : 'normal',
+                'font-style': prop.italic == '1' ? 'italic' : 'normal',
+                'text-decoration': prop.underline == '1' ? 'underline' : 'none',
+                'color': prop.textcolor,
+                'background': prop.bgcolor,
+                'border-radius': prop.rounded == '1' ? '0.3em' : '0',
+                'border-width': prop.borderwidth,
+                'border-color': prop.bordercolor,
+                'border-style': 'solid',
+            };
+            wrapper.find('.annotation-content').css(style);
+            $videoWrapper.append(wrapper);
+            recalculatingTextSize(wrapper, false, true);
+        };
+
+        const renderShape = (wrapper, item, prop, id, position) => {
+            var parts = prop.timestamp.split(':');
+            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            if (prop.gotourl != '') {
+                wrapper.append(`<a href="${prop.gotourl}" target="_blank"><div id="${id}"
+                         class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}"
+                          style="width: 100%; height: 100%;"></div></a>`);
+                wrapper.addClass('clickable');
+            } else {
+                if (!self.isEditMode()) {
+                    if (timestamp == 0) {
+                        wrapper.addClass('no-pointer');
+                    } else {
+                        wrapper.addClass('clickable');
+                    }
+                }
+                wrapper.append(`<div id="${id}" class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}
+                             ${timestamp > 0 ? 'cursor-pointer' : ''}"
+                         ${timestamp > 0 ? 'data-timestamp="' + timestamp + '"' : ''}
+                         style="width: 100%; height: 100%;"></div>`);
+            }
+            wrapper.css(position);
+            var style = {
+                'background': prop.bgcolor,
+                'border-width': prop.borderwidth,
+                'border-color': prop.bordercolor,
+                'border-style': 'solid',
+                'opacity': prop.opacity / 100,
+            };
+            if (prop.shape == 'circle') {
+                style['border-radius'] = '50%';
+            } else if (prop.shape == 'rectangle') {
+                style['border-radius'] = prop.rounded == '1' ? '1em' : '0';
+            }
+            wrapper.find('.annotation-content').css(style);
+            $videoWrapper.append(wrapper);
+        };
+
+        const renderHotspot = (wrapper, item, prop, id, position) => {
+            wrapper.append(`<div id="${id}" class="annotation-content shadow-sm pulse" role="button"></div>`);
+            position['aspect-ratio'] = '1';
+            wrapper.css(position);
+            var style = {
+                'background-color': prop.color,
+                'opacity': prop.opacity / 100,
+                'border-radius': '50%',
+                'aspect-ratio': '1',
+            };
+            wrapper.find('.annotation-content').css(style);
+            $videoWrapper.append(wrapper);
+
+            if (!self.isEditMode()) {
+                if (prop.usemodal == '1') {
+                    wrapper.attr({
+                        'data-toggle': 'modal',
+                    });
+                } else {
+                    wrapper.attr({
+                        'tabindex': -1,
+                        'data-trigger': 'manual',
+                        'data-boundary': 'viewport',
+                        'data-placement': 'auto',
+                        'data-html': 'true',
+                        'data-content': '<div class="loader"></div>',
+                        'data-title': prop.formattedtitle
+                            + `<i class="bi bi-x-circle-fill ml-auto popover-dismiss cursor-pointer"
+                                     style="font-size:1.5em;"></i>`,
+                    });
+
+                    wrapper.popover({
+                        container: '#wrapper',
+                        html: true,
+                        template: `<div class="popover inlineannotation-popover id-${id}"
+                                 role="tooltip"><div class="arrow"></div>
+                                 <h3 class="popover-header d-flex justify-content-between"></h3>
+                                 <div class="popover-body rounded"></div>${prop.url != '' ?
+                                `<div class="popup-footer bg-light p-2 rounded-bottom"><a href="${prop.url}"
+                                      class="d-block w-100 text-right rotatex-360" target="_blank">
+                                      <i class="bi bi-arrow-right"><i></i></i></a></div>` : ''}</div>`,
+                    });
+
+                    wrapper.on('shown.bs.popover', async function() {
+                        let $body = $(`.popover.id-${id} .popover-body`);
+                        const html = await self.formatContent(prop.content.text, M.cfg.contextid);
+                        $body.html(html);
+                        notifyFilter($body);
+                        wrapper.popover('update');
+                    });
+                    if (prop.openbydefault == '1') {
+                        wrapper.popover('show');
+                    }
+                }
+            }
+        };
+
         /**
          * Render items on the annotation canvas.
          * @param {Array} elements array of elements to render
@@ -578,554 +808,338 @@ export default class Annotation extends Base {
                 $videoWrapper.find(`.annotation-wrapper`).remove();
                 $('#timeline #annotation-timeline').empty();
             }
-            // Sort element by z-index
-            elements.sort((a, b) => b.position['z-index'] - a.position['z-index']);
-            elements = elements.filter(item => item.properties.start <= self.end && item.properties.end >= self.start);
-            elements.map(item => {
-                let start = item.properties.start;
-                let end = item.properties.end;
-                if (start < self.start) {
-                    start = self.start;
-                }
-                if (end > self.end) {
-                    end = self.end;
-                }
 
-                item.properties.start = start;
-                item.properties.end = end;
-
-                return item;
-            });
-
-            const renderImage = (wrapper, item, prop, id, position) => {
-                var parts = prop.timestamp.split(':');
-                var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-                if (prop.gotourl != '') {
-                    wrapper.append(`<a href="${prop.gotourl}" target="_blank"><img src="${prop.url}" id="${id}"
-                             class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
-                             ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/></a>`);
-                } else {
-                    wrapper.append(`<img src="${prop.url}" id="${id}"
-                                 ${timestamp > 0 ? ' data-timestamp="' + timestamp + '"' : ''}
-                                  class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}
-                                  ${timestamp > 0 ? 'cursor-pointer' : ''}"
-                                   ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/>`);
-                }
-                if (!self.isEditMode()) {
-                    if (prop.gotourl == '' && timestamp == 0) {
-                        wrapper.removeClass('resizable');
-                        wrapper.addClass('no-pointer');
-                    } else {
-                        wrapper.addClass('clickable');
-                    }
-                }
-                wrapper.css(position);
-                wrapper.css('height', 'auto');
-                $videoWrapper.append(wrapper);
-            };
-
-            const renderFile = (wrapper, item, prop, id, position) => {
-                var wrapperhtml = ``;
-                wrapperhtml = `<a id="${id}"
-                        class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
-                        annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatey-180" href="${prop.url}"
-                         target="_blank"><i class="bi bi-paperclip fs-unset"></i>${prop.formattedlabel != "" ?
-                        `<span style="margin-left:0.25em;">${prop.formattedlabel}` : ''}</a>`;
-                wrapper.append(`<div class="d-flex h-100">${wrapperhtml}</div>`);
-                position.width = 0;
-                wrapper.css(position);
-                $videoWrapper.append(wrapper);
-                recalculatingTextSize(wrapper, true);
-            };
-
-            const renderNavigation = (wrapper, item, prop, id, position) => {
-                var parts = prop.timestamp.split(':');
-                var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-
-                wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0"
-                             class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
-                              annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''}"
-                               data-timestamp="${timestamp}">${prop.formattedlabel}</span></div>`);
-
-                position.width = 0;
-
-                wrapper.css(position);
-                $videoWrapper.append(wrapper);
-                recalculatingTextSize(wrapper, true);
-            };
-
-            const renderText = (wrapper, item, prop, id, position) => {
-                if (prop.url != undefined && prop.url != '') {
-                    wrapper.append(`<a id="${id}"
-                         class="annotation-content text-nowrap ${prop.shadow == '1' ? 'text-shadow' : ''} d-block"
-                          href="${prop.url}" target="_blank">${prop.formattedlabel}</a>`);
-                } else {
-                    if (!self.isEditMode() || !$('#content-region').hasClass('no-pointer-events')) {
-                        wrapper.addClass('no-pointer');
-                    }
-                    wrapper.append(`<div id="${id}"
-                         class="annotation-content text-nowrap ${prop.shadow == '1' ? 'text-shadow' : ''}
-                         ">${prop.formattedlabel}</div>`);
-                }
-                wrapper.position.width = 0;
-                wrapper.css(position);
-                var style = {
-                    'font-weight': prop.bold == '1' ? 'bold' : 'normal',
-                    'font-style': prop.italic == '1' ? 'italic' : 'normal',
-                    'text-decoration': prop.underline == '1' ? 'underline' : 'none',
-                    'color': prop.textcolor,
-                    'background': prop.bgcolor,
-                    'border-width': prop.borderwidth,
-                    'border-color': prop.bordercolor,
-                    'border-style': 'solid',
-                    'font-family': prop.textfont != '' ? prop.textfont : 'inherit',
-                };
-                wrapper.find('.annotation-content').css(style);
-                $videoWrapper.append(wrapper);
-                recalculatingTextSize(wrapper);
-            };
-
-            const renderTextBlock = (wrapper, item, prop, id, position) => {
-                var textparts = prop.formattedlabel.split('\r\n');
-                var textblock = '<div class="d-flex flex-column">';
-                textparts.forEach((part) => {
-                    if (part.trim() == '') {
-                        return;
-                    }
-                    textblock += `<span class="text-row text-nowrap text-${prop.alignment}"
-                             style="font-family: ${prop.textfont != '' ? prop.textfont : 'inherit'}">${part}</span>`;
-                });
-                textblock += '</div>';
-                if (prop.url != undefined && prop.url != '') {
-                    wrapper.append(`<a id="${id}"
-                                 class="annotation-content d-block ${prop.shadow == '1' ? 'text-shadow' : ''}"
-                                  href="${prop.url}" target="_blank">${textblock}</a>`);
-                    wrapper.addClass('clickable');
-                } else {
-                    if (!self.isEditMode() || !$('#content-region').hasClass('no-pointer-events')) {
-                        wrapper.addClass('no-pointer');
-                    }
-                    wrapper.append(`<div id="${id}"
-                                 class="annotation-content ${prop.shadow == '1' ? 'text-shadow' : ''}
-                                 ">${textblock}</div>`);
-                }
-                wrapper.position.width = 0;
-                wrapper.css(position);
-                var style = {
-                    'font-size': item.position.fontSize,
-                    'line-height': item.position.lineHeight,
-                    'font-weight': prop.bold == '1' ? 'bold' : 'normal',
-                    'font-style': prop.italic == '1' ? 'italic' : 'normal',
-                    'text-decoration': prop.underline == '1' ? 'underline' : 'none',
-                    'color': prop.textcolor,
-                    'background': prop.bgcolor,
-                    'border-radius': prop.rounded == '1' ? '0.3em' : '0',
-                    'border-width': prop.borderwidth,
-                    'border-color': prop.bordercolor,
-                    'border-style': 'solid',
-                };
-                wrapper.find('.annotation-content').css(style);
-                $videoWrapper.append(wrapper);
-                recalculatingTextSize(wrapper, false, true);
-            };
-
-            const renderShape = (wrapper, item, prop, id, position) => {
-                var parts = prop.timestamp.split(':');
-                var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-                if (prop.gotourl != '') {
-                    wrapper.append(`<a href="${prop.gotourl}" target="_blank"><div id="${id}"
-                             class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}"
-                              style="width: 100%; height: 100%;"></div></a>`);
-                    wrapper.addClass('clickable');
-                } else {
-                    if (!self.isEditMode()) {
-                        if (timestamp == 0) {
-                            wrapper.addClass('no-pointer');
-                        } else {
-                            wrapper.addClass('clickable');
-                        }
-                    }
-                    wrapper.append(`<div id="${id}" class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}
-                                 ${timestamp > 0 ? 'cursor-pointer' : ''}"
-                             ${timestamp > 0 ? 'data-timestamp="' + timestamp + '"' : ''}
-                             style="width: 100%; height: 100%;"></div>`);
-                }
-                wrapper.css(position);
-                var style = {
-                    'background': prop.bgcolor,
-                    'border-width': prop.borderwidth,
-                    'border-color': prop.bordercolor,
-                    'border-style': 'solid',
-                    'opacity': prop.opacity / 100,
-                };
-                if (prop.shape == 'circle') {
-                    style['border-radius'] = '50%';
-                } else if (prop.shape == 'rectangle') {
-                    style['border-radius'] = prop.rounded == '1' ? '1em' : '0';
-                }
-                wrapper.find('.annotation-content').css(style);
-                $videoWrapper.append(wrapper);
-            };
-
-            const renderHotspot = (wrapper, item, prop, id, position) => {
-                wrapper.append(`<div id="${id}" class="annotation-content shadow-sm pulse" role="button"></div>`);
-                position['aspect-ratio'] = '1';
-                wrapper.css(position);
-                var style = {
-                    'background-color': prop.color,
-                    'opacity': prop.opacity / 100,
-                    'border-radius': '50%',
-                    'aspect-ratio': '1',
-                };
-                wrapper.find('.annotation-content').css(style);
-                $videoWrapper.append(wrapper);
-
-                if (!self.isEditMode()) {
-                    if (prop.usemodal == '1') {
-                        wrapper.attr({
-                            'data-toggle': 'modal',
-                        });
-                    } else {
-                        wrapper.attr({
-                            'tabindex': -1,
-                            'data-trigger': 'manual',
-                            'data-boundary': 'viewport',
-                            'data-placement': 'auto',
-                            'data-html': 'true',
-                            'data-content': '<div class="loader"></div>',
-                            'data-title': prop.formattedtitle
-                                + `<i class="bi bi-x-circle-fill ml-auto popover-dismiss cursor-pointer"
-                                         style="font-size:1.5em;"></i>`,
-                        });
-
-                        wrapper.popover({
-                            container: '#wrapper',
-                            html: true,
-                            template: `<div class="popover inlineannotation-popover id-${id}"
-                                     role="tooltip"><div class="arrow"></div>
-                                     <h3 class="popover-header d-flex justify-content-between"></h3>
-                                     <div class="popover-body rounded"></div>${prop.url != '' ?
-                                    `<div class="popup-footer bg-light p-2 rounded-bottom"><a href="${prop.url}"
-                                          class="d-block w-100 text-right rotatex-360" target="_blank">
-                                          <i class="bi bi-arrow-right"><i></i></i></a></div>` : ''}</div>`,
-                        });
-
-                        wrapper.on('shown.bs.popover', async function() {
-                            let $body = $(`.popover.id-${id} .popover-body`);
-                            const html = await self.formatContent(prop.content.text, M.cfg.contextid);
-                            $body.html(html);
-                            notifyFilter($body);
-                            wrapper.popover('update');
-                        });
-                        if (prop.openbydefault == '1') {
-                            wrapper.popover('show');
-                        }
-                    }
-                }
-            };
-
-            let count = 0;
-            elements.forEach(async (item) => {
-                let prop = item.properties;
-                let type = item.type;
-                let id = item.id;
-                let position = item.position;
-                let wrapper = $(`<div class="annotation-wrapper" data-group="${position.group}" data-start="${prop.start}"
-                     data-end="${prop.end}"  data-anno="${annotation.id}" data-item="${id}" data-type="${type}"></div>`);
-                if (prop.resizable == '1' || self.isEditMode()) {
-                    wrapper.addClass('resizable');
-                    wrapper.attr('tabindex', 0);
-                }
-                switch (type) {
-                    case 'image':
-                        renderImage(wrapper, item, prop, id, position);
-                        break;
-                    case 'file':
-                        renderFile(wrapper, item, prop, id, position);
-                        break;
-                    case 'navigation':
-                        renderNavigation(wrapper, item, prop, id, position);
-                        break;
-                    case 'text':
-                        renderText(wrapper, item, prop, id, position);
-                        break;
-                    case 'textblock':
-                        renderTextBlock(wrapper, item, prop, id, position);
-                        break;
-                    case 'shape':
-                        renderShape(wrapper, item, prop, id, position);
-                        break;
-                    case 'hotspot':
-                        renderHotspot(wrapper, item, prop, id, position);
-                        break;
-                }
-
-                if (type != 'shape') {
-                    wrapper.on('mouseover', function() {
-                        if (!$(this).hasClass('resizable')) {
-                            return;
-                        }
-
-                        let aspectRatio =
-                            $(this).find('.annotation-content').width() / $(this).find('.annotation-content').height();
-                        if (wrapper.width() / wrapper.height() != aspectRatio && (type == 'image')) {
-                            $(this).height((wrapper.width() / aspectRatio));
-                        }
-                        $(this).resizable('option', 'aspectRatio', $(this).find('.annotation-content').outerWidth() /
-                            $(this).find('.annotation-content').outerHeight());
+            if (elements.length == 0) {
+                if (actives) {
+                    actives.forEach((active) => {
+                        $videoWrapper.find(`.annotation-wrapper[data-item="${active}"]`).addClass('active');
                     });
                 }
-
-                count++;
-
-                if (count == elements.length) {
-                    // Always trigger the timeupdate event after all items are rendered.
-                    dispatchEvent('timeupdate', {time: self.roundToTwo(currentTime)});
-
-                    if (self.isEditMode()) {
-                        if ($('#annotation-btns').is(":visible") == false) {
-                            $videoWrapper.find('.annotation-wrapper').addClass('no-pointer');
-                        }
-                        // Initialize the draggable and resizable for each item.
-                        $videoWrapper.find('.annotation-wrapper').draggable({
-                            containment: "#annotation-canvas",
-                            cursor: "move",
-                            grid: [1, 1],
-                            handle: '.annotation-content',
-                            start: function() {
-                                // Get all the selected elements
-                                if (!$(this).hasClass('active')) {
-                                    $(this).trigger('click');
-                                }
-                                let $selected = $videoWrapper.find('.annotation-wrapper.active');
-                                $selected.addClass('no-pointer');
-                                $selected.each(function() {
-                                    $(this).data('startPosition', $(this).position());
-                                });
-                            },
-                            drag: function(event, ui) {
-                                var $selected = $videoWrapper.find('.annotation-wrapper.active');
-                                var left = ui.originalPosition.left - ui.position.left;
-                                var top = ui.originalPosition.top - ui.position.top;
-                                var positions = $selected.map(function() {
-                                    return {
-                                        id: $(this).data('item'),
-                                        left: $(this).position().left,
-                                        top: $(this).position().top,
-                                        bottom: $(this).position().top + $(this).height(),
-                                        right: $(this).position().left + $(this).width(),
-                                    };
-                                }).get();
-
-                                if (positions.find(x => x.left < 0)) {
-                                    // Sort the elements by left position to get the leftmost element
-                                    positions.sort((a, b) => a.left - b.left);
-                                    let onLeft = positions.find(x => x.left < 0);
-                                    let id = onLeft.id;
-                                    let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
-                                    target.css('left', 0);
-                                    let distance = target.data('startPosition').left;
-                                    ui.position.left = ui.originalPosition.left - distance;
-                                    left = ui.originalPosition.left - ui.position.left;
-                                }
-
-                                if (positions.find(x => x.top < 0)) {
-                                    positions.sort((a, b) => a.top - b.top);
-                                    let onTop = positions.find(x => x.top < 0);
-                                    let id = onTop.id;
-                                    let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
-                                    target.css('top', 0);
-                                    let distance = target.data('startPosition').top;
-                                    ui.position.top = ui.originalPosition.top - distance;
-                                    top = ui.originalPosition.top - ui.position.top;
-                                }
-
-                                if (positions.find(x => x.right > $('#annotation-canvas').width())) {
-                                    positions.sort((a, b) => a.right - b.right);
-                                    let onRight = positions.find(x => x.right > $('#annotation-canvas').width());
-                                    let id = onRight.id;
-                                    let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
-                                    target.css('left', ($('#annotation-canvas').width() - target.width() - 1) + 'px');
-                                    let distance = target.data('startPosition').left - target.position().left;
-                                    ui.position.left = ui.originalPosition.left - distance;
-                                    left = ui.originalPosition.left - ui.position.left;
-                                }
-
-                                if (positions.find(x => x.bottom > $('#annotation-canvas').height())) {
-                                    positions.sort((a, b) => a.bottom - b.bottom);
-                                    let onBottom = positions.find(x => x.bottom > $('#annotation-canvas').height());
-                                    let id = onBottom.id;
-                                    let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
-                                    target.css('top', ($('#annotation-canvas').height() - target.height() - 1) + 'px');
-                                    let distance = target.data('startPosition').top - target.position().top;
-                                    ui.position.top = ui.originalPosition.top - distance;
-                                    top = ui.originalPosition.top - ui.position.top;
-                                }
-
-                                $selected.not(this).each(function() {
-                                    var $this = $(this);
-                                    var position = $this.data('startPosition');
-                                    $this.css({
-                                        left: (position.left - left) + 'px',
-                                        top: (position.top - top) + 'px',
-                                    });
-                                });
-                                updatePositionInfo($(this));
-                            },
-                            stop: function() {
-                                let $selected = $videoWrapper.find('.annotation-wrapper.active');
-                                var positions = $selected.map(function() {
-                                    return {
-                                        id: $(this).data('item'),
-                                        left: $(this).position().left,
-                                        top: $(this).position().top,
-                                        bottom: $(this).position().top + $(this).height(),
-                                        right: $(this).position().left + $(this).width(),
-                                    };
-                                }).get();
-
-                                if (positions.find(x => x.left < 0)) {
-                                    positions.sort((a, b) => a.left - b.left);
-                                    let onLeft = positions.find(x => x.left < 0);
-                                    let id = onLeft.id;
-                                    let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
-                                    target.css('left', 0);
-                                    let distance = target.data('startPosition').left;
-                                    $selected.each(function() {
-                                        let $this = $(this);
-                                        let position = $this.data('startPosition');
-                                        let newLeft = position.left - distance;
-                                        $this.css('left', newLeft + 'px');
-                                    });
-                                }
-
-                                if (positions.find(x => x.top < 0)) {
-                                    positions.sort((a, b) => a.top - b.top);
-                                    let onTop = positions.find(x => x.top < 0);
-                                    let id = onTop.id;
-                                    let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
-                                    target.css('top', 0);
-                                    let distance = target.data('startPosition').top;
-                                    $selected.each(function() {
-                                        let $this = $(this);
-                                        let position = $this.data('startPosition');
-                                        let newTop = position.top - distance;
-                                        $this.css('top', newTop + 'px');
-                                    });
-                                }
-
-                                if (positions.find(x => x.right > $('#annotation-canvas').width())) {
-                                    positions.sort((a, b) => a.right - b.right);
-                                    let onRight = positions.find(x => x.right > $('#annotation-canvas').width());
-                                    let id = onRight.id;
-                                    let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
-                                    target.css('left', ($('#annotation-canvas').width() - target.width() - 1) + 'px');
-                                    let distance = target.data('startPosition').left - target.position().left;
-                                    $selected.each(function() {
-                                        let $this = $(this);
-                                        let position = $this.data('startPosition');
-                                        let newLeft = position.left - distance;
-                                        $this.css('left', newLeft + 'px');
-                                    });
-                                }
-
-                                if (positions.find(x => x.bottom > $('#annotation-canvas').height())) {
-                                    positions.sort((a, b) => a.bottom - b.bottom);
-                                    let onBottom = positions.find(x => x.bottom > $('#annotation-canvas').height());
-                                    let id = onBottom.id;
-                                    let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
-                                    target.css('top', ($('#annotation-canvas').height() - target.height() - 1) + 'px');
-                                    let distance = target.data('startPosition').top - target.position().top;
-                                    $selected.each(function() {
-                                        let $this = $(this);
-                                        let position = $this.data('startPosition');
-                                        let newTop = position.top - distance;
-                                        $this.css('top', newTop + 'px');
-                                    });
-                                }
-
-                                getItems(false);
-                                $selected = $selected.map(function() {
-                                    return $(this).data('item');
-                                }).get();
-                                saveTracking($selected);
-                                if ($selected.length == 1) {
-                                    $(this).trigger('click');
-                                }
-                                $videoWrapper.find('.annotation-wrapper').removeClass('no-pointer');
-                            }
-                        });
-
-                        $videoWrapper.find('.annotation-wrapper').resizable({
-                            containment: "#annotation-canvas",
-                            handles: "all",
-                            grid: [1, 1],
-                            minHeight: 1,
-                            resize: function(event) {
-                                let type = $(this).data('type');
-                                if (type == 'file' || type == 'navigation' || type == 'textblock') {
-                                    recalculatingTextSize($(this), type != 'textblock', type == 'textblock');
-                                } else if (type == 'shape' && event.ctrlKey) {
-                                    $(this).resizable('option', 'aspectRatio', 1);
-                                }
-                                updatePositionInfo($(this));
-                            },
-                            stop: function() {
-                                let type = $(this).data('type');
-                                if (type == 'file' || type == 'navigation' || type == 'textblock') {
-                                    recalculatingTextSize($(this), type != 'textblock', type == 'textblock');
-                                } else if (type == 'shape') {
-                                    $(this).resizable('option', 'aspectRatio', false);
-                                }
-                                recalculatingSize($(this));
-                                getItems(false);
-                                saveTracking([$(this).data('item')]);
-                                $(this).trigger('click');
-                            }
-                        });
-
-                        await renderTimelineItems(elements, actives);
-                        dispatchEvent('timeupdate', {time: self.roundToTwo(currentTime)});
+            } else {
+                // Sort element by z-index
+                elements.sort((a, b) => Number(b.position['z-index']) - Number(a.position['z-index']));
+                elements = elements.filter(item => item.properties.start <= self.end && item.properties.end >= self.start);
+                elements.map(item => {
+                    let start = item.properties.start;
+                    let end = item.properties.end;
+                    if (start < self.start) {
+                        start = self.start;
                     }
-                }
-
-                if (actives && actives.includes(id)) {
-                    wrapper.addClass('active');
-                    if (actives.length == 1) {
-                        setTimeout(function() {
-                            wrapper.trigger('mouseover');
-                            wrapper.trigger('click');
-                        }, 500);
+                    if (end > self.end) {
+                        end = self.end;
                     }
-                }
-            });
 
-            // Handle behavior for each item
-            if (!self.isEditMode()) {
-                $videoWrapper.on('click', `.annotation-wrapper`, function(e) {
-                    e.stopImmediatePropagation();
-                    let wrapper = $(this);
-                    let type = wrapper.data('type');
+                    item.properties.start = start;
+                    item.properties.end = end;
+
+                    return item;
+                });
+
+
+
+                let count = 0;
+                elements.forEach(async (item) => {
+                    let prop = item.properties;
+                    let type = item.type;
+                    let id = item.id;
+                    let position = item.position;
+                    let wrapper = $(`<div class="annotation-wrapper" data-group="${position.group}" data-start="${prop.start}"
+                     data-end="${prop.end}"  data-anno="${annotation.id}" data-item="${id}" data-type="${type}"></div>`);
+                    if (prop.resizable == '1' || self.isEditMode()) {
+                        wrapper.addClass('resizable');
+                        wrapper.attr('tabindex', 0);
+                    }
                     switch (type) {
-                        case 'navigation':
                         case 'image':
+                            renderImage(wrapper, item, prop, id, position);
+                            break;
+                        case 'file':
+                            renderFile(wrapper, item, prop, id, position);
+                            break;
+                        case 'navigation':
+                            renderNavigation(wrapper, item, prop, id, position);
+                            break;
+                        case 'text':
+                            renderText(wrapper, item, prop, id, position);
+                            break;
+                        case 'textblock':
+                            renderTextBlock(wrapper, item, prop, id, position);
+                            break;
                         case 'shape':
-                            var navigation = wrapper.find('.annotation-content');
-                            if (self.isBetweenStartAndEnd(navigation.data('timestamp'))) {
-                                self.player.seek(navigation.data('timestamp'));
-                                self.player.play();
-                            }
+                            renderShape(wrapper, item, prop, id, position);
                             break;
                         case 'hotspot':
-                            self.player.pause();
-                            var hotspotid = wrapper.data('item');
-                            var hotspot = items.find(x => x.id == hotspotid);
-                            var viewertype = wrapper.data('toggle');
-                            if (viewertype == 'modal') {
-                                let title = hotspot.properties.formattedtitle;
-                                let content = hotspot.properties.content.text;
-                                let url = hotspot.properties.url;
-                                let modal = `<div class="modal fade" id="annotation-modal" role="dialog"
+                            renderHotspot(wrapper, item, prop, id, position);
+                            break;
+                    }
+
+                    if (type != 'shape') {
+                        wrapper.on('mouseover', function() {
+                            if (!$(this).hasClass('resizable')) {
+                                return;
+                            }
+
+                            let aspectRatio =
+                                $(this).find('.annotation-content').width() / $(this).find('.annotation-content').height();
+                            if (wrapper.width() / wrapper.height() != aspectRatio && (type == 'image')) {
+                                $(this).height((wrapper.width() / aspectRatio));
+                            }
+                            $(this).resizable('option', 'aspectRatio', $(this).find('.annotation-content').outerWidth() /
+                                $(this).find('.annotation-content').outerHeight());
+                        });
+                    }
+
+                    count++;
+
+                    if (count == elements.length) {
+                        // Always trigger the timeupdate event after all items are rendered.
+                        dispatchEvent('timeupdate', {time: self.roundToTwo(currentTime)});
+
+                        if (self.isEditMode()) {
+                            if ($('#annotation-btns').is(":visible") == false) {
+                                $videoWrapper.find('.annotation-wrapper').addClass('no-pointer');
+                            }
+                            // Initialize the draggable and resizable for each item.
+                            $videoWrapper.find('.annotation-wrapper').draggable({
+                                containment: "#annotation-canvas",
+                                cursor: "move",
+                                grid: [1, 1],
+                                handle: '.annotation-content',
+                                start: function() {
+                                    getItems(false);
+                                    // Get all the selected elements
+                                    if (!$(this).hasClass('active')) {
+                                        $(this).trigger('click');
+                                    }
+                                    let $selected = $videoWrapper.find('.annotation-wrapper.active');
+                                    $selected.addClass('no-pointer');
+                                    $selected.each(function() {
+                                        $(this).data('startPosition', $(this).position());
+                                    });
+                                },
+                                drag: function(event, ui) {
+                                    var $selected = $videoWrapper.find('.annotation-wrapper.active');
+                                    var left = ui.originalPosition.left - ui.position.left;
+                                    var top = ui.originalPosition.top - ui.position.top;
+                                    var positions = $selected.map(function() {
+                                        return {
+                                            id: $(this).data('item'),
+                                            left: $(this).position().left,
+                                            top: $(this).position().top,
+                                            bottom: $(this).position().top + $(this).height(),
+                                            right: $(this).position().left + $(this).width(),
+                                        };
+                                    }).get();
+
+                                    if (positions.find(x => x.left < 0)) {
+                                        // Sort the elements by left position to get the leftmost element
+                                        positions.sort((a, b) => a.left - b.left);
+                                        let onLeft = positions.find(x => x.left < 0);
+                                        let id = onLeft.id;
+                                        let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
+                                        target.css('left', 0);
+                                        let distance = target.data('startPosition').left;
+                                        ui.position.left = ui.originalPosition.left - distance;
+                                        left = ui.originalPosition.left - ui.position.left;
+                                    }
+
+                                    if (positions.find(x => x.top < 0)) {
+                                        positions.sort((a, b) => a.top - b.top);
+                                        let onTop = positions.find(x => x.top < 0);
+                                        let id = onTop.id;
+                                        let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
+                                        target.css('top', 0);
+                                        let distance = target.data('startPosition').top;
+                                        ui.position.top = ui.originalPosition.top - distance;
+                                        top = ui.originalPosition.top - ui.position.top;
+                                    }
+
+                                    if (positions.find(x => x.right > $('#annotation-canvas').width())) {
+                                        positions.sort((a, b) => a.right - b.right);
+                                        let onRight = positions.find(x => x.right > $('#annotation-canvas').width());
+                                        let id = onRight.id;
+                                        let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
+                                        target.css('left', ($('#annotation-canvas').width() - target.width() - 1) + 'px');
+                                        let distance = target.data('startPosition').left - target.position().left;
+                                        ui.position.left = ui.originalPosition.left - distance;
+                                        left = ui.originalPosition.left - ui.position.left;
+                                    }
+
+                                    if (positions.find(x => x.bottom > $('#annotation-canvas').height())) {
+                                        positions.sort((a, b) => a.bottom - b.bottom);
+                                        let onBottom = positions.find(x => x.bottom > $('#annotation-canvas').height());
+                                        let id = onBottom.id;
+                                        let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
+                                        target.css('top', ($('#annotation-canvas').height() - target.height() - 1) + 'px');
+                                        let distance = target.data('startPosition').top - target.position().top;
+                                        ui.position.top = ui.originalPosition.top - distance;
+                                        top = ui.originalPosition.top - ui.position.top;
+                                    }
+
+                                    $selected.not(this).each(function() {
+                                        var $this = $(this);
+                                        var position = $this.data('startPosition');
+                                        $this.css({
+                                            left: (position.left - left) + 'px',
+                                            top: (position.top - top) + 'px',
+                                        });
+                                    });
+                                    updatePositionInfo($(this));
+                                },
+                                stop: function() {
+                                    let $selected = $videoWrapper.find('.annotation-wrapper.active');
+                                    var positions = $selected.map(function() {
+                                        return {
+                                            id: $(this).data('item'),
+                                            left: $(this).position().left,
+                                            top: $(this).position().top,
+                                            bottom: $(this).position().top + $(this).height(),
+                                            right: $(this).position().left + $(this).width(),
+                                        };
+                                    }).get();
+
+                                    if (positions.find(x => x.left < 0)) {
+                                        positions.sort((a, b) => a.left - b.left);
+                                        let onLeft = positions.find(x => x.left < 0);
+                                        let id = onLeft.id;
+                                        let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
+                                        target.css('left', 0);
+                                        let distance = target.data('startPosition').left;
+                                        $selected.each(function() {
+                                            let $this = $(this);
+                                            let position = $this.data('startPosition');
+                                            let newLeft = position.left - distance;
+                                            $this.css('left', newLeft + 'px');
+                                        });
+                                    }
+
+                                    if (positions.find(x => x.top < 0)) {
+                                        positions.sort((a, b) => a.top - b.top);
+                                        let onTop = positions.find(x => x.top < 0);
+                                        let id = onTop.id;
+                                        let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
+                                        target.css('top', 0);
+                                        let distance = target.data('startPosition').top;
+                                        $selected.each(function() {
+                                            let $this = $(this);
+                                            let position = $this.data('startPosition');
+                                            let newTop = position.top - distance;
+                                            $this.css('top', newTop + 'px');
+                                        });
+                                    }
+
+                                    if (positions.find(x => x.right > $('#annotation-canvas').width())) {
+                                        positions.sort((a, b) => a.right - b.right);
+                                        let onRight = positions.find(x => x.right > $('#annotation-canvas').width());
+                                        let id = onRight.id;
+                                        let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
+                                        target.css('left', ($('#annotation-canvas').width() - target.width() - 1) + 'px');
+                                        let distance = target.data('startPosition').left - target.position().left;
+                                        $selected.each(function() {
+                                            let $this = $(this);
+                                            let position = $this.data('startPosition');
+                                            let newLeft = position.left - distance;
+                                            $this.css('left', newLeft + 'px');
+                                        });
+                                    }
+
+                                    if (positions.find(x => x.bottom > $('#annotation-canvas').height())) {
+                                        positions.sort((a, b) => a.bottom - b.bottom);
+                                        let onBottom = positions.find(x => x.bottom > $('#annotation-canvas').height());
+                                        let id = onBottom.id;
+                                        let target = $videoWrapper.find(`.annotation-wrapper[data-item="${id}"]`);
+                                        target.css('top', ($('#annotation-canvas').height() - target.height() - 1) + 'px');
+                                        let distance = target.data('startPosition').top - target.position().top;
+                                        $selected.each(function() {
+                                            let $this = $(this);
+                                            let position = $this.data('startPosition');
+                                            let newTop = position.top - distance;
+                                            $this.css('top', newTop + 'px');
+                                        });
+                                    }
+
+                                    getItems(false);
+                                    $selected = $selected.map(function() {
+                                        return $(this).data('item');
+                                    }).get();
+                                    saveTracking($selected);
+                                    if ($selected.length == 1) {
+                                        $(this).trigger('click');
+                                    }
+                                    $videoWrapper.find('.annotation-wrapper').removeClass('no-pointer');
+                                }
+                            });
+
+                            $videoWrapper.find('.annotation-wrapper').resizable({
+                                containment: "#annotation-canvas",
+                                handles: "all",
+                                grid: [1, 1],
+                                minHeight: 1,
+                                resize: function(event) {
+                                    let type = $(this).data('type');
+                                    if (type == 'file' || type == 'navigation' || type == 'textblock') {
+                                        recalculatingTextSize($(this), type != 'textblock', type == 'textblock');
+                                    } else if (type == 'shape' && event.ctrlKey) {
+                                        $(this).resizable('option', 'aspectRatio', 1);
+                                    }
+                                    updatePositionInfo($(this));
+                                },
+                                stop: function() {
+                                    let type = $(this).data('type');
+                                    if (type == 'file' || type == 'navigation' || type == 'textblock') {
+                                        recalculatingTextSize($(this), type != 'textblock', type == 'textblock');
+                                    } else if (type == 'shape') {
+                                        $(this).resizable('option', 'aspectRatio', false);
+                                    }
+                                    recalculatingSize($(this));
+                                    getItems(false);
+                                    saveTracking([$(this).data('item')]);
+                                    $(this).trigger('click');
+                                }
+                            });
+
+                            await renderTimelineItems(elements, actives);
+                            dispatchEvent('timeupdate', {time: self.roundToTwo(currentTime)});
+                        }
+                    }
+
+                    if (actives && actives.includes(id)) {
+                        wrapper.addClass('active');
+                        if (actives.length == 1) {
+                            setTimeout(function() {
+                                wrapper.trigger('mouseover');
+                                wrapper.trigger('click');
+                            }, 500);
+                        }
+                    }
+                });
+
+                // Handle behavior for each item
+                if (!self.isEditMode()) {
+                    $videoWrapper.on('click', `.annotation-wrapper`, function(e) {
+                        e.stopImmediatePropagation();
+                        let wrapper = $(this);
+                        let type = wrapper.data('type');
+                        switch (type) {
+                            case 'navigation':
+                            case 'image':
+                            case 'shape':
+                                var navigation = wrapper.find('.annotation-content');
+                                if (self.isBetweenStartAndEnd(navigation.data('timestamp'))) {
+                                    self.player.seek(navigation.data('timestamp'));
+                                    self.player.play();
+                                }
+                                break;
+                            case 'hotspot':
+                                self.player.pause();
+                                var hotspotid = wrapper.data('item');
+                                var hotspot = items.find(x => x.id == hotspotid);
+                                var viewertype = wrapper.data('toggle');
+                                if (viewertype == 'modal') {
+                                    let title = hotspot.properties.formattedtitle;
+                                    let content = hotspot.properties.content.text;
+                                    let url = hotspot.properties.url;
+                                    let modal = `<div class="modal fade" id="annotation-modal" role="dialog"
                                 aria-labelledby="annotation-modal"
                              aria-hidden="true" data-backdrop="static" data-keyboard="false">
                              <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
@@ -1145,29 +1159,30 @@ export default class Annotation extends Base {
                                     </div>
                                 </div>
                                 </div>`;
-                                $('#wrapper').append(modal);
-                                $('#annotation-modal').modal('show');
-                                $('#annotation-modal').on('hide.bs.modal', function() {
-                                    $('#annotation-modal').remove();
-                                });
-                                $('#annotation-modal').on('shown.bs.modal', async function() {
-                                    $('#annotation-modal .modal-body').fadeIn(300);
-                                    let $body = $('#annotation-modal .modal-body');
-                                    const html = await self.formatContent(content, M.cfg.contextid);
-                                    $body.html(html);
-                                    notifyFilter($body);
-                                });
-                            } else {
-                                wrapper.popover('show');
-                            }
-                            break;
-                    }
-                });
+                                    $('#wrapper').append(modal);
+                                    $('#annotation-modal').modal('show');
+                                    $('#annotation-modal').on('hide.bs.modal', function() {
+                                        $('#annotation-modal').remove();
+                                    });
+                                    $('#annotation-modal').on('shown.bs.modal', async function() {
+                                        $('#annotation-modal .modal-body').fadeIn(300);
+                                        let $body = $('#annotation-modal .modal-body');
+                                        const html = await self.formatContent(content, M.cfg.contextid);
+                                        $body.html(html);
+                                        notifyFilter($body);
+                                    });
+                                } else {
+                                    wrapper.popover('show');
+                                }
+                                break;
+                        }
+                    });
 
-                $playerWrapper.on('click', `.popover-dismiss`, function(e) {
-                    e.stopImmediatePropagation();
-                    $(this).closest('.popover').remove();
-                });
+                    $playerWrapper.on('click', `.popover-dismiss`, function(e) {
+                        e.stopImmediatePropagation();
+                        $(this).closest('.popover').remove();
+                    });
+                }
             }
         };
 
@@ -1184,7 +1199,7 @@ export default class Annotation extends Base {
                     if (type == 'file' || type == 'navigation' || type == 'textblock') {
                         recalculatingTextSize($(this), type != 'textblock', type == 'textblock');
                     }
-                }, 1);
+                }, 100);
             });
             $('#annotation-canvas').css('font-size', $('#annotation-canvas').width() / 75 + 'px');
         });
@@ -1293,7 +1308,8 @@ export default class Annotation extends Base {
          */
         const getItems = (updateid) => {
             let newItems = [];
-            $videoWrapper.find(`.annotation-wrapper`).each(function(index, element) {
+            const annos = $videoWrapper.find(`.annotation-wrapper`);
+            annos.each(function(index, element) {
                 const id = $(element).data('item');
                 let item = {
                     "type": $(element).data('type'),
@@ -1394,7 +1410,7 @@ export default class Annotation extends Base {
                     $('#annotation-btns #position').removeClass('d-none');
                 }
 
-                $('#annotation-canvas #background').removeClass('d-none').css('z-index', 1);
+                $('#annotation-canvas #background').removeClass('d-none').css('z-index', 3);
             }
         });
 
@@ -1406,7 +1422,6 @@ export default class Annotation extends Base {
         });
 
         $playerWrapper.on('click', `#annotation-btns #save`, function(e) {
-            e.preventDefault();
             e.stopImmediatePropagation();
             getItems(false);
             // Encode html tags
@@ -1441,13 +1456,13 @@ export default class Annotation extends Base {
             $('#annotation-canvas #background').trigger('click');
         });
 
-        $(document).on('click', `#annotation-btns #closetoolbar`, function(e) {
-            e.preventDefault();
+        $(document).off('click', `#annotation-btns #closetoolbar`).on('click', `#annotation-btns #closetoolbar`, function(e) {
+            e.stopImmediatePropagation();
             if (draftStatus == 'draft') {
                 Notification.saveCancel(
                     M.util.get_string('unsavedchange', 'ivplugin_annotation'),
                     M.util.get_string('unsavedchangeconfirm', 'ivplugin_annotation'),
-                    M.util.get_string('save'),
+                    M.util.get_string('save', 'ivplugin_annotation'),
                     function() {
                         // If the user clicks save, save the changes.
                         $('#annotation-btns #save').trigger('click');
@@ -1475,7 +1490,7 @@ export default class Annotation extends Base {
             }
         });
 
-        $playerWrapper.on('click', `#annotation-btns .add-ia`, async function(e) {
+        $playerWrapper.off('click', `#annotation-btns .add-ia`).on('click', `#annotation-btns .add-ia`, async function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             let annoid = $videoWrapper.data('id');
@@ -1553,7 +1568,7 @@ export default class Annotation extends Base {
             });
         });
 
-        $playerWrapper.on('click', `#annotation-btns #edit`, function(e) {
+        $playerWrapper.off('click', `#annotation-btns #edit`).on('click', `#annotation-btns #edit`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             let annnoid = $videoWrapper.data('id');
@@ -1619,7 +1634,7 @@ export default class Annotation extends Base {
             });
         });
 
-        $videoWrapper.on('click', `.annotation-wrapper`, function(e) {
+        $videoWrapper.off('click', `.annotation-wrapper`).on('click', `.annotation-wrapper`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             self.player.pause();
@@ -1637,7 +1652,7 @@ export default class Annotation extends Base {
                 }
             }
 
-            if ($(this).data('group') != "undefined") {
+            if (!isNaN($(this).data('group'))) {
                 let group = $(this).data('group');
                 $videoWrapper.find(`.annotation-wrapper[data-group="${group}"]`).addClass('active');
             }
@@ -1703,7 +1718,7 @@ export default class Annotation extends Base {
             $('#annotation-btns #edit').trigger('click');
         });
 
-        $(document).on('click', '#annotation-canvas #background', function(e) {
+        $(document).off('click', '#annotation-canvas #background').on('click', '#annotation-canvas #background', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $('#annotation-canvas .annotation-wrapper').removeClass('active');
@@ -1712,7 +1727,7 @@ export default class Annotation extends Base {
             $('#annotation-canvas #background').addClass('d-none').css('z-index', 0);
         });
 
-        $(document).on('click', `#annotation-btns #undo`, async function(e) {
+        $(document).off('click', `#annotation-btns #undo`).on('click', `#annotation-btns #undo`, async function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             if (trackingIndex == 0) {
@@ -1736,7 +1751,7 @@ export default class Annotation extends Base {
             }
         });
 
-        $(document).on('click', `#annotation-btns #redo`, async function(e) {
+        $(document).off('click', `#annotation-btns #redo`).on('click', `#annotation-btns #redo`, async function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             if (trackingIndex == tracking.length - 1) {
@@ -1794,7 +1809,7 @@ export default class Annotation extends Base {
         };
 
         // Group the active items
-        $(document).on('click', `#annotation-btns #group`, function(e) {
+        $(document).off('click', `#annotation-btns #group`).on('click', `#annotation-btns #group`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(this).attr('disabled', 'disabled').addClass('d-none');
@@ -1816,7 +1831,7 @@ export default class Annotation extends Base {
             saveTracking(active);
         });
 
-        $(document).on('click', `#annotation-btns #ungroup`, function(e) {
+        $(document).off('click', `#annotation-btns #ungroup`).on('click', `#annotation-btns #ungroup`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(this).attr('disabled', 'disabled').addClass('d-none');
@@ -1838,7 +1853,7 @@ export default class Annotation extends Base {
         });
 
         // Increase the z-index of the active items
-        $(document).on('click', `#annotation-btns #up`, function(e) {
+        $(document).off('click', `#annotation-btns #up`).on('click', `#annotation-btns #up`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             let active = $('#edit-btns').attr('data-active');
@@ -1868,7 +1883,7 @@ export default class Annotation extends Base {
         });
 
         // Decrease the z-index of the active items
-        $(document).on('click', `#annotation-btns #down`, function(e) {
+        $(document).off('click', `#annotation-btns #down`).on('click', `#annotation-btns #down`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             let active = $('#edit-btns').attr('data-active');
@@ -1913,18 +1928,19 @@ export default class Annotation extends Base {
             saveTracking(null);
         });
 
-        // Duplicate the active items
+        // Duplicate the active items.
         $playerWrapper.on('click', `#annotation-btns #copy`, async function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             getItems(false);
-            // Copy the active item
+            // Copy the active item.
             const highestOrder = getTopLayer(items);
             let active = $('#edit-btns').attr('data-active');
             active = active.split(',');
             active = sortItemsByLayer(active, 'asc');
             const currentTime = await self.player.getCurrentTime();
             let newItems = [];
+            let groupIncrement = Math.round(Math.random() * 100);
             for (let i = 0; i < active.length; i++) {
                 let a = active[i];
                 let activeItem = $(`.annotation-wrapper[data-item="${a}"]`);
@@ -1935,7 +1951,9 @@ export default class Annotation extends Base {
                 newItem.properties.start = currentTime;
                 newItem.position = recalculatingSize(activeItem);
                 if (item.position.group) {
-                    newItem.position.group = Number(item.position.group) + 1;
+                    newItem.position.group = Number(item.position.group) + groupIncrement;
+                } else {
+                    delete newItem.position.group;
                 }
                 newItem.id = new Date().getTime();
                 newItems.push(newItem.id);
@@ -1945,11 +1963,13 @@ export default class Annotation extends Base {
                 if (i == active.length - 1) {
                     $('#edit-btns').attr('data-active', newItems.join(',')).addClass('d-flex').removeClass('d-none');
                     // Put focus on the first element
-                    getItems(false);
-                    renderItems(items, newItems, false);
-                    document.querySelector('.annotation-wrapper.active').focus();
-                    updatePositionInfo($(`.annotation-wrapper[data-item="${newItem.id}"]`));
-                    saveTracking(newItems);
+                    renderItems([], newItems, true);
+                    setTimeout(() => {
+                        getItems(false);
+                        document.querySelector('.annotation-wrapper.active').focus();
+                        updatePositionInfo($videoWrapper.find(`.annotation-wrapper[data-item="${newItem.id}"]`));
+                        saveTracking(newItems);
+                    }, 500);
                 }
             }
         });

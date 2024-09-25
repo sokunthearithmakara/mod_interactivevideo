@@ -30,6 +30,10 @@ import Templates from 'core/templates';
 import Notification from 'core/notification';
 import {notifyFilterContentUpdated as notifyFilter} from 'core_filters/events';
 export default class InlineAnnotation extends Base {
+    /**
+     * Callback function to be executed after an edit operation.
+     * Currently, this function does not perform any actions.
+     */
     postEditCallback() {
         // Do nothing
     }
@@ -43,6 +47,11 @@ export default class InlineAnnotation extends Base {
         return +(Math.round(num + 'e+2') + 'e-2');
     }
 
+    /**
+     * Render the container for the annotation.
+     * @param {Object} annotation The annotation object.
+     * @return {void}
+     */
     renderContainer(annotation) {
         const videoWrapper = $('#video-wrapper');
         videoWrapper.find('#canvas').remove();
@@ -52,21 +61,24 @@ export default class InlineAnnotation extends Base {
         const updateAspectRatio = async (video, reset) => {
             let elem = video ? $('#player') : $(`#canvas[data-id='${annotation.id}']`);
             if ($("#wrapper").hasClass('fullscreen')) {
-                let ratio = await this.player.ratio();
+                let ratio = 16 / 9;
+                if (!this.displayoptions.usefixedratio || this.displayoptions.usefixedratio == 0) {
+                    ratio = this.player.aspectratio;
+                }
                 let videowrapperaspect = videoWrapper.width() / videoWrapper.height();
                 let gap = '- 55px';
                 if ($("#wrapper").hasClass('no-videonav')) {
                     gap = '';
                 }
                 if (videowrapperaspect > ratio) {
-                    elem.css('height', `calc(100vh ${gap})`);
-                    elem.css('width', `calc((100vh ${gap}) * ${ratio})`);
+                    elem.css('height', `calc(100dvh ${gap})`);
+                    elem.css('width', `calc((100dvh ${gap}) * ${ratio})`);
                     elem.css('top', '0');
-                    elem.css('left', `calc((100vw - (100vh ${gap}) * ${ratio}) / 2)`);
+                    elem.css('left', `calc((100dvw - (100dvh ${gap}) * ${ratio}) / 2)`);
                 } else if (videowrapperaspect < ratio) {
-                    elem.css('width', '100vw');
-                    elem.css('height', `${100 / ratio}vw`);
-                    elem.css('top', `calc((100vh ${gap} - 100vw / ${ratio}) / 2)`);
+                    elem.css('width', '100dvw');
+                    elem.css('height', `${100 / ratio}dvw`);
+                    elem.css('top', `calc((100dvh ${gap} - 100dvw / ${ratio}) / 2)`);
                     elem.css('left', '0');
                 }
             } else {
@@ -99,6 +111,12 @@ export default class InlineAnnotation extends Base {
         });
     }
 
+    /**
+     * Post-processes the content after rendering an annotation.
+     * @param {Object} annotation The annotation object.
+     * @param {Object} data The data object.
+     * @return {void}
+     */
     postContentRender(annotation, data) {
         let self = this;
         var $videoWrapper = $('#video-wrapper');
@@ -156,13 +174,6 @@ export default class InlineAnnotation extends Base {
             position.group = g;
             elem.css(position);
             updatePositionInfo(elem);
-            if (elem.data('type') == 'video') {
-                // Update size of the playpause button
-                elem.find('.playpause').css({
-                    'font-size': elem.outerHeight() * 0.2 + 'px',
-                    'line-height': elem.outerHeight() * 0.2 + 'px',
-                });
-            }
             return position;
         };
 
@@ -198,6 +209,355 @@ export default class InlineAnnotation extends Base {
             elem.css('width', 'auto');
         };
 
+        const renderImage = (wrapper, item, prop, id, position) => {
+            var parts = prop.timestamp.split(':');
+            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            if (prop.gotourl != '') {
+                wrapper.append(`<a href="${prop.gotourl}" target="_blank"><img src="${prop.url}" id="${id}"
+                             class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
+                             ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/></a>`);
+            } else {
+                wrapper.append(`<img src="${prop.url}" id="${id}"
+                                 ${timestamp > 0 ? ' data-timestamp="' + timestamp + '"' : ''}
+                                  class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}
+                                  ${timestamp > 0 ? 'cursor-pointer' : ''}"
+                                   ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/>`);
+            }
+            if (!self.isEditMode()) {
+                if (prop.gotourl == '' && timestamp == 0) {
+                    wrapper.removeClass('resizable');
+                    wrapper.addClass('no-pointer');
+                } else {
+                    wrapper.addClass('clickable');
+                }
+            }
+            wrapper.css(position);
+            wrapper.css('height', 'auto');
+            $videoWrapper.find(`#canvas`).append(wrapper);
+        };
+
+        const renderVideo = (wrapper, item, prop, id, position) => {
+            wrapper.append(`<video id="${id}" class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
+                 ${prop.showcontrol == 1 && !self.isEditMode() ? 'controls' : ''}
+                 src="${prop.url}" style="border-radius: ${prop.rounded == 1 ? '1em' : '0'}" disablePictureInPicture/></video>
+             <i class="playpause bi bi-play-fill position-absolute" style="font-size: 2em; line-height:: 2em;"></i>`);
+            var video = wrapper.find('video')[0];
+            video.autoplay = prop.autoplay == '1';
+            video.playsInline = true;
+            if (self.isEditMode()) {
+                video.autoplay = false;
+            }
+            video.onplay = function() {
+                wrapper.find('.playpause').removeClass('bi-play-fill').addClass('bi-pause-fill');
+            };
+            video.onpause = function() {
+                wrapper.find('.playpause').removeClass('bi-pause-fill').addClass('bi-play-fill');
+            };
+            video.onended = function() {
+                wrapper.find('.playpause').removeClass('bi-pause-fill').addClass('bi-play-fill');
+            };
+            wrapper.css(position);
+            $videoWrapper.find(`#canvas`).append(wrapper);
+            recalculatingSize(wrapper);
+        };
+
+        const renderFile = (wrapper, item, prop, id, position) => {
+            const type = item.type;
+            var wrapperhtml = ``;
+            if (type == 'audio') {
+                wrapperhtml = `<span id="${id}" tabindex="0"
+                             class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
+                              annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatex-360"
+                               data-src="${prop.url}"><i class="bi bi-volume-up fs-unset" style="margin-right:0.25em;"></i>
+                               <span class="timeremaining">00:00</span></span>`;
+            } else if (type == 'file') {
+                wrapperhtml = `<a id="${id}"
+                             class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
+                             annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatey-180" href="${prop.url}"
+                              target="_blank"><i class="bi bi-paperclip fs-unset"></i>${prop.formattedlabel != "" ?
+                        `<span style="margin-left:0.25em;">${prop.formattedlabel}` : ''}</a>`;
+            }
+            wrapper.append(`<div class="d-flex h-100">${wrapperhtml}</div>`);
+
+            if (type == 'audio' && !self.isEditMode()) {
+                let playButton = wrapper.find('.annotation-content');
+                let audioSrc = prop.url;
+                let media = new Audio(audioSrc);
+                playButton.on('click', function(e) {
+                    e.stopImmediatePropagation();
+                    if (media.paused || media.ended || media.currentTime === 0) {
+                        media.play();
+                        $(this).find('i').removeClass('bi-volume-up').addClass('bi-pause-fill');
+                    } else {
+                        media.pause();
+                        $(this).find('i').removeClass('bi-pause-fill').addClass('bi-volume-up');
+                    }
+                });
+
+                let totaltime = 0;
+                media.onloadedmetadata = function() {
+                    totaltime = media.duration;
+                    playButton.find('span.timeremaining').text(convertSecondsToMMSS(totaltime));
+                };
+
+                media.onended = function() {
+                    playButton.find('i').removeClass('bi-pause-fill').addClass('bi-volume-up');
+                    playButton.find('span.timeremaining').text(convertSecondsToMMSS(totaltime));
+                };
+
+                media.ontimeupdate = function() {
+                    playButton.find('span.timeremaining')
+                        .text(convertSecondsToMMSS(media.duration - media.currentTime));
+                };
+
+                if (prop.autoplay == '1') {
+                    setTimeout(() => {
+                        playButton.trigger('click');
+                    }, 100);
+                }
+
+                $(document).one('iv:playerSeek iv:playerPlaying', function() {
+                    if (media) {
+                        media.pause();
+                    }
+                });
+            }
+
+            position.width = 0;
+
+            wrapper.css(position);
+            $videoWrapper.find(`#canvas`).append(wrapper);
+            recalculatingTextSize(wrapper, true);
+        };
+
+        const renderNavigation = (wrapper, item, prop, id, position) => {
+            var parts = prop.timestamp.split(':');
+            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+
+            wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0" class="btn ${prop.style} ${prop.rounded == '1' ?
+                'btn-rounded' : 'rounded-0'} annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''}"
+                data-timestamp="${timestamp}">${prop.formattedlabel}</span></div>`);
+
+            position.width = 0;
+
+            wrapper.css(position);
+            $videoWrapper.find(`#canvas`).append(wrapper);
+            recalculatingTextSize(wrapper, true);
+        };
+
+        const renderStopwatch = (wrapper, item, prop, id, position) => {
+            var duration = Number(prop.duration) * 60;
+            wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0"
+                             class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
+                              annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatey-180"
+                               data-duration="${duration}">
+                               <i class="bi bi bi-stopwatch fs-unset" style="margin-right:0.25em;"></i>
+                               <span>${convertSecondsToMMSS(duration)}</span></span></div>`);
+
+            var timer, alarm;
+            if (timer) {
+                clearInterval(timer);
+            }
+            var intervalfunction = function() {
+                timer = setInterval(() => {
+                    $(`.annotation-content#${id}`).addClass('running');
+                    let time = $(`.annotation-content#${id}`).data('duration');
+                    time--;
+                    $(`.annotation-content#${id} span`).text(convertSecondsToMMSS(time));
+                    $(`.annotation-content#${id}`).data('duration', time);
+                    if (prop.playalarmsound.playsoundatinterval == '1'
+                        && time % (prop.playalarmsound.intervaltime * 60) == 0) {
+                        if (prop.playalarmsound.playsoundatend == 1) {
+                            alarm = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/short-alarm.mp3');
+                            alarm.play();
+                        }
+                    }
+                    if (time < 0) {
+                        clearInterval(timer);
+                        if (prop.playalarmsound.playsoundatend == 1) {
+                            alarm = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/alarm.mp3');
+                            alarm.play();
+                            alarm.onplay = function() {
+                                $(`.annotation-content#${id}`).addClass('pulse');
+                            };
+                            alarm.onended = function() {
+                                $(`.annotation-content#${id}`).removeClass('pulse');
+                            };
+                        }
+                        $(`.annotation-content#${id}`).removeClass('running');
+                        $(`.annotation-content#${id} span`).text(convertSecondsToMMSS(duration));
+                        $(`.annotation-content#${id}`).data('duration', duration);
+                    }
+                }, 1000);
+            };
+
+            if (!self.isEditMode()) {
+                intervalfunction();
+                $videoWrapper.on('click', `.annotation-content#${id}`, function(e) {
+                    e.stopImmediatePropagation();
+                    if (prop.allowpause == 1) {
+                        if ($(this).hasClass('running')) {
+                            clearInterval(timer);
+                            if (alarm) {
+                                alarm.pause();
+                            }
+                            $(this).removeClass('running');
+                        } else {
+                            intervalfunction();
+                        }
+                    } else if ($(this).data('duration') == duration) {
+                        intervalfunction();
+                    }
+                });
+            }
+
+            $(document).one('iv:playerSeek', function() {
+                clearInterval(timer);
+            });
+
+            position.width = 0;
+
+            wrapper.css(position);
+            $videoWrapper.find(`#canvas`).append(wrapper);
+            recalculatingTextSize(wrapper, true);
+        };
+
+        const renderTextblock = (wrapper, item, prop, id, position) => {
+            var textparts = prop.formattedlabel.split('\r\n');
+            var textblock = '<div class="d-flex flex-column">';
+            textparts.forEach((part) => {
+                if (part.trim() == '') {
+                    return;
+                }
+                textblock += `<span class="text-row text-nowrap text-${prop.alignment}"
+                                 style="font-family: ${prop.textfont != '' ? prop.textfont : 'inherit'}">${part}</span>`;
+            });
+            textblock += '</div>';
+            if (prop.url != undefined && prop.url != '') {
+                wrapper.append(`<a id="${id}"
+                                     class="annotation-content d-block ${prop.shadow == '1' ? 'text-shadow' : ''}"
+                                      href="${prop.url}" target="_blank">${textblock}</a>`);
+                wrapper.addClass('clickable');
+            } else {
+                wrapper.append(`<div id="${id}"
+                                     class="annotation-content ${prop.shadow == '1' ? 'text-shadow' : ''}
+                                     ">${textblock}</div>`);
+            }
+            wrapper.position.width = 0;
+            wrapper.css(position);
+            var style = {
+                'font-size': item.position.fontSize,
+                'line-height': item.position.lineHeight,
+                'font-weight': prop.bold == '1' ? 'bold' : 'normal',
+                'font-style': prop.italic == '1' ? 'italic' : 'normal',
+                'text-decoration': prop.underline == '1' ? 'underline' : 'none',
+                'color': prop.textcolor,
+                'background': prop.bgcolor,
+                'border-radius': prop.rounded == '1' ? '0.3em' : '0',
+                'border-width': prop.borderwidth,
+                'border-color': prop.bordercolor,
+                'border-style': 'solid',
+            };
+            wrapper.find('.annotation-content').css(style);
+            $videoWrapper.find(`#canvas`).append(wrapper);
+            recalculatingTextSize(wrapper, false, true);
+        };
+
+        const renderShape = (wrapper, item, prop, id, position) => {
+            var parts = prop.timestamp.split(':');
+            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            if (prop.gotourl != '') {
+                wrapper.append(`<a href="${prop.gotourl}" target="_blank"><div id="${id}"
+                             class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}"
+                              style="width: 100%; height: 100%;"></div></a>`);
+                wrapper.addClass('clickable');
+            } else {
+                if (!self.isEditMode()) {
+                    if (timestamp == 0) {
+                        wrapper.addClass('no-pointer');
+                    } else {
+                        wrapper.addClass('clickable');
+                    }
+                }
+                wrapper.append(`<div id="${id}" class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}
+                                 ${timestamp > 0 ? 'cursor-pointer' : ''}"
+                             ${timestamp > 0 ? 'data-timestamp="' + timestamp + '"' : ''}
+                             style="width: 100%; height: 100%;"></div>`);
+            }
+            wrapper.css(position);
+            var style = {
+                'background': prop.bgcolor,
+                'border-width': prop.borderwidth,
+                'border-color': prop.bordercolor,
+                'border-style': 'solid',
+                'opacity': prop.opacity / 100,
+            };
+            if (prop.shape == 'circle') {
+                style['border-radius'] = '50%';
+            } else if (prop.shape == 'rectangle') {
+                style['border-radius'] = prop.rounded == '1' ? '1em' : '0';
+            }
+            wrapper.find('.annotation-content').css(style);
+            $videoWrapper.find(`#canvas`).append(wrapper);
+        };
+
+        const renderHotspot = (wrapper, item, prop, id, position) => {
+            wrapper.append(`<div id="${id}" class="annotation-content shadow-sm pulse" role="button"></div>`);
+            position['aspect-ratio'] = '1';
+            wrapper.css(position);
+            var style = {
+                'background-color': prop.color,
+                'opacity': prop.opacity / 100,
+                'border-radius': '50%',
+                'aspect-ratio': '1',
+            };
+            wrapper.find('.annotation-content').css(style);
+            $videoWrapper.find(`#canvas`).append(wrapper);
+
+            if (!self.isEditMode()) {
+                if (prop.usemodal == '1') {
+                    wrapper.attr({
+                        'data-toggle': 'modal',
+                    });
+                } else {
+                    wrapper.attr({
+                        'tabindex': -1,
+                        'data-trigger': 'manual',
+                        'data-boundary': 'viewport',
+                        'data-placement': 'auto',
+                        'data-html': 'true',
+                        'data-content': '<div class="loader"></div>',
+                        'data-title': prop.formattedtitle
+                            + `<i class="bi bi-x-circle-fill ml-auto popover-dismiss cursor-pointer"
+                                         style="font-size:1.5em;"></i>`,
+                    });
+
+                    wrapper.popover({
+                        container: '#wrapper',
+                        html: true,
+                        template: `<div class="popover inlineannotation-popover id-${id}"
+                                     role="tooltip"><div class="arrow"></div>
+                                     <h3 class="popover-header d-flex justify-content-between"></h3>
+                                     <div class="popover-body rounded"></div>${prop.url != '' ?
+                                `<div class="popup-footer bg-light p-2 rounded-bottom"><a href="${prop.url}"
+                                          class="d-block w-100 text-right rotatex-360" target="_blank">
+                                          <i class="bi bi-arrow-right"><i></i></i></a></div>` : ''}</div>`,
+                    });
+
+                    wrapper.on('shown.bs.popover', async function() {
+                        let $body = $(`.popover.id-${id} .popover-body`);
+                        const html = await self.formatContent(prop.content.text, M.cfg.contextid);
+                        $body.html(html);
+                        notifyFilter($body);
+                        wrapper.popover('update');
+                    });
+                    if (prop.openbydefault == '1') {
+                        wrapper.popover('show');
+                    }
+                }
+            }
+        };
+
         const renderItems = (elements, actives, update) => {
             if (!update) { // Clear the canvas if it is a new start.
                 $videoWrapper.find(`#canvas`).empty();
@@ -225,348 +585,29 @@ export default class InlineAnnotation extends Base {
 
                     switch (type) {
                         case 'image':
-                            var parts = prop.timestamp.split(':');
-                            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-                            if (prop.gotourl != '') {
-                                wrapper.append(`<a href="${prop.gotourl}" target="_blank"><img src="${prop.url}" id="${id}"
-                             class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
-                             ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/></a>`);
-                            } else {
-                                wrapper.append(`<img src="${prop.url}" id="${id}"
-                                 ${timestamp > 0 ? ' data-timestamp="' + timestamp + '"' : ''}
-                                  class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}
-                                  ${timestamp > 0 ? 'cursor-pointer' : ''}"
-                                   ${prop.rounded == 1 ? 'style="border-radius:1em;"' : ''} alt="${prop.formattedalttext}"/>`);
-                            }
-                            if (!self.isEditMode()) {
-                                if (prop.gotourl == '' && timestamp == 0) {
-                                    wrapper.removeClass('resizable');
-                                    wrapper.addClass('no-pointer');
-                                } else {
-                                    wrapper.addClass('clickable');
-                                }
-                            }
-                            wrapper.css(position);
-                            wrapper.css('height', 'auto');
-                            $videoWrapper.find(`#canvas`).append(wrapper);
+                            renderImage(wrapper, item, prop, id, position);
                             break;
                         case 'video':
-                            wrapper.append(`<video id="${id}" class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
-                                 preload="metadata" src="${prop.url}" style="border-radius: ${prop.rounded == 1 ? '1em' : '0'}"
-                              disablePictureInPicture/></video>
-                              <i class="playpause bi bi-play-fill shadow position-absolute fs-unset"></i>`);
-                            var video = wrapper.find('video')[0];
-                            video.autoplay = prop.autoplay == '1';
-                            video.playsInline = true;
-                            if (self.isEditMode()) {
-                                video.autoplay = false;
-                            }
-                            video.onplay = function() {
-                                wrapper.find('.playpause').removeClass('bi-play-fill').addClass('bi-pause-fill');
-                            };
-                            video.onpause = function() {
-                                wrapper.find('.playpause').removeClass('bi-pause-fill').addClass('bi-play-fill');
-                            };
-                            video.onended = function() {
-                                wrapper.find('.playpause').removeClass('bi-pause-fill').addClass('bi-play-fill');
-                            };
-                            wrapper.css(position);
-                            $videoWrapper.find(`#canvas`).append(wrapper);
-                            recalculatingSize(wrapper);
+                            renderVideo(wrapper, item, prop, id, position);
                             break;
                         case 'file':
                         case 'audio':
-                            var wrapperhtml = ``;
-                            if (type == 'audio') {
-                                wrapperhtml = `<span id="${id}" tabindex="0"
-                             class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
-                              annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatex-360"
-                               data-src="${prop.url}"><i class="bi bi-volume-up fs-unset" style="margin-right:0.25em;"></i>
-                               <span class="timeremaining">00:00</span></span>`;
-                            } else if (type == 'file') {
-                                wrapperhtml = `<a id="${id}"
-                             class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
-                             annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatey-180" href="${prop.url}"
-                              target="_blank"><i class="bi bi-paperclip fs-unset"></i>${prop.formattedlabel != "" ?
-                                        `<span style="margin-left:0.25em;">${prop.formattedlabel}` : ''}</a>`;
-                            }
-                            wrapper.append(`<div class="d-flex h-100">${wrapperhtml}</div>`);
-
-                            if (type == 'audio' && !self.isEditMode()) {
-                                let playButton = wrapper.find('.annotation-content');
-                                let audioSrc = prop.url;
-                                let media = new Audio(audioSrc);
-                                playButton.on('click', function(e) {
-                                    e.stopImmediatePropagation();
-                                    if (media.paused || media.ended || media.currentTime === 0) {
-                                        media.play();
-                                        $(this).find('i').removeClass('bi-volume-up').addClass('bi-pause-fill');
-                                    } else {
-                                        media.pause();
-                                        $(this).find('i').removeClass('bi-pause-fill').addClass('bi-volume-up');
-                                    }
-                                });
-
-                                let totaltime = 0;
-                                media.onloadedmetadata = function() {
-                                    totaltime = media.duration;
-                                    playButton.find('span.timeremaining').text(convertSecondsToMMSS(totaltime));
-                                };
-
-                                media.onended = function() {
-                                    playButton.find('i').removeClass('bi-pause-fill').addClass('bi-volume-up');
-                                    playButton.find('span.timeremaining').text(convertSecondsToMMSS(totaltime));
-                                };
-
-                                media.ontimeupdate = function() {
-                                    playButton.find('span.timeremaining')
-                                        .text(convertSecondsToMMSS(media.duration - media.currentTime));
-                                };
-
-                                if (prop.autoplay == '1') {
-                                    setTimeout(() => {
-                                        playButton.trigger('click');
-                                    }, 100);
-                                }
-
-                                $(document).one('iv:playerSeek iv:playerPlaying', function() {
-                                    if (media) {
-                                        media.pause();
-                                    }
-                                });
-                            }
-
-                            position.width = 0;
-
-                            wrapper.css(position);
-                            $videoWrapper.find(`#canvas`).append(wrapper);
-                            recalculatingTextSize(wrapper, true);
-
+                            renderFile(wrapper, item, prop, id, position);
                             break;
                         case 'navigation':
-                            var parts = prop.timestamp.split(':');
-                            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-
-                            wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0"
-                             class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
-                              annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''}"
-                               data-timestamp="${timestamp}">${prop.formattedlabel}</span></div>`);
-
-                            position.width = 0;
-
-                            wrapper.css(position);
-                            $videoWrapper.find(`#canvas`).append(wrapper);
-                            recalculatingTextSize(wrapper, true);
+                            renderNavigation(wrapper, item, prop, id, position);
                             break;
                         case 'stopwatch':
-                            var duration = Number(prop.duration) * 60;
-                            wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0"
-                             class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
-                              annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatey-180"
-                               data-duration="${duration}">
-                               <i class="bi bi bi-stopwatch fs-unset" style="margin-right:0.25em;"></i>
-                               <span>${convertSecondsToMMSS(duration)}</span></span></div>`);
-
-                            var timer, alarm;
-                            if (timer) {
-                                clearInterval(timer);
-                            }
-                            var intervalfunction = function() {
-                                timer = setInterval(() => {
-                                    $(`.annotation-content#${id}`).addClass('running');
-                                    let time = $(`.annotation-content#${id}`).data('duration');
-                                    time--;
-                                    $(`.annotation-content#${id} span`).text(convertSecondsToMMSS(time));
-                                    $(`.annotation-content#${id}`).data('duration', time);
-                                    if (prop.playalarmsound.playsoundatinterval == '1'
-                                        && time % (prop.playalarmsound.intervaltime * 60) == 0) {
-                                        if (prop.playalarmsound.playsoundatend == 1) {
-                                            alarm = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/short-alarm.mp3');
-                                            alarm.play();
-                                        }
-                                    }
-                                    if (time < 0) {
-                                        clearInterval(timer);
-                                        if (prop.playalarmsound.playsoundatend == 1) {
-                                            alarm = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/alarm.mp3');
-                                            alarm.play();
-                                            alarm.onplay = function() {
-                                                $(`.annotation-content#${id}`).addClass('pulse');
-                                            };
-                                            alarm.onended = function() {
-                                                $(`.annotation-content#${id}`).removeClass('pulse');
-                                            };
-                                        }
-                                        $(`.annotation-content#${id}`).removeClass('running');
-                                        $(`.annotation-content#${id} span`).text(convertSecondsToMMSS(duration));
-                                        $(`.annotation-content#${id}`).data('duration', duration);
-                                    }
-                                }, 1000);
-                            };
-
-                            if (!self.isEditMode()) {
-                                intervalfunction();
-                                $videoWrapper.on('click', `.annotation-content#${id}`, function(e) {
-                                    e.stopImmediatePropagation();
-                                    if (prop.allowpause == 1) {
-                                        if ($(this).hasClass('running')) {
-                                            clearInterval(timer);
-                                            if (alarm) {
-                                                alarm.pause();
-                                            }
-                                            $(this).removeClass('running');
-                                        } else {
-                                            intervalfunction();
-                                        }
-                                    } else if ($(this).data('duration') == duration) {
-                                        intervalfunction();
-                                    }
-                                });
-                            }
-
-                            $(document).one('iv:playerSeek', function() {
-                                clearInterval(timer);
-                            });
-
-                            position.width = 0;
-
-                            wrapper.css(position);
-                            $videoWrapper.find(`#canvas`).append(wrapper);
-                            recalculatingTextSize(wrapper, true);
-
+                            renderStopwatch(wrapper, item, prop, id, position);
                             break;
                         case 'textblock':
-                            var textparts = prop.formattedlabel.split('\r\n');
-                            var textblock = '<div class="d-flex flex-column">';
-                            textparts.forEach((part) => {
-                                if (part.trim() == '') {
-                                    return;
-                                }
-                                textblock += `<span class="text-row text-nowrap text-${prop.alignment}"
-                                 style="font-family: ${prop.textfont != '' ? prop.textfont : 'inherit'}">${part}</span>`;
-                            });
-                            textblock += '</div>';
-                            if (prop.url != undefined && prop.url != '') {
-                                wrapper.append(`<a id="${id}"
-                                     class="annotation-content d-block ${prop.shadow == '1' ? 'text-shadow' : ''}"
-                                      href="${prop.url}" target="_blank">${textblock}</a>`);
-                                wrapper.addClass('clickable');
-                            } else {
-                                wrapper.append(`<div id="${id}"
-                                     class="annotation-content ${prop.shadow == '1' ? 'text-shadow' : ''}
-                                     ">${textblock}</div>`);
-                            }
-                            wrapper.position.width = 0;
-                            wrapper.css(position);
-                            var style = {
-                                'font-size': item.position.fontSize,
-                                'line-height': item.position.lineHeight,
-                                'font-weight': prop.bold == '1' ? 'bold' : 'normal',
-                                'font-style': prop.italic == '1' ? 'italic' : 'normal',
-                                'text-decoration': prop.underline == '1' ? 'underline' : 'none',
-                                'color': prop.textcolor,
-                                'background': prop.bgcolor,
-                                'border-radius': prop.rounded == '1' ? '0.3em' : '0',
-                                'border-width': prop.borderwidth,
-                                'border-color': prop.bordercolor,
-                                'border-style': 'solid',
-                            };
-                            wrapper.find('.annotation-content').css(style);
-                            $videoWrapper.find(`#canvas`).append(wrapper);
-                            recalculatingTextSize(wrapper, false, true);
+                            renderTextblock(wrapper, item, prop, id, position);
                             break;
                         case 'shape':
-                            var parts = prop.timestamp.split(':');
-                            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-                            if (prop.gotourl != '') {
-                                wrapper.append(`<a href="${prop.gotourl}" target="_blank"><div id="${id}"
-                             class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}"
-                              style="width: 100%; height: 100%;"></div></a>`);
-                                wrapper.addClass('clickable');
-                            } else {
-                                if (!self.isEditMode()) {
-                                    if (timestamp == 0) {
-                                        wrapper.addClass('no-pointer');
-                                    } else {
-                                        wrapper.addClass('clickable');
-                                    }
-                                }
-                                wrapper.append(`<div id="${id}" class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}
-                                 ${timestamp > 0 ? 'cursor-pointer' : ''}"
-                             ${timestamp > 0 ? 'data-timestamp="' + timestamp + '"' : ''}
-                             style="width: 100%; height: 100%;"></div>`);
-                            }
-                            wrapper.css(position);
-                            var style = {
-                                'background': prop.bgcolor,
-                                'border-width': prop.borderwidth,
-                                'border-color': prop.bordercolor,
-                                'border-style': 'solid',
-                                'opacity': prop.opacity / 100,
-                            };
-                            if (prop.shape == 'circle') {
-                                style['border-radius'] = '50%';
-                            } else if (prop.shape == 'rectangle') {
-                                style['border-radius'] = prop.rounded == '1' ? '1em' : '0';
-                            }
-                            wrapper.find('.annotation-content').css(style);
-                            $videoWrapper.find(`#canvas`).append(wrapper);
+                            renderShape(wrapper, item, prop, id, position);
                             break;
                         case 'hotspot':
-                            wrapper.append(`<div id="${id}" class="annotation-content shadow-sm pulse" role="button"></div>`);
-                            position['aspect-ratio'] = '1';
-                            wrapper.css(position);
-                            var style = {
-                                'background-color': prop.color,
-                                'opacity': prop.opacity / 100,
-                                'border-radius': '50%',
-                                'aspect-ratio': '1',
-                            };
-                            wrapper.find('.annotation-content').css(style);
-                            $videoWrapper.find(`#canvas`).append(wrapper);
-
-                            if (!self.isEditMode()) {
-                                if (prop.usemodal == '1') {
-                                    wrapper.attr({
-                                        'data-toggle': 'modal',
-                                    });
-                                } else {
-                                    wrapper.attr({
-                                        'tabindex': -1,
-                                        'data-trigger': 'manual',
-                                        'data-boundary': 'viewport',
-                                        'data-placement': 'auto',
-                                        'data-html': 'true',
-                                        'data-content': '<div class="loader"></div>',
-                                        'data-title': prop.formattedtitle
-                                            + `<i class="bi bi-x-circle-fill ml-auto popover-dismiss cursor-pointer"
-                                         style="font-size:1.5em;"></i>`,
-                                    });
-
-                                    wrapper.popover({
-                                        container: '#wrapper',
-                                        html: true,
-                                        template: `<div class="popover inlineannotation-popover id-${id}"
-                                     role="tooltip"><div class="arrow"></div>
-                                     <h3 class="popover-header d-flex justify-content-between"></h3>
-                                     <div class="popover-body rounded"></div>${prop.url != '' ?
-                                                `<div class="popup-footer bg-light p-2 rounded-bottom"><a href="${prop.url}"
-                                          class="d-block w-100 text-right rotatex-360" target="_blank">
-                                          <i class="bi bi-arrow-right"><i></i></i></a></div>` : ''}</div>`,
-                                    });
-
-                                    wrapper.on('shown.bs.popover', async function() {
-                                        let $body = $(`.popover.id-${id} .popover-body`);
-                                        const html = await self.formatContent(prop.content.text, M.cfg.contextid);
-                                        $body.html(html);
-                                        notifyFilter($body);
-                                        wrapper.popover('update');
-                                    });
-                                    if (prop.openbydefault == '1') {
-                                        wrapper.popover('show');
-                                    }
-                                }
-                            }
+                            renderHotspot(wrapper, item, prop, id, position);
                             break;
                     }
 
@@ -657,84 +698,86 @@ export default class InlineAnnotation extends Base {
                                 updatePositionInfo($(this));
                             },
                             stop: function() {
-                                let $selected = $videoWrapper.find('#canvas .annotation-wrapper.active');
-                                var positions = $selected.map(function() {
-                                    return {
-                                        id: $(this).data('item'),
-                                        left: $(this).position().left,
-                                        top: $(this).position().top,
-                                        bottom: $(this).position().top + $(this).height(),
-                                        right: $(this).position().left + $(this).width(),
-                                    };
-                                }).get();
+                                if (self.isEditMode()) {
+                                    let $selected = $videoWrapper.find('#canvas .annotation-wrapper.active');
+                                    var positions = $selected.map(function() {
+                                        return {
+                                            id: $(this).data('item'),
+                                            left: $(this).position().left,
+                                            top: $(this).position().top,
+                                            bottom: $(this).position().top + $(this).height(),
+                                            right: $(this).position().left + $(this).width(),
+                                        };
+                                    }).get();
 
-                                if (positions.find(x => x.left < 0)) {
-                                    positions.sort((a, b) => a.left - b.left);
-                                    let onLeft = positions.find(x => x.left < 0);
-                                    let id = onLeft.id;
-                                    let target = $videoWrapper.find(`#canvas .annotation-wrapper[data-item="${id}"]`);
-                                    target.css('left', 0);
-                                    let distance = target.data('startPosition').left;
-                                    $selected.each(function() {
-                                        let $this = $(this);
-                                        let position = $this.data('startPosition');
-                                        let newLeft = position.left - distance;
-                                        $this.css('left', newLeft + 'px');
-                                    });
+                                    if (positions.find(x => x.left < 0)) {
+                                        positions.sort((a, b) => a.left - b.left);
+                                        let onLeft = positions.find(x => x.left < 0);
+                                        let id = onLeft.id;
+                                        let target = $videoWrapper.find(`#canvas .annotation-wrapper[data-item="${id}"]`);
+                                        target.css('left', 0);
+                                        let distance = target.data('startPosition').left;
+                                        $selected.each(function() {
+                                            let $this = $(this);
+                                            let position = $this.data('startPosition');
+                                            let newLeft = position.left - distance;
+                                            $this.css('left', newLeft + 'px');
+                                        });
+                                    }
+
+                                    if (positions.find(x => x.top < 0)) {
+                                        positions.sort((a, b) => a.top - b.top);
+                                        let onTop = positions.find(x => x.top < 0);
+                                        let id = onTop.id;
+                                        let target = $videoWrapper.find(`#canvas .annotation-wrapper[data-item="${id}"]`);
+                                        target.css('top', 0);
+                                        let distance = target.data('startPosition').top;
+                                        $selected.each(function() {
+                                            let $this = $(this);
+                                            let position = $this.data('startPosition');
+                                            let newTop = position.top - distance;
+                                            $this.css('top', newTop + 'px');
+                                        });
+                                    }
+
+                                    if (positions.find(x => x.right > $('#canvas').width())) {
+                                        positions.sort((a, b) => a.right - b.right);
+                                        let onRight = positions.find(x => x.right > $('#canvas').width());
+                                        let id = onRight.id;
+                                        let target = $videoWrapper.find(`#canvas .annotation-wrapper[data-item="${id}"]`);
+                                        target.css('left', ($('#canvas').width() - target.width() - 1) + 'px');
+                                        let distance = target.data('startPosition').left - target.position().left;
+                                        $selected.each(function() {
+                                            let $this = $(this);
+                                            let position = $this.data('startPosition');
+                                            let newLeft = position.left - distance;
+                                            $this.css('left', newLeft + 'px');
+                                        });
+                                    }
+
+                                    if (positions.find(x => x.bottom > $('#canvas').height())) {
+                                        positions.sort((a, b) => a.bottom - b.bottom);
+                                        let onBottom = positions.find(x => x.bottom > $('#canvas').height());
+                                        let id = onBottom.id;
+                                        let target = $videoWrapper.find(`#canvas .annotation-wrapper[data-item="${id}"]`);
+                                        target.css('top', ($('#canvas').height() - target.height() - 1) + 'px');
+                                        let distance = target.data('startPosition').top - target.position().top;
+                                        $selected.each(function() {
+                                            let $this = $(this);
+                                            let position = $this.data('startPosition');
+                                            let newTop = position.top - distance;
+                                            $this.css('top', newTop + 'px');
+                                        });
+                                    }
+
+                                    getItems(false);
+                                    updatePositionInfo($(this));
+                                    $selected = $selected.map(function() {
+                                        return $(this).data('item');
+                                    }).get();
+
+                                    saveTracking($selected);
                                 }
-
-                                if (positions.find(x => x.top < 0)) {
-                                    positions.sort((a, b) => a.top - b.top);
-                                    let onTop = positions.find(x => x.top < 0);
-                                    let id = onTop.id;
-                                    let target = $videoWrapper.find(`#canvas .annotation-wrapper[data-item="${id}"]`);
-                                    target.css('top', 0);
-                                    let distance = target.data('startPosition').top;
-                                    $selected.each(function() {
-                                        let $this = $(this);
-                                        let position = $this.data('startPosition');
-                                        let newTop = position.top - distance;
-                                        $this.css('top', newTop + 'px');
-                                    });
-                                }
-
-                                if (positions.find(x => x.right > $('#canvas').width())) {
-                                    positions.sort((a, b) => a.right - b.right);
-                                    let onRight = positions.find(x => x.right > $('#canvas').width());
-                                    let id = onRight.id;
-                                    let target = $videoWrapper.find(`#canvas .annotation-wrapper[data-item="${id}"]`);
-                                    target.css('left', ($('#canvas').width() - target.width() - 1) + 'px');
-                                    let distance = target.data('startPosition').left - target.position().left;
-                                    $selected.each(function() {
-                                        let $this = $(this);
-                                        let position = $this.data('startPosition');
-                                        let newLeft = position.left - distance;
-                                        $this.css('left', newLeft + 'px');
-                                    });
-                                }
-
-                                if (positions.find(x => x.bottom > $('#canvas').height())) {
-                                    positions.sort((a, b) => a.bottom - b.bottom);
-                                    let onBottom = positions.find(x => x.bottom > $('#canvas').height());
-                                    let id = onBottom.id;
-                                    let target = $videoWrapper.find(`#canvas .annotation-wrapper[data-item="${id}"]`);
-                                    target.css('top', ($('#canvas').height() - target.height() - 1) + 'px');
-                                    let distance = target.data('startPosition').top - target.position().top;
-                                    $selected.each(function() {
-                                        let $this = $(this);
-                                        let position = $this.data('startPosition');
-                                        let newTop = position.top - distance;
-                                        $this.css('top', newTop + 'px');
-                                    });
-                                }
-
-                                getItems(false);
-                                updatePositionInfo($(this));
-                                $selected = $selected.map(function() {
-                                    return $(this).data('item');
-                                }).get();
-
-                                saveTracking($selected);
                             }
                         });
 
@@ -744,26 +787,30 @@ export default class InlineAnnotation extends Base {
                             grid: [1, 1],
                             minHeight: 1,
                             resize: function(event) {
-                                let type = $(this).data('type');
-                                if (type == 'file'
-                                    || type == 'audio' || type == 'stopwatch' || type == 'navigation' || type == 'textblock') {
-                                    recalculatingTextSize($(this), type != 'textblock', type == 'textblock');
-                                } else if (type == 'shape' && event.ctrlKey) {
-                                    $(this).resizable('option', 'aspectRatio', 1);
+                                if (self.isEditMode()) {
+                                    let type = $(this).data('type');
+                                    if (type == 'file'
+                                        || type == 'audio' || type == 'stopwatch' || type == 'navigation' || type == 'textblock') {
+                                        recalculatingTextSize($(this), type != 'textblock', type == 'textblock');
+                                    } else if (type == 'shape' && event.ctrlKey) {
+                                        $(this).resizable('option', 'aspectRatio', 1);
+                                    }
+                                    updatePositionInfo($(this));
                                 }
-                                updatePositionInfo($(this));
                             },
                             stop: function() {
-                                let type = $(this).data('type');
-                                if (type == 'file' || type == 'navigation' || type == 'textblock') {
-                                    recalculatingTextSize($(this), type != 'textblock', type == 'textblock');
-                                } else if (type == 'shape') {
-                                    $(this).resizable('option', 'aspectRatio', false);
+                                if (self.isEditMode()) {
+                                    let type = $(this).data('type');
+                                    if (type == 'file' || type == 'navigation' || type == 'textblock') {
+                                        recalculatingTextSize($(this), type != 'textblock', type == 'textblock');
+                                    } else if (type == 'shape') {
+                                        $(this).resizable('option', 'aspectRatio', false);
+                                    }
+                                    recalculatingSize($(this));
+                                    getItems(false);
+                                    saveTracking([$(this).data('item')]);
+                                    $(this).trigger('click');
                                 }
-                                recalculatingSize($(this));
-                                getItems(false);
-                                saveTracking([$(this).data('item')]);
-                                $(this).trigger('click');
                             }
                         });
                     }
@@ -892,7 +939,7 @@ export default class InlineAnnotation extends Base {
                     } else if (type == 'video') {
                         recalculatingSize($(this));
                     }
-                }, 1);
+                }, 100);
                 $('#canvas').css('font-size', $('#canvas').width() / 75 + 'px');
             });
         });
@@ -993,6 +1040,18 @@ export default class InlineAnnotation extends Base {
                 $(`#inlineannotation-btns`).remove();
                 $('.inlineannotation-popover').remove();
                 $videoWrapper.find(`#canvas`).remove();
+            }
+        });
+
+        $playerWrapper.on('click', `#canvas`, function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (!self.isEditMode()) {
+                self.player.play();
+            } else {
+                $videoWrapper.find('#canvas .annotation-wrapper').removeClass('active');
+                $('#inlineannotation-btns .btn').removeClass('active rotatey-360');
+                $('#edit-btns').attr('data-active', '').addClass('d-none').removeClass('d-flex');
             }
         });
 
@@ -1100,7 +1159,6 @@ export default class InlineAnnotation extends Base {
         };
 
         $playerWrapper.on('click', `#inlineannotation-btns #save`, function(e) {
-            e.preventDefault();
             e.stopImmediatePropagation();
             getItems(false);
             // Encode html tags
@@ -1134,31 +1192,34 @@ export default class InlineAnnotation extends Base {
             });
         });
 
-        $(document).one('click', `#inlineannotation-btns #closetoolbar`, function(e) {
-            e.preventDefault();
-            if (draftStatus == 'draft') {
-                Notification.saveCancel(
-                    M.util.get_string('unsavedchange', 'ivplugin_inlineannotation'),
-                    M.util.get_string('unsavedchangeconfirm', 'ivplugin_inlineannotation'),
-                    M.util.get_string('save'),
-                    function() {
-                        // If the user clicks save, save the changes.
-                        $('#inlineannotation-btns #save').trigger('click');
-                        $(`#inlineannotation-btns #closetoolbar`).trigger('click');
-                    },
-                    function() {
-                        $(`#inlineannotation-btns`).remove();
-                        $('#canvas[data-id="' + annotation.id + '"]').remove();
-                    }
-                );
-            } else {
-                $(`#inlineannotation-btns`).remove();
-                $('#canvas[data-id="' + annotation.id + '"]').remove();
-            }
-        });
+        $(document).off('click', `#inlineannotation-btns #closetoolbar`)
+            .on('click', `#inlineannotation-btns #closetoolbar`, function(e) {
+                e.stopImmediatePropagation();
+                if (draftStatus == 'draft') {
+                    Notification.saveCancel(
+                        M.util.get_string('unsavedchange', 'ivplugin_inlineannotation'),
+                        M.util.get_string('unsavedchangeconfirm', 'ivplugin_inlineannotation'),
+                        M.util.get_string('save', 'ivplugin_inlineannotation'),
+                        function() {
+                            // If the user clicks save, save the changes.
+                            $('#inlineannotation-btns #save').trigger('click');
+                            draftStatus = null;
+                            tracking = [];
+                            $(`#inlineannotation-btns #closetoolbar`).trigger('click');
+                        },
+                        function() {
+                            $(`#inlineannotation-btns`).remove();
+                            $('#canvas[data-id="' + annotation.id + '"]').remove();
+                        }
+                    );
+                } else {
+                    $(`#inlineannotation-btns`).remove();
+                    $('#canvas[data-id="' + annotation.id + '"]').remove();
+                }
+            });
 
         $(document).on('click', `#inlineannotation-btns #hideshow`, function(e) {
-            e.preventDefault();
+            e.stopImmediatePropagation();
             $('#canvas[data-id="' + annotation.id + '"]').toggle();
             $(this).find('i').toggleClass('bi-eye bi-eye-slash');
         });
@@ -1720,14 +1781,6 @@ export default class InlineAnnotation extends Base {
                     recalculatingSize(activeItem);
                 }
             }
-        });
-
-        $playerWrapper.on('click', `#canvas`, function(e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            $videoWrapper.find('#canvas .annotation-wrapper').removeClass('active');
-            $('#inlineannotation-btns .btn').removeClass('active rotatey-360');
-            $('#edit-btns').attr('data-active', '').addClass('d-none').removeClass('d-flex');
         });
 
         $(document).on('annotationdeleted', function(e) {

@@ -23,6 +23,17 @@
 import {dispatchEvent} from 'core/event_dispatcher';
 let player;
 class Yt {
+    /**
+     * Creates an instance of the YouTube player.
+     *
+     * @constructor
+     * @param {string} url - The URL of the YouTube video.
+     * @param {number} start - The start time of the video in seconds.
+     * @param {number} end - The end time of the video in seconds.
+     * @param {boolean} showControls - Whether to show the video controls.
+     * @param {boolean} [customStart=false] - Whether to use a custom start time.
+     * @param {boolean} [preload=false] - Whether to preload the video.
+     */
     constructor(url, start, end, showControls, customStart = false, preload = false) {
         /**
          * The type of the player
@@ -47,7 +58,7 @@ class Yt {
          * Interval frequency
          * @type {Number}
          */
-        this.frequency = 0.15;
+        this.frequency = 0.25;
         this.support = {
             playbackrate: true,
             quality: false,
@@ -75,8 +86,6 @@ class Yt {
                 controls: showControls ? 1 : 0,
                 showinfo: 0,
                 fs: 0,
-                cc_load_policy: 1,
-                cc_lang_pref: M.cfg.language,
                 iv_load_policy: 3,
                 autohide: 1,
                 rel: 0,
@@ -90,6 +99,7 @@ class Yt {
                 onReady: function(e) {
                     e.target.getOptions();
                     self.end = !self.end ? e.target.getDuration() : Math.min(self.end, e.target.getDuration());
+                    self.aspectratio = self.ratio();
                     // It's always good idea to play the video at the beginning to download some data.
                     // Otherwise, if user seek before start, they're gonna get blackscreen.
                     if (preload == true && customStart == false) {
@@ -241,7 +251,7 @@ class Yt {
      * @return {Number}
      */
     ratio() {
-        return 16 / 9;
+        return 16 / 9; // YT always return 16:9 as of 2024.
     }
     /**
      * Destroy the player

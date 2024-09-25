@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * TODO describe module main
+ * Main class for skip segment
  *
  * @module     ivplugin_skipsegment/main
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
@@ -44,8 +44,8 @@ export default class SkipSegment extends Base {
         listItem.find('[data-editable]').removeAttr('data-editable');
         listItem.find('.btn.copy').remove();
         listItem.find('.title').replaceWith(`<span class="skipend timestamp
-                            bg-light px-2 py-1 rounded-sm text-truncate"
-                            data-timestamp="${item.title}">${this.convertSecondsToHMS(item.title)}</span>`);
+            bg-light px-2 py-1 rounded-sm text-truncate"
+            data-timestamp="${item.title}">${this.convertSecondsToHMS(item.title, this.totaltime < 3600, true)}</span>`);
         if (this.isSkipped(item.timestamp)) {
             listItem.find('.skipend').after(`<span class="badge badge-warning ml-2">
                             ${M.util.get_string('skipped', 'ivplugin_skipsegment')}</span>`);
@@ -95,30 +95,31 @@ export default class SkipSegment extends Base {
         var body = super.onEditFormLoaded(form, event);
         body.on('change', '[name=titleassist]', function(e) {
             e.preventDefault();
+            const originalValue = $(this).data('initial-value');
             // Make sure the timestamp format is hh:mm:ss
             if (!self.validateTimestampFormat($(this).val())) {
                 self.addNotification(M.util.get_string('invalidtimestampformat', 'ivplugin_skipsegment'));
-                $(this).val($('[name=timestampassist]').val());
+                $(this).val(originalValue);
                 return;
             }
 
             // Convert the timestamp to seconds
             var parts = $(this).val().split(':');
-            var timestamp = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
             if (!self.isBetweenStartAndEnd(timestamp)) {
                 var message = M.util.get_string('interactioncanonlybeaddedbetweenstartandendtime', 'mod_interactivevideo', {
                     "start": self.convertSecondsToHMS(self.start),
                     "end": self.convertSecondsToHMS(self.end),
                 });
                 self.addNotification(message);
-                $(this).val($('[name=timestampassist]').val());
+                $(this).val(originalValue);
                 return;
             }
 
             // Make sure the title assist is not the same as the timestamp assist or less than the timestamp assist
-            if (timestamp <= parseInt($('[name=timestamp]').val())) {
+            if (timestamp <= Number($('[name=timestamp]').val())) {
                 self.addNotification(M.util.get_string('segmentendmustbegreaterthantimestamp', 'mod_interactivevideo'));
-                $(this).val($('[name=timestampassist]').val());
+                $(this).val(originalValue);
                 return;
             }
 

@@ -24,6 +24,15 @@ import {dispatchEvent} from 'core/event_dispatcher';
 import $ from 'jquery';
 let player;
 class DailyMotion {
+    /**
+     * Constructs a new Dailymotion player instance.
+     *
+     * @param {string} url - The URL of the Dailymotion video.
+     * @param {number} start - The start time of the video in seconds.
+     * @param {number} end - The end time of the video in seconds.
+     * @param {boolean} showControls - Whether to show player controls.
+     * @param {boolean} [customStart=false] - Whether to start the video with custom behavior.
+     */
     constructor(url, start, end, showControls, customStart = false) {
         this.type = 'dailymotion';
         this.start = start;
@@ -56,6 +65,7 @@ class DailyMotion {
         };
         let dailymotion;
         const dailymotionEvents = (player) => {
+            self.aspectratio = self.ratio();
             if (showControls) {
                 player.setQuality(480);
             }
@@ -169,71 +179,163 @@ class DailyMotion {
             });
         }
     }
+    /**
+     * Plays the Dailymotion video using the player instance.
+     */
     play() {
         player.play();
     }
+    /**
+     * Pauses the Dailymotion player.
+     *
+     * This method calls the `pause` function on the `player` object to halt video playback.
+     */
     pause() {
         player.pause();
     }
+    /**
+     * Stops the video playback and seeks to the specified start time.
+     *
+     * @param {number} starttime - The time (in seconds) to seek to before pausing the video.
+     */
     stop(starttime) {
         player.seek(starttime);
         player.pause();
     }
+    /**
+     * Seeks the video player to a specified time.
+     *
+     * @param {number} time - The time in seconds to seek to.
+     * @returns {Promise<void>} A promise that resolves when the seek operation is complete.
+     */
     async seek(time) {
         await player.seek(time);
         dispatchEvent('iv:playerSeek', {time: time});
     }
+    /**
+     * Retrieves the current playback time of the video.
+     *
+     * @returns {Promise<number>} A promise that resolves to the current video time in seconds.
+     */
     async getCurrentTime() {
         const state = await player.getState();
         return state.videoTime;
     }
+    /**
+     * Asynchronously retrieves the duration of the video.
+     *
+     * @returns {Promise<number>} A promise that resolves to the duration of the video in seconds.
+     */
     async getDuration() {
         const state = await player.getState();
         return state.videoDuration;
     }
+    /**
+     * Checks if the Dailymotion player is paused.
+     *
+     * @async
+     * @function isPaused
+     * @returns {Promise<boolean>} A promise that resolves to a boolean indicating whether the player is paused.
+     */
     async isPaused() {
         const state = await player.getState();
         return !state.playerIsPlaying;
     }
+    /**
+     * Checks if the Dailymotion player is currently playing.
+     *
+     * @returns {Promise<boolean>} A promise that resolves to a boolean indicating if the player is playing.
+     */
     async isPlaying() {
         const state = await player.getState();
         return state.playerIsPlaying;
     }
+
+    /**
+     * Checks if the Dailymotion player has ended and is on the replay screen.
+     *
+     * @returns {Promise<boolean>} A promise that resolves to a boolean indicating if the player is on the replay screen.
+     */
     async isEnded() {
         const state = await player.getState();
         return state.playerIsReplayScreen;
     }
+    /**
+     * Calculates the aspect ratio of the player and compares it to 16:9.
+     * If the player's aspect ratio is greater than 16:9, it returns the player's aspect ratio.
+     * Otherwise, it returns 16:9.
+     *
+     * @returns {Promise<number>} The aspect ratio of the player or 16:9.
+     */
     async ratio() {
         const state = await player.getState();
         const ratio = state.playerAspectRatio.split(':');
-        if (ratio[0] / ratio[1] > 16 / 9) {
-            return ratio[0] / ratio[1];
-        } else {
-            return 16 / 9;
-        }
+        return ratio[0] / ratio[1];
     }
+    /**
+     * Destroys the Dailymotion player instance.
+     *
+     * This method calls the `destroy` method on the `player` object to clean up
+     * and release any resources held by the player.
+     */
     destroy() {
         player.destroy();
     }
+    /**
+     * Asynchronously retrieves the current state of the player.
+     *
+     * @returns {Promise<Object>} A promise that resolves to the current state of the player.
+     */
     async getState() {
         const state = await player.getState();
         return state;
     }
+    /**
+     * Sets the playback speed of the Dailymotion player.
+     *
+     * @param {number} rate - The playback rate to set.
+     */
     setRate(rate) {
         player.setPlaybackSpeed(rate);
     }
+    /**
+     * Mutes the Dailymotion player.
+     *
+     * This method sets the player's mute state to true, effectively silencing any audio.
+     */
     mute() {
         player.setMute(true);
     }
+    /**
+     * Unmutes the Dailymotion player.
+     */
     unMute() {
         player.setMute(false);
     }
+    /**
+     * Returns the original Dailymotion player instance.
+     *
+     * @returns {Object} The Dailymotion player instance.
+     */
     originalPlayer() {
         return player;
     }
+    /**
+     * Sets the quality of the video player.
+     *
+     * @param {string} quality - The desired quality level for the video player.
+     */
     setQuality(quality) {
         player.setQuality(quality);
     }
+    /**
+     * Retrieves the available video qualities and the current quality setting.
+     *
+     * @returns {Promise<Object>} An object containing:
+     * - `qualities` {Array<string>}: A list of available video qualities including 'default'.
+     * - `qualitiesLabel` {Array<string>}: A list of video quality labels including 'Auto'.
+     * - `currentQuality` {string}: The current video quality setting, 'default' if set to 'Auto'.
+     */
     async getQualities() {
         let states = await this.getState();
         return {

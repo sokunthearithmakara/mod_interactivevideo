@@ -130,28 +130,42 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'text',
             'startassist',
             get_string('start', 'mod_interactivevideo'),
-            ['size' => '100', 'placeholder' => '00:00:00']
+            ['size' => '100', 'placeholder' => '00:00:00.00']
         );
         $mform->setType('startassist', PARAM_TEXT);
         $mform->setDefault('startassist', "00:00:00");
         $mform->addRule('startassist', null, 'required', null, 'client');
+        $mform->addRule(
+            'startassist',
+            get_string('invalidtimeformat', 'mod_interactivevideo'),
+            'regex',
+            '/^([0-9]{2}):([0-5][0-9]):([0-5][0-9])(\.\d{2})?$/',
+            'client'
+        );
 
         $mform->addElement(
             'text',
             'endassist',
             get_string('end', 'mod_interactivevideo') . '<br><span class="text-muted small" id="videototaltime"></span>',
-            ['size' => '100', 'placeholder' => '00:00:00']
+            ['size' => '100', 'placeholder' => '00:00:00.00']
         );
         $mform->setType('endassist', PARAM_TEXT);
         $mform->setDefault('startassist', "00:00:00");
         $mform->addRule('endassist', null, 'required', null, 'client');
+        $mform->addRule(
+            'endassist',
+            get_string('invalidtimeformat', 'mod_interactivevideo'),
+            'regex',
+            '/^([0-9]{2}):([0-5][0-9]):([0-5][0-9])(\.\d{2})?$/',
+            'client'
+        );
 
         $mform->addElement('hidden', 'start', 0);
-        $mform->setType('start', PARAM_INT);
+        $mform->setType('start', PARAM_FLOAT);
         $mform->addElement('hidden', 'end', 0);
-        $mform->setType('end', PARAM_INT);
+        $mform->setType('end', PARAM_FLOAT);
         $mform->addElement('hidden', 'totaltime', 0);
-        $mform->setType('totaltime', PARAM_INT);
+        $mform->setType('totaltime', PARAM_FLOAT);
 
         $mform->addElement('hidden', 'type');
         $mform->setType('type', PARAM_TEXT);
@@ -207,22 +221,22 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         );
         $mform->setDefault('darkmode', 1);
 
+        // Fix aspect ratio.
+        $mform->addElement(
+            'advcheckbox',
+            'usefixedratio',
+            '',
+            get_string('usefixedratio', 'mod_interactivevideo'),
+            ['group' => 1],
+            [0, 1]
+        );
+
         // Disable chapter navigation.
         $mform->addElement(
             'advcheckbox',
             'disablechapternavigation',
             '',
             get_string('disablechapternavigation', 'mod_interactivevideo'),
-            ['group' => 1],
-            [0, 1]
-        );
-
-        // Prevent skipping.
-        $mform->addElement(
-            'advcheckbox',
-            'preventskipping',
-            '',
-            get_string('preventskipping', 'mod_interactivevideo'),
             ['group' => 1],
             [0, 1]
         );
@@ -243,6 +257,16 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'hidemainvideocontrols',
             '',
             get_string('hidemainvideocontrols', 'mod_interactivevideo'),
+            ['group' => 1],
+            [0, 1]
+        );
+
+        // Prevent skipping.
+        $mform->addElement(
+            'advcheckbox',
+            'preventskipping',
+            '',
+            get_string('preventskipping', 'mod_interactivevideo'),
             ['group' => 1],
             [0, 1]
         );
@@ -360,28 +384,19 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             }
         }
 
-        // Validate the start and end time format.
-        if (!preg_match('/^([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $data['startassist'])) {
-            $errors['startassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
-        }
-
-        if (!preg_match('/^([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $data['endassist'])) {
-            $errors['endassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
-        }
-
         // End time must be greater than 0 & greater than start.
         if ($data['end'] < $data['start']) {
             $errors['endassist'] = get_string('endtimegreaterstarttime', 'mod_interactivevideo');
         }
 
         $endtime = explode(':', $data['endassist']);
-        $endtime = $endtime[0] * 3600 + $endtime[1] * 60 + $endtime[2];
+        $endtime = $endtime[0] * 3600 + $endtime[1] * 60 + $endtime[2] * 1;
         if ($endtime != $data['end']) {
-            $errors['endassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
+            $errors['endassist'] = get_string('invalidtimeformat', 'mod_interactivevideo') . ' ' . $endtime . ' ' . $data['end'];
         }
 
         $starttime = explode(':', $data['startassist']);
-        $starttime = $starttime[0] * 3600 + $starttime[1] * 60 + $starttime[2];
+        $starttime = $starttime[0] * 3600 + $starttime[1] * 60 + $starttime[2] * 1;
         if ($starttime != $data['start']) {
             $errors['startassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
         }
@@ -409,34 +424,35 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                 ['subdirs' => 0],
                 $text
             );
-        }
 
-        $displayoptions = [
-            'darkmode',
-            'disablechapternavigation',
-            'preventskipping',
-            'useoriginalvideocontrols',
-            'hidemainvideocontrols',
-            'preventseeking',
-            'disableinteractionclick',
-            'disableinteractionclickuntilcompleted',
-            'hideinteractions',
-            'theme',
-        ];
-        if (empty($defaultvalues['displayoptions'])) {
-            $defaultvalues['displayoptions'] = json_encode(array_fill_keys($displayoptions, 0));
-        }
-        $defaultdisplayoptions = json_decode($defaultvalues['displayoptions'], true);
-        foreach ($displayoptions as $option) {
-            $defaultvalues[$option] = !empty($defaultdisplayoptions[$option]) ? $defaultdisplayoptions[$option] : 0;
-        }
+            $displayoptions = [
+                'darkmode',
+                'usefixedratio',
+                'disablechapternavigation',
+                'preventskipping',
+                'useoriginalvideocontrols',
+                'hidemainvideocontrols',
+                'preventseeking',
+                'disableinteractionclick',
+                'disableinteractionclickuntilcompleted',
+                'hideinteractions',
+                'theme',
+            ];
+            if (empty($defaultvalues['displayoptions'])) {
+                $defaultvalues['displayoptions'] = json_encode(array_fill_keys($displayoptions, 0));
+            }
+            $defaultdisplayoptions = json_decode($defaultvalues['displayoptions'], true);
+            foreach ($displayoptions as $option) {
+                $defaultvalues[$option] = !empty($defaultdisplayoptions[$option]) ? $defaultdisplayoptions[$option] : 0;
+            }
 
-        $completionpercentageenabledel = 'completionpercentageenabled';
-        $completionpercentageel = 'completionpercentage';
+            $completionpercentageenabledel = 'completionpercentageenabled';
+            $completionpercentageel = 'completionpercentage';
 
-        $defaultvalues[$completionpercentageenabledel] = !empty($defaultvalues[$completionpercentageel]) ? 1 : 0;
-        if (empty($defaultvalues[$completionpercentageel])) {
-            $defaultvalues[$completionpercentageel] = 0;
+            $defaultvalues[$completionpercentageenabledel] = !empty($defaultvalues[$completionpercentageel]) ? 1 : 0;
+            if (empty($defaultvalues[$completionpercentageel])) {
+                $defaultvalues[$completionpercentageel] = 0;
+            }
         }
     }
 
@@ -461,7 +477,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         $mform->setType($completionpercentageel, PARAM_INT);
         $completionpercentagegroupel = 'completionpercentagegroup';
         $mform->addGroup($group, $completionpercentagegroupel, '', ' ', false);
-        $mform->hideIf($completionpercentageel, $completionpercentageenabledel, 'notchecked');
+        $mform->disabledIf($completionpercentageel, $completionpercentageenabledel, 'notchecked');
 
         return [$completionpercentagegroupel];
     }

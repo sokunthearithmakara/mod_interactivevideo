@@ -138,20 +138,32 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
      */
     protected function process_completiondata($data) {
         global $DB;
-
         $data = (object)$data;
         $oldid = $data->id;
         $data->cmid = $this->get_new_parentid('interactivevideo');
         $data->userid = $this->get_mappingid('user', $data->userid);
         $oldcompletionitems = json_decode($data->completeditems, true);
+        $oldcompletiondetails = json_decode($data->completiondetails, true);
         $newcompletionitems = [];
+        $newcompletiondetails = [];
         foreach ($oldcompletionitems as $olditemid) {
             $newitemid = $this->get_mappingid('annotationitems', $olditemid);
             if ($newitemid) {
                 $newcompletionitems[] = strval($newitemid);
+                // Get completion details for this item and assign a new id using array filter.
+                $cdetails = array_filter($oldcompletiondetails, function ($cdetails) use ($olditemid) {
+                    // cdetails is a string, so we need to convert it to an object.
+                    $cdetails = json_decode($cdetails);
+                    return $cdetails->id == $olditemid;
+                });
+                $cdetails = reset($cdetails);
+                $cdetails = json_decode($cdetails);
+                $cdetails->id = $newitemid;
+                $newcompletiondetails[] = json_encode($cdetails);
             }
         }
         $data->completeditems = json_encode($newcompletionitems);
+        $data->completiondetails = json_encode($newcompletiondetails);
         $newitemid = $DB->insert_record('interactivevideo_completion', $data);
         $this->set_mapping('completiondata', $oldid, $newitemid);
     }
@@ -170,6 +182,8 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
         $data->cmid = $this->get_new_parentid('interactivevideo');
         $data->userid = $this->get_mappingid('user', $data->userid);
         $data->annotationid = $this->get_mappingid('annotationitems', $data->annotationid);
+        $oldcompletionid = $data->completionid;
+        $data->completionid = $this->get_mappingid('completiondata', $oldcompletionid);
         $newitemid = $DB->insert_record('interactivevideo_log', $data);
         $this->set_mapping('logdata', $oldid, $newitemid, true);
     }

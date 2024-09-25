@@ -62,7 +62,7 @@ class base_form extends \core_form\dynamic_form {
         $data = new \stdClass();
         $data->id = $this->optional_param('id', 0, PARAM_INT);
         $data->contextid = $this->optional_param('contextid', null, PARAM_INT);
-        $data->timestamp = $this->optional_param('timestamp', 1, PARAM_INT);
+        $data->timestamp = $this->optional_param('timestamp', 1, PARAM_FLOAT);
         $data->timestampassist = $this->optional_param('timestampassist', '00:00:00', PARAM_TEXT);
         $data->courseid = $this->optional_param('courseid', null, PARAM_INT);
         $data->cmid = $this->optional_param('cmid', null, PARAM_INT);
@@ -181,43 +181,34 @@ class base_form extends \core_form\dynamic_form {
 
         $mform->addElement('hidden', 'start', null);
         $mform->setType('start', PARAM_TEXT);
-        $mform->setDefault('start', $this->optional_param('start', '00:00:00', PARAM_TEXT));
+        $mform->setDefault('start', $this->optional_param('start', '00:00:00.00', PARAM_TEXT));
 
         $mform->addElement('hidden', 'end', null);
         $mform->setType('end', PARAM_TEXT);
-        $mform->setDefault('end', $this->optional_param('end', '00:00:00', PARAM_TEXT));
+        $mform->setDefault('end', $this->optional_param('end', '00:00:00.00', PARAM_TEXT));
 
         $mform->addElement('hidden', 'timestamp', null);
-        $mform->setType('timestamp', PARAM_INT);
-        $mform->addRule('timestamp', get_string('required'), 'required', null, 'client');
+        $mform->setType('timestamp', PARAM_FLOAT);
         $mform->setDefault('timestamp', 0);
 
         $mform->addElement('header', 'general', get_string('general', 'form'));
 
         $mform->addElement(
-            'text',
+            'hidden',
             'timestampassist',
             '<i class="bi bi-stopwatch mr-2"></i>' . get_string('timestamp', 'mod_interactivevideo') . ' ['
-                . $this->optional_param('start', '00:00:00', PARAM_TEXT) . ' - '
+                . $this->optional_param('start', '00:00:00.00', PARAM_TEXT) . ' - '
                 . $this->optional_param(
                     'end',
-                    '00:00:00',
+                    '00:00:00.00',
                     PARAM_TEXT
                 ) . ']',
-            ['placeholder' => '00:00:00']
+            ['placeholder' => '00:00:00.00']
         );
         $mform->setType('timestampassist', PARAM_TEXT);
-        $mform->addRule('timestampassist', get_string('required'), 'required', null, 'client');
         $mform->setDefault(
             'timestampassist',
-            $this->optional_param('timestampassist', '00:00:00', PARAM_TEXT)
-        );
-        $mform->addRule(
-            'timestampassist',
-            get_string('invalidtimestamp', 'mod_interactivevideo'),
-            'regex',
-            '/^([0-5][0-9]):([0-5][0-9]):([0-5][0-9])$/',
-            'client'
+            $this->optional_param('timestampassist', '00:00:00.00', PARAM_TEXT)
         );
     }
 

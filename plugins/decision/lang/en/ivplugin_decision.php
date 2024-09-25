@@ -32,5 +32,4 @@ $string['destination'] = 'Destination';
 $string['destquestion'] = 'Question';
 $string['pluginname'] = 'Decision';
 $string['privacy:metadata'] = 'The Decision plugin doesn\'t store any personal data.';
-$string['requireresponsebeforeviewingothers'] = 'Require response before viewing others';
 $string['skip'] = 'Skip';

@@ -22,7 +22,7 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
- namespace ivplugin_form\form_fields;
+namespace ivplugin_form\form_fields;
 
 /**
  * Configuration form for adding/editing form element "week"
@@ -58,27 +58,57 @@ class week extends base {
             'text',
             'default',
             get_string('default', 'ivplugin_form'),
-            ['data-type' => 'week']
+            [
+                'data-type' => 'week',
+                'placeholder' => 'YYYY-W00',
+            ]
         );
         $mform->setType('default', PARAM_TEXT);
+        $mform->addRule(
+            'default',
+            get_string('invalidformat', 'ivplugin_form'),
+            'regex',
+            '/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/',
+            'client'
+        );
 
         // Min.
         $mform->addElement(
             'text',
             'minlength',
             get_string('minweek', 'ivplugin_form'),
-            ['data-type' => 'week']
+            [
+                'data-type' => 'week',
+                'placeholder' => 'YYYY-W00',
+            ]
         );
         $mform->setType('minlength', PARAM_TEXT);
+        $mform->addRule(
+            'minlength',
+            get_string('invalidformat', 'ivplugin_form'),
+            'regex',
+            '/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/',
+            'client'
+        );
 
         // Max.
         $mform->addElement(
             'text',
             'maxlength',
             get_string('maxweek', 'ivplugin_form'),
-            ['data-type' => 'week']
+            [
+                'data-type' => 'week',
+                'placeholder' => 'YYYY-W00',
+            ]
         );
         $mform->setType('maxlength', PARAM_TEXT);
+        $mform->addRule(
+            'maxlength',
+            get_string('invalidformat', 'ivplugin_form'),
+            'regex',
+            '/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/',
+            'client'
+        );
         $this->set_display_vertical();
     }
 }

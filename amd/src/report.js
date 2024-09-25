@@ -21,6 +21,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 import $ from 'jquery';
+import Notification from 'core/notification';
+import {add as addToast} from 'core/toast';
 import JSZip from 'mod_interactivevideo/libraries/jszip';
 import 'mod_interactivevideo/libraries/jquery.dataTables';
 import 'mod_interactivevideo/libraries/dataTables.bootstrap4';
@@ -28,6 +30,12 @@ import 'mod_interactivevideo/libraries/dataTables.buttons';
 import 'mod_interactivevideo/libraries/buttons.bootstrap4';
 import 'mod_interactivevideo/libraries/buttons.html5';
 
+/**
+ * Initializes the report functionality for the interactive video module.
+ *
+ * @param {number} cmid - The course module ID.
+ * @param {number} groupid - The group ID.
+ */
 const init = (cmid, groupid) => {
     window.JSZip = JSZip;
 
@@ -91,9 +99,14 @@ const init = (cmid, groupid) => {
                 },
                 {
                     data: "picture",
-                    render: function(data) {
-                        return '<div class="text-truncate">' + data + '</div>';
-                    }
+                    render: function(data, type, row) {
+                        let deletebutton = `<button title="${M.util.get_string('reset', 'mod_interactivevideo')}"
+                         class="btn btn-sm text-danger reset m-1" data-record="${row.completionid}" data-userid="${row.id}">
+                         <i class="bi bi-trash3"></i></button>`;
+                        return `<div class="text-truncate d-flex align-items-center justify-content-between">${data}
+                        ${row.completionpercentage > 0 ? deletebutton : ''}</div>`;
+                    },
+                    className: "bg-white sticky-left-0",
                 },
                 {
                     data: "firstname",
@@ -130,12 +143,16 @@ const init = (cmid, groupid) => {
                 },
                 {
                     data: "timecompleted",
-                    render: function(data, type) {
+                    render: function(data, type, row) {
                         if (!data || data == 0) {
-                            if (type === 'display') {
-                                return M.util.get_string('inprogress', 'mod_interactivevideo');
+                            if (!row.timecreated) {
+                                return '';
                             } else {
-                                return 0;
+                                if (type === 'display') {
+                                    return M.util.get_string('inprogress', 'mod_interactivevideo');
+                                } else {
+                                    return 0;
+                                }
                             }
                         } else {
                             var date = new Date(data * 1000);
@@ -197,7 +214,7 @@ const init = (cmid, groupid) => {
             },
             stateSave: true,
             "dom": `<'d-flex w-100 justify-content-between`
-                + `'<'d-flex align-items-start'Bl>'<''f>>t<'row'<'col-sm-6'i><'col-sm-6'p>>`,
+                + `'<'d-flex align-items-start'Bl>'<''f>>t<'row mt-2'<'col-sm-6'i><'col-sm-6'p>>`,
             "buttons": [
                 {
                     extend: "copyHtml5",
@@ -206,7 +223,15 @@ const init = (cmid, groupid) => {
                     messageTop: null,
                     title: null,
                     exportOptions: {
-                        columns: ['.exportable']
+                        columns: ['.exportable'],
+                        format: {
+                            body: function(data) {
+                                // Strip HTML tags to get text only
+                                const div = document.createElement("div");
+                                div.innerHTML = data;
+                                return (div.textContent || div.innerText || "").trim();
+                            }
+                        }
                     }
                 },
                 {
@@ -214,7 +239,15 @@ const init = (cmid, groupid) => {
                     text: '<i class="bi bi-filetype-csv fa-fw fs-unset"></i>',
                     className: "btn btn-sm",
                     exportOptions: {
-                        columns: ['.exportable']
+                        columns: ['.exportable'],
+                        format: {
+                            body: function(data) {
+                                // Strip HTML tags to get text only
+                                const div = document.createElement("div");
+                                div.innerHTML = data;
+                                return (div.textContent || div.innerText || "").trim();
+                            }
+                        }
                     }
                 },
                 {
@@ -222,7 +255,15 @@ const init = (cmid, groupid) => {
                     text: '<i class="bi bi-file-earmark-excel fa-fw fs-unset"></i>',
                     className: "btn btn-sm",
                     exportOptions: {
-                        columns: ['.exportable']
+                        columns: ['.exportable'],
+                        format: {
+                            body: function(data) {
+                                // Strip HTML tags to get text only
+                                const div = document.createElement("div");
+                                div.innerHTML = data;
+                                return (div.textContent || div.innerText || "").trim();
+                            }
+                        }
                     }
                 }
             ],
@@ -234,26 +275,37 @@ const init = (cmid, groupid) => {
                 $("#reporttable .table-responsive").addClass("p-1");
                 $("#reporttable .spinner-grow").remove();
                 $("table#completiontable").removeClass("d-none");
+
             }
         };
 
         $("#reporttable th.rotate").each(function() {
             const itemid = $(this).data("item").toString();
             const ctype = $(this).data("type");
-            const annotation = itemsdata.find(x => x.id == itemid);
             datatableOptions.columns.push({
                 data: null,
                 sortable: false,
                 className: "text-center exportable",
-                render: function(data, type, row) {
+                render: function(data, rtype, row) {
                     if (!data.completeditems) {
                         return `<i class="fa fa-times"></i>`;
                     }
-                    var completeditems = JSON.parse(data.completeditems);
+                    let completeditems = JSON.parse(data.completeditems);
+                    let completiondetails;
+                    try {
+                        completiondetails = JSON.parse(data.completiondetails).map(x => JSON.parse(x));
+                    } catch (e) {
+                        completiondetails = [];
+                    }
                     if (completeditems) {
                         if (completeditems.indexOf(itemid) > -1) {
-                            return `<i class="fa fa-check text-success" data-id="${itemid}" data-userid="${row.id}"
-                             data-type="${ctype}"></i><br>${annotation.xp ?? 0}`;
+                            let details = completiondetails.find(x => Number(x.id) == Number(itemid));
+                            if (details) {
+                                return `<span class="completion-detail ${details.hasDetails ? 'cursor-pointer' : ''}"
+                                 data-id="${itemid}" data-userid="${row.id}" data-type="${ctype}">${details.reportView}</span>`;
+                            } else {
+                                return '';
+                            }
                         } else {
                             return '<i class="fa fa-times"></i><span class="d-none">-</span>';
                         }
@@ -265,6 +317,7 @@ const init = (cmid, groupid) => {
         });
 
         tabledata = $('#completiontable').DataTable(datatableOptions);
+        window.console.log(tabledata.data().toArray());
     });
 
     $(document).on('click', '[data-item] a', function() {
@@ -285,7 +338,7 @@ const init = (cmid, groupid) => {
             <div class="modal-content rounded-lg">
                 <div class="modal-header d-flex align-items-center shadow-sm" id="title">
                     <h5 class="modal-title text-truncate mb-0">${theAnnotation.formattedtitle
-+ " @ " + convertSecondsToHMS(theAnnotation.timestamp)}</h5>
+            + " @ " + convertSecondsToHMS(theAnnotation.timestamp)}</h5>
                     <div class="btns d-flex align-items-center">
                         <button class="btn close-modal p-0" aria-label="Close" data-dismiss="modal">
                         <i class="bi bi-x-lg fa-fw fs-25px"></i>
@@ -316,7 +369,53 @@ const init = (cmid, groupid) => {
         });
     });
 
-    $(document).on('click', '[data-id].fa-check', function() {
+    $(document).on('click', 'td .reset', function(e) {
+        e.preventDefault();
+        const recordid = $(this).data('record');
+        let $this = $(this);
+        Notification.deleteCancel(
+            M.util.get_string('deletecompletion', 'mod_interactivevideo'),
+            M.util.get_string('areyousureyouwanttoresetthecompletiondata', 'mod_interactivevideo'),
+            M.util.get_string('delete', 'mod_interactivevideo'),
+            function() {
+                $.ajax({
+                    url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                    method: 'POST',
+                    dataType: "text",
+                    data: {
+                        action: 'delete_progress_by_id',
+                        recordid,
+                        contextid: M.cfg.contextid,
+                        sesskey: M.cfg.sesskey,
+                    },
+                    success: function(response) {
+                        if (response == 'deleted') {
+                            let targetdata = tabledata.row($this.closest('tr')).data();
+                            targetdata.completionpercentage = 0;
+                            targetdata.timecompleted = 0;
+                            targetdata.xp = 0;
+                            targetdata.timecreated = 0;
+                            targetdata.completeditems = null;
+                            targetdata.completiondetails = null;
+                            targetdata.completionid = null;
+                            tabledata.row($this.closest('tr')).data(targetdata).draw();
+                            addToast(M.util.get_string('completionresetsuccess', 'mod_interactivevideo'), {
+                                type: 'success'
+                            });
+                        }
+                    },
+                    error: function() {
+                        addToast(M.util.get_string('completionreseterror', 'mod_interactivevideo'), {
+                            type: 'error'
+                        });
+                    }
+                });
+            },
+            null
+        );
+    });
+
+    $(document).on('click', 'td .completion-detail', function() {
         let id = $(this).data('id');
         let userid = $(this).data('userid');
         let type = $(this).data('type');
@@ -325,11 +424,7 @@ const init = (cmid, groupid) => {
         // Get column header with the item id.
         let theAnnotation = itemsdata.find(x => x.id == id);
         require([amdmodule + ''], function(Module) {
-            new Module().getCompletionData(theAnnotation, userid).then((data) => {
-                return window.console.log(data);
-            }).catch((error) => {
-                window.console.error(error);
-            });
+            new Module().getCompletionData(theAnnotation, userid);
         });
     });
 };

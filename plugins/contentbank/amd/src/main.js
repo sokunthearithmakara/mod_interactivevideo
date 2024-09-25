@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * TODO describe module main
+ * Main class for content bank
  *
  * @module     ivplugin_contentbank/main
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
@@ -78,6 +78,14 @@ export default class ContentBank extends Base {
         return {form, event};
     }
 
+    /**
+     * Handles the rendering of content annotations and applies specific classes and conditions.
+     *
+     * @param {Object} annotation - The annotation object containing details about the content.
+     * @param {Function} callback - The callback function to be executed if certain conditions are met.
+     * @returns {boolean|Function} - Returns true if the annotation does not meet the conditions for completion tracking,
+     *                               otherwise returns the callback function.
+     */
     postContentRender(annotation, callback) {
         $(`#message[data-id='${annotation.id}']`).addClass('hascontentbank');
         if (annotation.hascompletion == 1
@@ -137,27 +145,35 @@ export default class ContentBank extends Base {
                 }
 
                 if (typeof H5P !== 'undefined' && H5P !== null) {
+                    clearInterval(iframeinterval);
                     if (self.isEditMode()) {
                         $message.find(`#title .btns .xapi`).remove();
                         $message.find(`#title .btns`)
                             .prepend(`<div class="xapi alert-secondary px-2
                          rounded-pill">${M.util.get_string('xapicheck', 'ivplugin_contentbank')}</div>`);
                     }
+                    let statements = [];
                     H5P.externalDispatcher.on('xAPI', function(event) {
+                        if (event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
+                            || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered') {
+                            statements.push(event.data.statement);
+                        }
                         if ((event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
                             || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered')
                             && event.data.statement.object.id.indexOf('subContentId') < 0) {
                             if (self.isEditMode()) {
-                                $message.find(`#title .btns .xapi`).remove();
-                                $message.find(`#title .btns`)
-                                    .prepend(`<div class="xapi alert-success px-2
-                                 rounded-pill"><i class="fa fa-check mr-2"></i>
-                                 ${M.util.get_string('xapieventdetected', 'ivplugin_contentbank')}</div>`);
+                                $(`#message[data-id='${annotation.id}'] #title .btns .xapi`).remove();
+                                $(`#message[data-id='${annotation.id}'] #title .btns`)
+                                    .prepend(`<div class="xapi alert-success d-inline px-2 rounded-pill">
+                                    <i class="fa fa-check mr-2"></i>
+                                    ${M.util.get_string('xapieventdetected', 'ivplugin_h5pupload')}
+                                    </div>`);
                                 var audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
                                 audio.play();
                                 return;
                             }
                             var complete = false;
+                            let textclass = '';
                             if (annotation.completiontracking == 'completepass'
                                 && event.data.statement.result && event.data.statement.result.score.scaled >= 0.5) {
                                 complete = true;
@@ -167,15 +183,34 @@ export default class ContentBank extends Base {
                             } else if (annotation.completiontracking == 'complete') {
                                 complete = true;
                             }
+                            if (event.data.statement.result.score.scaled < 0.5) {
+                                textclass = 'fa fa-check text-danger';
+                            } else if (event.data.statement.result.score.scaled < 1 ) {
+                                textclass = 'fa fa-check text-success';
+                            } else {
+                                textclass = 'bi bi-check2-all text-success';
+                            }
                             if (complete && !annotation.completed) {
-                                self.toggleCompletion(annoid, 'mark-done', 'automatic');
+                                let details = {};
+                                const completeTime = new Date();
+                                details.xp = annotation.xp;
+                                details.duration = completeTime.getTime() - $('#video-wrapper').data('timestamp');
+                                details.timecompleted = completeTime.getTime();
+                                const completiontime = completeTime.toLocaleString();
+                                let duration = self.formatTime(details.duration / 1000);
+                                details.reportView = `<span data-toggle="tooltip" data-html="true"
+                 data-title='<span class="d-flex flex-column align-items-start"><span><i class="bi bi-calendar mr-2"></i>
+                 ${completiontime}</span><span><i class="bi bi-stopwatch mr-2"></i>${duration}</span>
+                 <span><i class="bi bi-list-check mr-2"></i>
+                 ${event.data.statement.result.score.raw}/${event.data.statement.result.score.max}</span></span>'>
+                 <i class="${textclass}"></i><br><span>${annotation.xp}</span></span>`;
+                                details.details = statements;
+                                self.toggleCompletion(annoid, 'mark-done', 'automatic', details);
                             }
                         }
                     });
-
-                    clearInterval(iframeinterval);
                 }
-            }, 1000);
+            }, 100);
         };
 
         // Apply content.

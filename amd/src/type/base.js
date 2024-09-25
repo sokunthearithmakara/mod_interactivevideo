@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * TODO describe module base
+ * Base class to be extended by other content types
  *
  * @module     mod_interactivevideo/type/base
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
@@ -29,8 +29,31 @@ import ModalForm from 'core_form/modalform';
 import 'mod_interactivevideo/libraries/jquery-ui';
 
 class Base {
-    constructor(player, annotations, interaction, course, userid, completionpercentage,
-        gradeiteminstance, grademax, vtype, preventskip, totaltime, start, end, properties, cm, token) {
+    /**
+     * Creates an instance of the base class for interactive video.
+     *
+     * @param {Object} player - The player object.
+     * @param {Array} annotations - The annotations object.
+     * @param {number} interaction - The interaction id.
+     * @param {number} course - The course id.
+     * @param {number} userid - The user id.
+     * @param {number} completionpercentage - The required completion percentage set in the activity settings.
+     * @param {number} gradeiteminstance - The grade item instance id.
+     * @param {number} grademax - The maximum grade set in the activity settings.
+     * @param {string} vtype - The video type (yt, vimeo, dailymotion, html4video).
+     * @param {boolean} preventskip - Prevent skipping of the video.
+     * @param {number} totaltime - The total time of the video in seconds including the skipped segments.
+     * @param {number} start - The start time of the video.
+     * @param {number} end - The end time of the video.
+     * @param {Object} properties - Properties of the interaction type defined in the PHP class.
+     * @param {number} cm - The course module id.
+     * @param {string} token - Access token.
+     * @param {Object} displayoptions - Display options.
+     * @param {number} completionid - Completion record id.
+     *
+     */
+    constructor(player, annotations, interaction, course, userid, completionpercentage, gradeiteminstance, grademax, vtype,
+        preventskip, totaltime, start, end, properties, cm, token, displayoptions, completionid) {
         /**
          * Access token
          * @type {string}
@@ -131,6 +154,17 @@ class Base {
          * @private
          */
         this.prop = properties;
+        /**
+         * Display options
+         * @type {Object}
+         * @private
+         */
+        this.displayoptions = displayoptions;
+        /**
+         * Completion id
+         * @type {number}
+         */
+        this.completionid = Number(completionid);
     }
 
     /**
@@ -151,14 +185,34 @@ class Base {
         });
     }
 
+    /**
+     * Formats the given text content.
+     *
+     * @param {string} text - The text content to format.
+     * @param {boolean} [shorttext=false] - Optional flag to indicate if the text should be formatted as short text.
+     * @returns {string} The formatted text.
+     */
     formatContent(text, shorttext = false) {
         return formatText(text, shorttext);
     }
 
-    render(annotation, format = 'html') {
+    /**
+     * Renders the given annotation in the specified format.
+     *
+     * @param {Object} annotation - The annotation object to render.
+     * @param {string} [format='html'] - The format in which to render the annotation. Defaults to 'html'.
+     * @returns {string} The rendered content.
+     */
+    async render(annotation, format = 'html') {
         return renderContent(annotation, format);
     }
 
+    /**
+     * Adds a notification with a specified message and type.
+     *
+     * @param {string} msg - The message to be displayed in the notification.
+     * @param {string} [type='danger'] - The type of the notification (e.g., 'success', 'info', 'warning', 'danger').
+     */
     addNotification(msg, type = 'danger') {
         addToast(msg, {type});
     }
@@ -178,10 +232,30 @@ class Base {
         return this.isInSkipSegment(timestamp) || !this.isBetweenStartAndEnd(timestamp);
     }
 
-    convertSecondsToHMS(s) {
+    /**
+     * Converts a given number of seconds into a formatted string (HH:MM:SS).
+     *
+     * @param {number} s - The number of seconds to convert.
+     * @param {boolean} [dynamic=false] - If true, omits the hours part if less than 1 hour.
+     * @param {boolean} [rounded=false] - If true, rounds the seconds to the nearest whole number.
+     * @returns {string} The formatted time string.
+     */
+    convertSecondsToHMS(s, dynamic = false, rounded = false) {
+        if (rounded) {
+            s = Math.round(s);
+        }
         const hours = Math.floor(s / 3600).toString().padStart(2, '0');
         const minutes = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
-        const seconds = Math.floor(s % 60).toString().padStart(2, '0');
+        let seconds = (s % 60).toFixed(2);
+        if (seconds < 10) {
+            seconds = '0' + seconds;
+        }
+        if (rounded) {
+            seconds = Math.floor(s % 60).toString().padStart(2, '0');
+        }
+        if (dynamic && (s / 3600) < 1) {
+            return `${minutes}:${seconds}`;
+        }
         return `${hours}:${minutes}:${seconds}`;
     }
 
@@ -200,7 +274,7 @@ class Base {
         listItem.attr('data-timestamp', item.timestamp)
             .attr('data-id', item.id);
 
-        listItem.find('.timestamp').text(this.convertSecondsToHMS(item.timestamp))
+        listItem.find('.timestamp').text(this.convertSecondsToHMS(item.timestamp, this.totaltime < 3600, true))
             .attr('data-timestamp', item.timestamp);
 
         listItem.find('.title').text(item.formattedtitle);
@@ -268,7 +342,7 @@ class Base {
      * @returns {boolean}
      */
     validateTimestampFormat(timestamp) {
-        return /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])$/.test(timestamp);
+        return /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])(\.\d{2})?$/.test(timestamp);
     }
 
     /**
@@ -696,22 +770,40 @@ class Base {
      * Callback to excute after the content is rendered.
      * @returns {void}
      */
-    postContentRender() {}
-
-    /**
-     * Callback to excute after the content is rendered in the editor.
-     */
-    postContentRenderEditor() {
-        // Do nothing.
-    }
+    postContentRender() { }
 
     /**
      * Set draggable
      * @param {string} elem The element to make draggable
      */
     setModalDraggable(elem) {
-        $(elem).draggable({ handle: ".modal-header" });
+        $(elem).draggable({handle: ".modal-header"});
     }
+
+    /**
+     * Formats a given time in seconds into a human-readable string.
+     *
+     * @param {number} seconds - The time in seconds to format.
+     * @returns {string} A string representing the formatted time in hours, minutes, and seconds.
+     */
+    formatTime(seconds) {
+        seconds = parseInt(seconds);
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = seconds % 60;
+        let string = '';
+        if (hours > 0) {
+            string += hours + 'h ';
+        }
+        if (minutes > 0) {
+            string += minutes + 'm ';
+        }
+        if (remainingSeconds > 0) {
+            string += remainingSeconds + 's';
+        }
+        return string;
+    }
+
 
     /**
      * Callback to excute after item is successfully marked complete or incomplete.
@@ -786,21 +878,39 @@ class Base {
      * @param {number} id The annotation id
      * @param {string} action The action to perform (mark-done, mark-undone)
      * @param {string} type The type of completion (manual, automatic)
+     * @param {{}} [details={}] Completion details
      * @returns {Promise}
      */
-    toggleCompletion(id, action, type = 'manual') {
+    toggleCompletion(id, action, type = 'manual', details = {}) {
         // Skip if the page is the interactions page.
         if (this.isEditMode()) {
             return Promise.resolve(); // Return a resolved promise for consistency
         }
-        // Gradable items (hascompletion and not in the skipsegment)
+        // Gradable items (hascompletion)
         const gradableitems = this.annotations.filter(x => x.hascompletion == '1');
+        const totalXp = gradableitems.map(({xp}) => Number(xp)).reduce((a, b) => a + b, 0);
+        let completedItems = gradableitems.filter(({completed}) => completed);
+        let earnedXp = completedItems.map(({xp}) => Number(xp)).reduce((a, b) => a + b, 0);
 
-        const totalXp = gradableitems.map(({ xp }) => Number(xp)).reduce((a, b) => a + b, 0);
-        let completedItems = gradableitems.filter(({ completed }) => completed);
-        let earnedXp = completedItems.map(({ xp }) => Number(xp)).reduce((a, b) => a + b, 0);
-        completedItems = completedItems.map(({ id }) => id);
-        const thisItem = gradableitems.find(({ id: itemId }) => itemId == id);
+        completedItems = completedItems.map(({id}) => id);
+        const thisItem = gradableitems.find(({id: itemId}) => itemId == id);
+        let completionDetails = {
+            id,
+        };
+        if (action == 'mark-done') {
+            const completeTime = new Date();
+            completionDetails.hasDetails = details.details ? true : false;
+            completionDetails.xp = thisItem.xp;
+            completionDetails.duration = details.duration || completeTime.getTime() - $('#video-wrapper').data('timestamp');
+            completionDetails.timecompleted = details.timecompleted || completeTime.getTime();
+            const completiontime = completeTime.toLocaleString();
+            let duration = this.formatTime(completionDetails.duration / 1000);
+            completionDetails.reportView = details.reportView ||
+                `<span data-toggle="tooltip" data-html="true"
+                 data-title='<span class="d-flex flex-column align-items-start"><span><i class="bi bi-calendar mr-2"></i>
+                 ${completiontime}</span><span><i class="bi bi-stopwatch mr-2"></i>${duration}</span></span>'>
+                 <i class="fa fa-check text-success"></i><br><span>${thisItem.xp}</span></span>`;
+        }
         if (action == 'mark-done') {
             completedItems.push(id.toString());
             earnedXp += Number(thisItem.xp);
@@ -809,8 +919,12 @@ class Base {
             earnedXp -= Number(thisItem.xp);
         }
 
-        const completed = (completedItems.length / gradableitems.length) * 100 >= Number(this.completionpercentage) ? 1 : 0;
-
+        let completed;
+        if (Number(this.completionpercentage) > 0) { // Completion percentage is set.
+            completed = (completedItems.length / gradableitems.length) * 100 >= Number(this.completionpercentage) ? 1 : 0;
+        } else {
+            completed = gradableitems.length == completedItems.length ? 1 : 0;
+        }
         return new Promise((resolve) => {
             $.ajax({
                 url: `${M.cfg.wwwroot}/mod/interactivevideo/ajax.php`,
@@ -818,6 +932,7 @@ class Base {
                 dataType: "text",
                 data: {
                     action: 'save_progress',
+                    markdone: action == 'mark-done',
                     sesskey: M.cfg.sesskey,
                     id: this.interaction,
                     uid: this.userid,
@@ -827,8 +942,12 @@ class Base {
                     c: completed,
                     xp: earnedXp,
                     completeditems: JSON.stringify(completedItems),
+                    completiondetails: JSON.stringify(completionDetails),
+                    details: JSON.stringify(details.details || {}),
+                    annotationtype: thisItem.type,
                     token: this.token,
                     cmid: this.cm,
+                    completionid: this.completionid,
                 },
                 success: () => {
                     // Update the annotations array.

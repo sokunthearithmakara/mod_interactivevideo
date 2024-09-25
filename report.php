@@ -57,7 +57,7 @@ if (isset($moduleinstance->displayoptions['theme']) && $moduleinstance->displayo
 $PAGE->requires->css(new moodle_url($CFG->wwwroot . '/mod/interactivevideo/libraries/DataTables/datatables.min.css'));
 
 $PAGE->set_url('/mod/interactivevideo/report.php', ['id' => $cm->id, 'group' => $group]);
-$PAGE->set_title(format_string($moduleinstance->name));
+$PAGE->set_title(get_string('reportfor', 'interactivevideo', format_string($moduleinstance->name)));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('embedded');
@@ -151,6 +151,8 @@ $renderer = $PAGE->get_renderer('core');
 $primarymenu = $primary->export_for_template($renderer);
 $datafortemplate = [
     "returnurl" => new moodle_url('/course/view.php', ['id' => $course->id]),
+    "completion" => '<h4 class="mb-0 border-left border-danger pl-3">' . format_string($moduleinstance->name) . '</h4>',
+    "manualcompletion" => 1,
     "settingurl" => has_capability('mod/interactivevideo:edit', $context)
         ? new moodle_url('/course/modedit.php', ['update' => $cm->id]) : '',
     "reporturl" => '',
@@ -182,10 +184,10 @@ echo html_writer::start_tag('table', [
     'id' => 'completiontable',
     'class' => 'table table-sm table-bordered table-striped w-100',
 ]);
-echo html_writer::start_tag('thead');
+echo '<thead class="sticky-top bg-white">';
 echo '<tr>';
 echo '<th id="id">' . get_string('id', 'mod_interactivevideo') . '</th>';
-echo '<th id="participant">' . get_string('participant', 'mod_interactivevideo') . '</th>';
+echo '<th id="participant" class="bg-white sticky-left-0">' . get_string('participant', 'mod_interactivevideo') . '</th>';
 echo '<th id="firstname">' . get_string('firstname') . '</th>';
 echo '<th id="lastname">' . get_string('lastname') . '</th>';
 echo '<th id="email">' . get_string('email') . '</th>';

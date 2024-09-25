@@ -76,7 +76,7 @@ $PAGE->requires->jquery_plugin('ui-css');
 $PAGE->activityheader->disable();
 
 $PAGE->set_url('/mod/interactivevideo/interactions.php', ['id' => $cm->id]);
-$PAGE->set_title(format_string($moduleinstance->name));
+$PAGE->set_title(get_string('interactionsin', 'interactivevideo', format_string($moduleinstance->name)));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
 $PAGE->set_pagelayout('embedded');
@@ -130,10 +130,10 @@ $primarymenu = $primary->export_for_template($renderer);
 $datafortemplate = [
     "returnurl" => new moodle_url('/course/view.php', ['id' => $course->id]),
     "canedit" => has_capability('mod/interactivevideo:edit', $modulecontext),
-    "completion" => ($attempted ? '<button class="btn btn-sm"
+    "completion" => ($attempted ? '<span class="mb-0 border-left border-danger pl-3"><button class="btn btn-sm"
           type="button" data-toggle="popover" data-html="true" data-content=\'' .
             get_string('interactionscannotbeedited', 'mod_interactivevideo') . '\'>
-         <i class="bi bi-exclamation-circle-fill text-warning" style="font-size: 25px"></i></button>' : ''),
+         <i class="bi bi-exclamation-circle-fill text-warning fs-25px"></i></button></span>' : ''),
     "manualcompletion" => 1,
     "settingurl" => has_capability('mod/interactivevideo:edit', $modulecontext)
         ? new moodle_url('/course/modedit.php', ['update' => $cm->id]) : '',
@@ -174,6 +174,7 @@ $PAGE->requires->js_call_amd(
         $moduleinstance->end,
         $coursecontext->id,
         $moduleinstance->type,
+        $moduleinstance->displayoptions,
     ]
 );
 

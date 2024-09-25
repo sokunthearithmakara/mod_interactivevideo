@@ -23,6 +23,11 @@
 import $ from 'jquery';
 import Base from 'mod_interactivevideo/type/base';
 export default class H5pUpload extends Base {
+    /**
+     * Render the container for the annotation
+     * @param {Object} annotation The annotation object
+     * @returns {void}
+     */
     renderContainer(annotation) {
         let $message = $(`#message[data-id='${annotation.id}']`);
         super.renderContainer(annotation);
@@ -46,6 +51,18 @@ export default class H5pUpload extends Base {
         $message.find('[data-toggle="tooltip"]').tooltip();
         return $message;
     }
+
+    /**
+     * Handles the rendering of content after an annotation is posted.
+     *
+     * This function adds a class to the message element, sets an interval to check for an iframe,
+     * and modifies the iframe's background and height properties. It also handles completion tracking.
+     *
+     * @param {Object} annotation - The annotation object containing details about the annotation.
+     * @param {Function} callback - The callback function to be executed if certain conditions are met.
+     * @returns {boolean|Function} - Returns true if the annotation does not require manual completion tracking,
+     *                               otherwise returns the callback function.
+     */
     postContentRender(annotation, callback) {
         $(`#message[data-id='${annotation.id}']`).addClass('hasiframe');
         let interval = setInterval(() => {
@@ -64,11 +81,34 @@ export default class H5pUpload extends Base {
         }
         return true;
     }
+    /**
+     * Executes the interaction for a given annotation.
+     *
+     * @param {Object} annotation - The annotation object containing interaction details.
+     * @param {number} annotation.id - The unique identifier for the annotation.
+     * @param {string} annotation.completiontracking - The method of completion tracking for the annotation.
+     * @param {boolean} annotation.hascompletion - Indicates if the annotation has completion tracking.
+     * @param {boolean} annotation.completed - Indicates if the annotation is already completed.
+     * @param {string} annotation.displayoptions - The display options for the annotation (e.g., 'popup').
+     *
+     * @returns {Promise<void>} - A promise that resolves when the interaction is fully executed.
+     */
     async runInteraction(annotation) {
         this.player.pause();
 
         var annoid = annotation.id;
         var self = this;
+
+        /**
+         * Monitors an annotation for xAPI events and updates the UI accordingly.
+         *
+         * @param {Object} annotation - The annotation object to monitor.
+         * @param {string} annotation.id - The ID of the annotation.
+         * @param {string} annotation.completiontracking - The completion tracking type for the annotation.
+         * @param {boolean} annotation.completed - Indicates if the annotation is completed.
+         *
+         * @returns {void}
+         */
         const xAPICheck = (annotation) => {
             var H5P;
             var iframeinterval = setInterval(function() {
@@ -86,7 +126,12 @@ export default class H5pUpload extends Base {
                             .prepend(`<div class="xapi alert-secondary d-inline px-2 rounded-pill">
                             ${M.util.get_string('xapicheck', 'ivplugin_h5pupload')}</div>`);
                     }
+                    let statements = [];
                     H5P.externalDispatcher.on('xAPI', function(event) {
+                        if (event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
+                            || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered') {
+                            statements.push(event.data.statement);
+                        }
                         if ((event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
                             || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered')
                             && event.data.statement.object.id.indexOf('subContentId') < 0) {
@@ -102,6 +147,7 @@ export default class H5pUpload extends Base {
                                 return;
                             }
                             var complete = false;
+                            let textclass = '';
                             if (annotation.completiontracking == 'completepass'
                                 && event.data.statement.result && event.data.statement.result.score.scaled >= 0.5) {
                                 complete = true;
@@ -111,13 +157,34 @@ export default class H5pUpload extends Base {
                             } else if (annotation.completiontracking == 'complete') {
                                 complete = true;
                             }
+                            if (event.data.statement.result.score.scaled < 0.5) {
+                                textclass = 'fa fa-check text-danger';
+                            } else if (event.data.statement.result.score.scaled < 1 ) {
+                                textclass = 'fa fa-check text-success';
+                            } else {
+                                textclass = 'bi bi-check2-all text-success';
+                            }
                             if (complete && !annotation.completed) {
-                                self.toggleCompletion(annoid, 'mark-done', 'automatic');
+                                let details = {};
+                                const completeTime = new Date();
+                                details.xp = annotation.xp;
+                                details.duration = completeTime.getTime() - $('#video-wrapper').data('timestamp');
+                                details.timecompleted = completeTime.getTime();
+                                const completiontime = completeTime.toLocaleString();
+                                let duration = self.formatTime(details.duration / 1000);
+                                details.reportView = `<span data-toggle="tooltip" data-html="true"
+                 data-title='<span class="d-flex flex-column align-items-start"><span><i class="bi bi-calendar mr-2"></i>
+                 ${completiontime}</span><span><i class="bi bi-stopwatch mr-2"></i>${duration}</span>
+                 <span><i class="bi bi-list-check mr-2"></i>
+                 ${event.data.statement.result.score.raw}/${event.data.statement.result.score.max}</span></span>'>
+                 <i class="${textclass}"></i><br><span>${annotation.xp}</span></span>`;
+                                details.details = statements;
+                                self.toggleCompletion(annoid, 'mark-done', 'automatic', details);
                             }
                         }
                     });
                 }
-            }, 1000);
+            }, 100);
         };
 
         // Apply content

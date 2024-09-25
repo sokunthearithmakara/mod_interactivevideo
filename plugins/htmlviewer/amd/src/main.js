@@ -20,21 +20,7 @@
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-import $ from 'jquery';
 import Iframe from 'ivplugin_iframe/main';
 
 export default class HtmlViewer extends Iframe {
-    postContentRenderEditor(modal) {
-        var modalbody = modal.getRoot();
-        modalbody.addClass('modalhasiframe');
-        var interval = setInterval(() => {
-            if ($('.modalhasiframe iframe').length > 0) {
-                // Remove the loading background because some iframe have transparent content.
-                setTimeout(() => {
-                    $('.modalhasiframe .modal-body iframe').css('background', 'none');
-                }, 1000);
-                clearInterval(interval);
-            }
-        }, 1000);
-    }
 }

@@ -22,7 +22,7 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
- namespace ivplugin_form\form_fields;
+namespace ivplugin_form\form_fields;
 
 /**
  * Configuration form for adding/editing form element "month"
@@ -58,27 +58,57 @@ class month extends base {
             'text',
             'default',
             get_string('default', 'ivplugin_form'),
-            ['data-type' => 'month']
+            [
+                'data-type' => 'month',
+                'placeholder' => 'YYYY-MM',
+            ]
         );
         $mform->setType('default', PARAM_TEXT);
+        $mform->addRule(
+            'default',
+            get_string('invalidformat', 'ivplugin_form'),
+            'regex',
+            '/^([0-9]{4})-(0[1-9]|1[1-2])$/',
+            'client'
+        );
 
         // Min.
         $mform->addElement(
             'text',
             'minlength',
             get_string('minmonth', 'ivplugin_form'),
-            ['data-type' => 'month']
+            [
+                'data-type' => 'month',
+                'placeholder' => 'YYYY-MM',
+            ]
         );
         $mform->setType('minlength', PARAM_TEXT);
+        $mform->addRule(
+            'minlength',
+            get_string('invalidformat', 'ivplugin_form'),
+            'regex',
+            '/^([0-9]{4})-(0[1-9]|1[1-2])$/',
+            'client'
+        );
 
         // Max.
         $mform->addElement(
             'text',
             'maxlength',
             get_string('maxmonth', 'ivplugin_form'),
-            ['data-type' => 'month']
+            [
+                'data-type' => 'month',
+                'placeholder' => 'YYYY-MM',
+            ]
         );
         $mform->setType('maxlength', PARAM_TEXT);
+        $mform->addRule(
+            'maxlength',
+            get_string('invalidformat', 'ivplugin_form'),
+            'regex',
+            '/^([0-9]{4})-(0[1-9]|1[1-2])$/',
+            'client'
+        );
 
         $this->set_display_vertical();
     }

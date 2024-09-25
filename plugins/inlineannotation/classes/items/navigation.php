@@ -81,7 +81,7 @@ class navigation extends \core_form\dynamic_form {
             'text',
             'timestamp',
             get_string('timestamp', 'ivplugin_inlineannotation'),
-            ['size' => 100, 'placeholder' => '00:00:00']
+            ['size' => 100, 'placeholder' => '00:00:00.00']
         );
         $mform->setType('timestamp', PARAM_TEXT);
         $mform->addRule('timestamp', get_string('required'), 'required', null, 'client');
@@ -89,7 +89,7 @@ class navigation extends \core_form\dynamic_form {
             'timestamp',
             get_string('invalidtimestampformat', 'ivplugin_inlineannotation'),
             'regex',
-            '/^([0-9]{2}):([0-5][0-9]):([0-5][0-9])$/',
+            '/^([0-9]{2}):([0-5][0-9]):([0-5][0-9])(\.\d{2})?$/',
             'client'
         );
         $mform->setDefault('timestamp', '00:00:00');

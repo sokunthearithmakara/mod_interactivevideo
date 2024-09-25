@@ -26,7 +26,7 @@ define(['jquery',
     'core/event_dispatcher',
     'mod_interactivevideo/libraries/jquery-ui',
 ], function($, addToast, Notification, {dispatchEvent}) {
-    var ctRenderer = new Object();
+    var ctRenderer = {};
     var player;
     var totaltime;
     var currentTime;
@@ -82,8 +82,9 @@ define(['jquery',
          * @param {Number} end video end time
          * @param {Number} coursecontextid course context id
          * @param {String} type video type
+         * @param {Object} displayoptions display options
          */
-        init: function(url, coursemodule, interaction, course, start, end, coursecontextid, type = 'yt') {
+        init: function(url, coursemodule, interaction, course, start, end, coursecontextid, type = 'yt', displayoptions) {
 
             /**
              * Util function to display notification
@@ -117,6 +118,9 @@ define(['jquery',
              * @returns formatted timestamp
              */
             const convertSecondsToHMS = (s, dynamic = false, rounded = true) => {
+                if (rounded) {
+                    s = Math.round(s);
+                }
                 let hours = Math.floor(s / 3600);
                 let minutes = Math.floor((s - hours * 3600) / 60);
                 let seconds = s - hours * 3600 - minutes * 60;
@@ -252,13 +256,13 @@ define(['jquery',
              * @returns
              */
             const validateTimestampFormat = (timestamp, fld, existing) => {
-                var regex = /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])$/;
+                var regex = /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])(\.\d{2})?$/;
                 if (!regex.test(timestamp)) {
                     addNotification(M.util.get_string('invalidtimestampformat', 'mod_interactivevideo'), 'danger');
                     if (existing) {
                         $(fld).val(existing);
                     } else {
-                        $(fld).val(convertSecondsToHMS(start));
+                        $(fld).val(convertSecondsToHMS(start, false, false));
                     }
                     return false;
                 }
@@ -285,14 +289,14 @@ define(['jquery',
                 if (checkduration) {
                     if (timestamp > end || timestamp < start) {
                         var message = M.util.get_string('timemustbebetweenstartandendtime', 'mod_interactivevideo', {
-                            "start": convertSecondsToHMS(start, true),
-                            "end": convertSecondsToHMS(end, true)
+                            "start": convertSecondsToHMS(start, true, false),
+                            "end": convertSecondsToHMS(end, true, false)
                         });
                         addNotification(message, 'danger');
                         if (existing) {
                             $(fld).val(existing);
                         } else {
-                            $(fld).val(convertSecondsToHMS(start));
+                            $(fld).val(convertSecondsToHMS(start, false, false));
                         }
                         return -1;
                     }
@@ -305,7 +309,7 @@ define(['jquery',
                         if (existing) {
                             $(fld).val(existing);
                         } else {
-                            $(fld).val(convertSecondsToHMS(start));
+                            $(fld).val(convertSecondsToHMS(start, false, false));
                         }
                         return -1;
                     }
@@ -318,13 +322,13 @@ define(['jquery',
                         && Number(x.title) > Number(timestamp));
                     if (skip) {
                         addNotification(M.util.get_string('interactionisbetweentheskipsegment', 'mod_interactivevideo', {
-                            "start": convertSecondsToHMS(skip.timestamp, true),
-                            "end": convertSecondsToHMS(skip.title, true)
+                            "start": convertSecondsToHMS(skip.timestamp, true, false),
+                            "end": convertSecondsToHMS(skip.title, true, false)
                         }), 'danger');
                         if (existing) {
                             $(fld).val(existing);
                         } else {
-                            $(fld).val(convertSecondsToHMS(start));
+                            $(fld).val(convertSecondsToHMS(start, false, false));
                         }
                         return -1;
                     }
@@ -351,6 +355,9 @@ define(['jquery',
              * Set of events to run after the video player is ready.
              */
             const onReady = async () => {
+                if (player.type != 'vimeo' && player.type != 'html5video') { // Vimeo/HTML5 does not pause/play on click.
+                    $('#video-block').addClass('no-pointer');
+                }
                 if (player.support.playbackrate == false) {
                     $('#changerate').remove();
                 } else {
@@ -369,7 +376,10 @@ define(['jquery',
 
                 totaltime = end - start;
                 // Recalculate the ratio of the video
-                let ratio = await player.ratio();
+                let ratio = 16 / 9;
+                if (!displayoptions.usefixedratio || displayoptions.usefixedratio == 0) {
+                    ratio = player.aspectratio;
+                }
                 $("#video-wrapper").css('padding-bottom', (1 / ratio) * 100 + '%');
 
                 playerReady = true;
@@ -515,35 +525,25 @@ define(['jquery',
                     if (currentAnnotation) {
                         $('#annotation-list tr').removeClass('active');
                         $(`tr[data-id="${currentAnnotation.id}"]`).addClass('active');
-
-                        // Show tooltip for two seconds
-                        // toggle the tooltip to show the title
                         $('#video-nav .annotation[data-id="' + currentAnnotation.id + '"] .item').tooltip('show');
-                        // Hide the tooltip after 2 seconds
                         setTimeout(function() {
                             $('#video-nav .annotation[data-id="' + currentAnnotation.id + '"] .item').tooltip('hide');
                         }, 2000);
                     }
 
-                    // If current time is within the skipsegment, seek to the end of the segment
+                    // If current time is within the skipsegment, seek to the end of the segment.
                     let skipsegments = annotations.filter((annotation) => annotation.type == 'skipsegment');
                     let skip = skipsegments.find(x => Number(x.timestamp) < Number(thisTime)
                         && Number(x.title) > Number(thisTime));
                     if (skip) {
                         await player.seek(Number(skip.title));
-                        // Replace the progress bar
+                        // Replace the progress bar.
                         percentage = (skip.title - start) / totaltime * 100;
                         replaceProgressBars(percentage);
                     }
                 };
                 if (player.type == 'yt' || player.type == 'wistia') {
-                    const update = async () => {
-                        await intervalFunction();
-                        if (await player.isPlaying() && !await player.isEnded()) {
-                            requestAnimationFrame(update);
-                        }
-                    };
-                    requestAnimationFrame(update);
+                    onPlayingInterval = setInterval(intervalFunction, player.frequency * 100);
                 } else {
                     intervalFunction();
                 }
@@ -609,11 +609,6 @@ define(['jquery',
                 if (action == 'add' || action == 'clone') {
                     addNotification(M.util.get_string('interactionadded', 'mod_interactivevideo'), 'success');
                     $(`tr[data-id="${updated.id}"]`).addClass('active');
-                    if (action == 'clone') {
-                        setTimeout(function() {
-                            $(`tr[data-id="${updated.id}"]`).find(`[data-editable="timestamp"]`).trigger('contextmenu');
-                        }, 100);
-                    }
                 } else if (action == 'edit') {
                     addNotification(M.util.get_string('interactionupdated', 'mod_interactivevideo'), 'success');
                     $(`tr[data-id="${updated.id}"]`).addClass('active');
@@ -654,7 +649,7 @@ define(['jquery',
                 let ctype = $(this).data('type');
                 player.pause();
                 var timestamp = currentTime || await player.getCurrentTime();
-                timestamp = Math.floor(timestamp);
+                timestamp = Number(timestamp.toFixed(2));
                 var contenttype = contentTypes.find(x => x.name == ctype);
                 if (contenttype.hastimestamp) {
                     if (annotations.find(x => x.timestamp == timestamp)) {
@@ -705,7 +700,7 @@ define(['jquery',
                 player.pause();
                 var id = $(this).closest('.annotation').data('id');
                 var annotation = annotations.find(annotation => annotation.id == id);
-                Notification.saveCancel(
+                Notification.deleteCancel(
                     M.util.get_string('deleteinteraction', 'mod_interactivevideo'),
                     M.util.get_string('deleteinteractionconfirm', 'mod_interactivevideo'),
                     M.util.get_string('delete', 'mod_interactivevideo'),
@@ -725,11 +720,12 @@ define(['jquery',
                 var percentage = (timestamp - start) / totaltime * 100;
                 replaceProgressBars(percentage);
                 await player.seek(timestamp, true);
+                player.pause();
                 var id = $(this).closest('.annotation').data('id');
-
                 var theAnnotation = annotations.find(annotation => annotation.id == id);
-
-                runInteraction(theAnnotation);
+                setTimeout(() => {
+                    runInteraction(theAnnotation);
+                }, 500);
             });
 
             // Implement go to timestamp
@@ -749,7 +745,7 @@ define(['jquery',
                 e.stopImmediatePropagation();
                 var percentage = e.offsetX / $(this).width();
                 replaceProgressBars(percentage * 100);
-                currentTime = Math.floor(percentage * totaltime) + start;
+                currentTime = (percentage * totaltime) + start;
                 await player.seek(currentTime);
                 player.pause();
                 $("#addcontent").trigger('click');
@@ -784,6 +780,14 @@ define(['jquery',
                         player.play();
                     }
                 }
+            });
+
+            $(document).on('click', '#video-block', function(e) {
+                if (!playerReady) {
+                    return;
+                }
+                e.preventDefault();
+                $('#playpause').trigger('click');
             });
 
             // Right click on the annotation indicator to edit the annotation.
@@ -837,7 +841,6 @@ define(['jquery',
                         var timestamp = validateTimeStartEnd(val, '[data-field].editing', initialValue, seconds,
                             true, true, true);
                         if (timestamp == -1) {
-                            window.console.log('wtf');
                             $(this).addClass('is-invalid');
                             return;
                         }
@@ -944,7 +947,6 @@ define(['jquery',
             };
 
             $(document).on('annotationitemsrendered', function() {
-                let secondLength = $('#timeline-items').width() / totaltime;
                 $('#timeline-wrapper [data-toggle="tooltip"]').tooltip({
                     'boundary': 'window',
                     'container': '#timeline',
@@ -954,7 +956,6 @@ define(['jquery',
                 // Tested
                 $('#timeline-items .annotation.li-draggable').draggable({
                     'axis': 'x',
-                    'grid': [secondLength, 0],
                     'start': function() {
                         appendTimestampMarker($(this).data('timestamp'));
                         $('.tooltip, #message').remove();
@@ -962,7 +963,6 @@ define(['jquery',
                     },
                     'drag': async function(event, ui) {
                         $('.tooltip').remove();
-                        window.console.log(ui.position.left);
                         let timestamp = ((ui.position.left + 5) / $('#timeline-items').width()) * totaltime + start;
                         if (timestamp < start) {
                             timestamp = start;
@@ -974,9 +974,9 @@ define(['jquery',
                         }
                         $('#scrollbar, #position-marker, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
                         $(this).css('left', (timestamp - start) / totaltime * 100 + '%');
-                        await player.seek(Math.round(timestamp));
+                        await player.seek(timestamp);
                         player.pause();
-                        $('#vseek #position').text(convertSecondsToHMS(Math.round(timestamp), true));
+                        $('#vseek #position').text(convertSecondsToHMS(timestamp, true, false));
                     },
                     'stop': async function(event, ui) {
                         $('.tooltip').remove();
@@ -996,23 +996,22 @@ define(['jquery',
                         $('#scrollbar, #position-marker, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
                         const id = $(this).data('id');
                         targetAnnotation = annotations.find(x => x.id == id);
-                        const roundedTimestamp = Math.round(timestamp);
-                        const existingAnnotation = annotations.find(x => x.timestamp == roundedTimestamp && x.id != id);
+                        const existingAnnotation = annotations.find(x => x.timestamp == timestamp && x.id != id);
                         if (existingAnnotation) {
                             addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        if (targetAnnotation.timestamp == Math.round(timestamp)) {
+                        if (targetAnnotation.timestamp == timestamp) {
                             return;
                         }
-                        targetAnnotation.timestamp = Math.round(timestamp);
+                        targetAnnotation.timestamp = timestamp;
                         targetAnnotation.status = "draft";
                         dispatchEvent('annotationupdated', {
                             annotation: targetAnnotation,
                             action: 'draft'
                         });
-                        await player.seek(Math.round(timestamp)); // Seek to the new position
+                        await player.seek(timestamp); // Seek to the new position
                         player.pause();
                         $('#scrollbar, #position-marker, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
                     }
@@ -1020,7 +1019,6 @@ define(['jquery',
 
                 $('#video-timeline-wrapper .skipsegment').draggable({
                     'axis': 'x',
-                    'grid': [secondLength, 0],
                     'start': function() {
                         $('#message').remove();
                         appendTimestampMarker($(this).data('timestamp'));
@@ -1039,10 +1037,9 @@ define(['jquery',
                         }
 
                         $('#scrollbar, #position-marker, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
-                        const roundedTimestamp = Math.round(timestamp);
-                        await player.seek(roundedTimestamp);
+                        await player.seek(timestamp);
                         player.pause();
-                        $('#vseek #position').text(convertSecondsToHMS(roundedTimestamp, true));
+                        $('#vseek #position').text(convertSecondsToHMS(timestamp, true, false));
                     },
                     'stop': async function(event, ui) {
                         $('#vseek #position-marker').remove();
@@ -1073,19 +1070,18 @@ define(['jquery',
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        const roundedTimestamp = Math.round(timestamp);
-                        const existingAnnotation = annotations.find(x => x.timestamp == roundedTimestamp && x.id != id);
+                        const existingAnnotation = annotations.find(x => x.timestamp == timestamp && x.id != id);
                         if (existingAnnotation) {
                             addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        if (targetAnnotation.timestamp == roundedTimestamp) {
+                        if (targetAnnotation.timestamp == timestamp) {
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        targetAnnotation.timestamp = roundedTimestamp;
-                        targetAnnotation.title = roundedTimestamp + skipduration;
+                        targetAnnotation.timestamp = timestamp;
+                        targetAnnotation.title = timestamp + skipduration;
                         if (targetAnnotation.title > end) {
                             targetAnnotation.title = end;
                         }
@@ -1094,7 +1090,7 @@ define(['jquery',
                             annotation: targetAnnotation,
                             action: 'draft'
                         });
-                        await player.seek(roundedTimestamp); // Seek to the new position
+                        await player.seek(timestamp); // Seek to the new position
                         player.pause();
                         $('#scrollbar, #position-marker, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
                     }
@@ -1103,7 +1099,6 @@ define(['jquery',
                 $('#video-timeline-wrapper .skipsegment').resizable({
                     'containment': '#video-timeline-wrapper',
                     'handles': 'e, w',
-                    'grid': [secondLength, 0],
                     'start': function() {
                         $('#message').remove();
                         appendTimestampMarker($(this).data('timestamp'));
@@ -1120,9 +1115,9 @@ define(['jquery',
                             timestamp = ((ui.position.left + ui.size.width) / $('#video-timeline').width()) * totaltime + start;
                         }
                         $('#scrollbar, #position-marker, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
-                        await player.seek(Math.round(timestamp));
+                        await player.seek(timestamp);
                         player.pause();
-                        $('#vseek #position').text(convertSecondsToHMS(Math.round(timestamp), true));
+                        $('#vseek #position').text(convertSecondsToHMS(timestamp, true, false));
                     },
                     'stop': async function(event, ui) {
                         $('#vseek #position-marker').remove();
@@ -1142,19 +1137,19 @@ define(['jquery',
                             timestamp = ((ui.position.left + ui.size.width) / $('#video-timeline').width()) * totaltime + start;
                             direction = "right";
                         }
-                        const existingAnnotation = annotations.find(x => x.timestamp == Math.round(timestamp) && x.id != id);
+                        const existingAnnotation = annotations.find(x => x.timestamp == timestamp && x.id != id);
                         if (existingAnnotation) {
                             addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
                             renderAnnotationItems(annotations);
                             return;
                         }
-                        if (targetAnnotation.timestamp == Math.round(timestamp)) {
+                        if (targetAnnotation.timestamp == timestamp) {
                             return;
                         }
                         if (direction == "left") {
-                            targetAnnotation.timestamp = Math.round(timestamp);
+                            targetAnnotation.timestamp = timestamp;
                         } else {
-                            targetAnnotation.title = Math.round(timestamp);
+                            targetAnnotation.title = timestamp;
                             if (targetAnnotation.title > end) {
                                 targetAnnotation.title = end;
                             }
@@ -1164,7 +1159,7 @@ define(['jquery',
                             annotation: targetAnnotation,
                             action: 'draft'
                         });
-                        await player.seek(Math.round(timestamp));
+                        await player.seek(timestamp);
                         player.pause();
                         $('#scrollbar, #position-marker, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
                     }
@@ -1198,20 +1193,12 @@ define(['jquery',
                 'start': function(event, ui) {
                     $('#timeline-items').addClass('no-pointer-events');
                     $("#message").remove();
-                    if ($(this).hasClass('snap')) {
-                        appendTimestampMarker(Math.round(((ui.position.left) /
-                            $('#timeline-items').width()) * totaltime + start), true);
-                    } else {
-                        appendTimestampMarker(((ui.position.left) / $('#timeline-items').width()) * totaltime + start, false);
-                    }
+                    appendTimestampMarker(((ui.position.left) / $('#timeline-items').width()) * totaltime + start, false);
                 },
                 'drag': async function(event, ui) {
                     let timestamp = ((ui.position.left) / $('#timeline-items').width()) * totaltime + start;
                     let percentage = (timestamp - start) / totaltime * 100;
-                    if ($(this).hasClass('snap')) {
-                        timestamp = Math.round(timestamp);
-                    }
-                    $('#vseek #position').text(convertSecondsToHMS(timestamp, true, $(this).hasClass('snap')));
+                    $('#vseek #position').text(convertSecondsToHMS(timestamp, true, false));
                     $('#vseek #position-marker, #scrollhead-top, #scrollbar')
                         .css('left', percentage + '%');
                     await player.seek(timestamp);
@@ -1225,9 +1212,6 @@ define(['jquery',
                     }, 200);
                     // Convert the position to percentage
                     let timestamp = ((ui.position.left) / $('#timeline-items').width()) * totaltime + start;
-                    if ($(this).hasClass('snap')) {
-                        timestamp = Math.round(timestamp);
-                    }
                     $('#scrollbar, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
                 }
             });
@@ -1238,22 +1222,15 @@ define(['jquery',
                 'start': function(event, ui) {
                     $('#vseek').addClass('no-pointer-events');
                     $("#message").remove();
-                    if ($('#scrollbar').hasClass('snap')) {
-                        appendTimestampMarker(Math.round(((ui.position.left) / $('#vseek').width()) * totaltime + start), true);
-                    } else {
-                        appendTimestampMarker(((ui.position.left) / $('#vseek').width()) * totaltime + start, false);
-                    }
+                    appendTimestampMarker(((ui.position.left) / $('#vseek').width()) * totaltime + start, false);
                 },
                 'drag': async function(event, ui) {
                     let timestamp = ((ui.position.left) / $('#vseek').width()) * totaltime + start;
                     let percentage = (timestamp - start) / totaltime * 100;
-                    if ($('#scrollbar').hasClass('snap')) {
-                        timestamp = Math.round(timestamp);
-                    }
                     if (timestamp < start) {
                         timestamp = start;
                     }
-                    $('#vseek #position').text(convertSecondsToHMS(timestamp, true, $('#scrollbar').hasClass('snap')));
+                    $('#vseek #position').text(convertSecondsToHMS(timestamp, true, false));
                     $('#vseek #position-marker, #scrollhead-top, #scrollbar')
                         .css('left', percentage + '%');
                     await player.seek(timestamp);
@@ -1269,9 +1246,6 @@ define(['jquery',
                     if (timestamp < start) {
                         timestamp = start;
                     }
-                    if ($('#scrollbar').hasClass('snap')) {
-                        timestamp = Math.round(timestamp);
-                    }
                     $('#scrollbar, #scrollhead-top').css('left', (timestamp - start) / totaltime * 100 + '%');
                 }
             });
@@ -1285,7 +1259,7 @@ define(['jquery',
                     $('#top-region, #timeline-wrapper').addClass('no-pointer-events');
                 },
                 'resize': function(event, ui) {
-                    $('#top-region').css('height', `calc(100vh - ${ui.size.height + 70}px)`);
+                    $('#top-region').css('height', `calc(100dvh - ${ui.size.height + 70}px)`);
                 },
                 'stop': function() {
                     $('#top-region, #timeline-wrapper').removeClass('no-pointer-events');
@@ -1327,7 +1301,7 @@ define(['jquery',
             const timelineHeight = localStorage.getItem('timeline-height');
             if (timelineHeight) {
                 $('#timeline-wrapper').css('height', timelineHeight + 'px');
-                $('#top-region').css('height', `calc(100vh - ${Number(timelineHeight) + 70}px)`);
+                $('#top-region').css('height', `calc(100dvh - ${Number(timelineHeight) + 70}px)`);
             }
 
             // Seek bar functionalities
@@ -1345,8 +1319,8 @@ define(['jquery',
                 $scrollbar.css('left', (relX + 5) + 'px');
                 $scrollbar.find('#scrollhead').remove();
                 var percentage = relX / $(this).width();
-                var time = Math.round(percentage * (totaltime) + start);
-                var formattedTime = convertSecondsToHMS(time, true);
+                var time = percentage * (totaltime) + start;
+                var formattedTime = convertSecondsToHMS(time, true, false);
                 $('#vseek #bar').append(`<div id="position-marker">
                     <div id="position" class="py-0 px-1" style="top:-25px;">${formattedTime}</div></div>`);
                 $('#vseek #position-marker').css('left', relX + 'px');
@@ -1363,11 +1337,11 @@ define(['jquery',
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
                 var percentage = relX / $(this).width();
-                var time = Math.round(percentage * (totaltime) + start);
+                var time = percentage * (totaltime) + start;
                 if (time < start) {
                     time = start;
                 }
-                var formattedTime = convertSecondsToHMS(time, true);
+                var formattedTime = convertSecondsToHMS(time, true, false);
                 // Move the cursorbar
                 $('#cursorbar').css('left', (relX + 5) + 'px');
                 $('#vseek #position').text(formattedTime);
@@ -1390,7 +1364,7 @@ define(['jquery',
                 e.stopImmediatePropagation();
                 var percentage = e.offsetX / $(this).width();
                 replaceProgressBars(percentage * 100);
-                await player.seek(Math.round((percentage * totaltime) + start));
+                await player.seek((percentage * totaltime) + start);
                 player.pause();
                 $("#message, #end-screen").remove();
             });

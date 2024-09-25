@@ -86,10 +86,21 @@ switch ($action) {
     case 'delete_item':
         $id = required_param('id', PARAM_INT);
         $contextid = required_param('contextid', PARAM_INT);
-        $item = interactivevideo_util::get_item($id, $contextid);
         $DB->delete_records('interactivevideo_items', ['id' => $id]);
+        $logs = $DB->get_records('interactivevideo_log', ['annotationid' => $id]);
         $fs = get_file_storage();
+        // Delete files.
         $fs->delete_area_files($contextid, 'mod_interactivevideo', 'content', $id);
+        // Delete logs files & logs.
+        if ($logs) {
+            foreach ($logs as $log) {
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'attachments', $log->id);
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text1', $log->id);
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text2', $log->id);
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text3', $log->id);
+            }
+            $DB->delete_records('interactivevideo_log', ['annotationid' => $id]);
+        }
         echo $id;
         break;
     case 'quickeditfield':
@@ -116,7 +127,24 @@ switch ($action) {
         $g = required_param('g', PARAM_FLOAT);
         $ginstance = required_param('gradeiteminstance', PARAM_INT);
         $xp = required_param('xp', PARAM_INT);
-        $progress = interactivevideo_util::save_progress($id, $userid, $completeditems, $c, $percentage, $g, $ginstance, $xp);
+        $completiondetails = required_param('completiondetails', PARAM_RAW);
+        $details = required_param('details', PARAM_RAW);
+        $markdone = required_param('markdone', PARAM_BOOL);
+        $type = required_param('annotationtype', PARAM_TEXT);
+        $progress = interactivevideo_util::save_progress(
+            $id,
+            $userid,
+            $completeditems,
+            $completiondetails,
+            $markdone,
+            $type,
+            $details,
+            $c,
+            $percentage,
+            $g,
+            $ginstance,
+            $xp
+        );
         echo json_encode($progress);
         break;
     case 'getreportdatabygroup':
@@ -140,5 +168,25 @@ switch ($action) {
         $contextid = required_param('contextid', PARAM_INT);
         $log = interactivevideo_util::get_logs_by_userids($userids, $annotationid, $contextid);
         echo json_encode($log);
+        break;
+    case 'delete_progress_by_id':
+        $recordid = required_param('recordid', PARAM_INT);
+        $contextid = required_param('contextid', PARAM_INT);
+        // Delete completion record.
+        $DB->delete_records('interactivevideo_completion', ['id' => $recordid]);
+        // Delete logs.
+        $logs = $DB->get_field('interactivevideo_log', 'id', ['completionid' => $recordid], IGNORE_MISSING);
+        // Delete associated files.
+        if ($logs) {
+            $fs = get_file_storage();
+            foreach ($logs as $log) {
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'attachments', $log->id);
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text1', $log->id);
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text2', $log->id);
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text3', $log->id);
+            }
+            $DB->delete_records('interactivevideo_log', ['completionid' => $recordid]);
+        }
+        echo 'deleted';
         break;
 }

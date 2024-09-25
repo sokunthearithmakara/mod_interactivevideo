@@ -24,15 +24,15 @@ import Base from 'mod_interactivevideo/type/base';
 import $ from 'jquery';
 import {notifyFilterContentUpdated as notifyFilter} from 'core_filters/events';
 export default class RichText extends Base {
+    /**
+     * Post-processes the content after rendering an annotation.
+     *
+     * @param {Object} annotation - The annotation object.
+     * @param {number} annotation.id - The ID of the annotation.
+     */
     postContentRender(annotation) {
         let $body = $(`#message[data-id='${annotation.id}'] .modal-body`);
         notifyFilter($body);
         $body.addClass('bg-white p-0');
     }
-    postContentRenderEditor() {
-        let $body = $(`.modal .modal-body`);
-        notifyFilter($body);
-        $body.addClass('bg-white p-0');
-    }
-
 }
