@@ -84,7 +84,7 @@ class main extends \ivplugin_richtext\main {
             // Parse the content to get the items that need formatting.
             $items = json_decode($content);
             $items = array_map(function ($item) {
-                if ($item->type == "text" || $item->type == "navigation" || $item->type == "file") {
+                if ($item->type == "text" || $item->type == "textblock" || $item->type == "navigation" || $item->type == "file") {
                     $item->properties->formattedlabel = format_string($item->properties->label);
                 } else if ($item->type == "image") {
                     $item->properties->formattedalttext = format_string($item->properties->alttext);

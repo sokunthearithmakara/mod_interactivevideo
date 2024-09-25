@@ -8,13 +8,6 @@
         <licenseversion>?</licenseversion>
     </library>
     <library>
-        <location>libraries/pdfjs</location>
-        <name>PDF JS library</name>
-        <version>4.5</version>
-        <license>Apache</license>
-        <licenseversion>2.0</licenseversion>
-    </library>
-    <library>
         <location>amd/src/libraries/buttons.bootstrap4.js</location>
         <name>Datatables Bootstrap4 Button Style</name>
         <version>2.4.1</version>

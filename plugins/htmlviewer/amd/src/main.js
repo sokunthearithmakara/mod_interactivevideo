@@ -20,7 +20,49 @@
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-import Iframe from 'ivplugin_iframe/main';
+import Base from 'mod_interactivevideo/type/base';
+import $ from 'jquery';
 
-export default class HtmlViewer extends Iframe {
+export default class HtmlViewer extends Base {
+
+    /**
+     * Override the renderContainer method
+     * @param {Object} annotation The annotation object
+     * @return {void}
+     */
+    renderContainer(annotation) {
+        $(`#message[data-id='${annotation.id}']`).addClass('hasiframe');
+        super.renderContainer(annotation);
+    }
+
+    /**
+     * Override the postContentRender method
+     * @param {Object} annotation The annotation object
+     * @return {void}
+     */
+    postContentRender(annotation) {
+        var interval = setInterval(() => {
+            if ($(`#message[data-id='${annotation.id}'] iframe`).length > 0) {
+                clearInterval(interval);
+                // Remove the loading background because some iframe has transparent content
+                setTimeout(() => {
+                    $(`#message[data-id='${annotation.id}'] iframe`).css('background', 'none');
+                }, 1000);
+            }
+        }, 1000);
+    }
+
+    /**
+     * Override the displayReportView method
+     * @param {Object} annotation The annotation object
+     * @return {void}
+     */
+    async displayReportView(annotation) {
+        const data = await this.render(annotation, 'html');
+        let $message = $(`#message[data-id='${annotation.id}']`);
+        $message.addClass('hasiframe');
+        $message.find(`.modal-body`).html(data);
+        $message.find(`.modal-body`).attr('id', 'content');
+        this.postContentRender(annotation);
+    }
 }

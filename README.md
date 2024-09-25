@@ -1,23 +1,33 @@
 # Interactive Video #
 
-Add interactions to your videos with this plugin including html content, external link (iframe), and interactive content H5P.
+Transform your video/audio content into an interactive learning adventure! Add dynamic annotations and interactions like H5P activities, PDFs, HTML games/simulations, rich text, and more. Track every learner’s journey with detailed reports.
 
-This plugin allows instructors to engage students by adding interactions to their YouTube videos.
+Main Features:
+- Media Support: Upload video/audio files or use YouTube, Vimeo, DailyMotion, Wistia, and direct file URLs.
+- Interactive Content: Add interactions or content types at specific points in the video/audio.
+- Display Modes: Choose from three display modes for interactions: inline (covering the video), popup (modal), and below the video.
+- Customizable Timing: Set the start and end times for the video/audio.
+- Distract-Free Mode: Display video/audio in a mode that maximizes focus.
+- Completion Tracking: Track completion based on content type: manual, view, or automatic.
+- Activity Completion: Set activity completion based on the percentage of interaction completed.
+- Experience Points: Award participants experience points after each content/interaction completion.
+- Detailed Reports: Access completion reports with details for each interaction.
+- Mobile Support: Compatible with mobile apps.
+- Modular Design: Administrators can add, remove, enable, or disable content types as sub-plugins. Developers can extend Interactive Video through custom sub-plugins.
 
-Main features:
-- Add interactions to your videos including html content, external link (iframe), and interactive content H5P.
-- Support three display modes: inline (covering the video), popup (modal), and below the video.
-- Set the start and end time of the video.
-- Distraction free - hide YouTube video controls and prevent students from going to YouTube.
-- Set manual or automatic completion of the interaction. Automatic completion is only applicable to H5P content that emits xAPI statements (completed and answered).
-- Set activity completion based on the completion of the interaction.
-- Support grades based on the interactions completed.
-- Display completion reports.
-
-Limitations:
-- Only YouTube videos are supported at the moment.
-- H5P content state is not saved. The content will be reset when the page is reloaded. However, the completion status will be saved.
-- No mobile app support.
+Out-of-the-box interaction/content types:
+- Annotations: Add persistan annotations on top of the video/canvas.
+- Chapter: Break video/audio into segments.
+- Content bank item: Add content from the course's content bank.
+- Decision: Add a crossroad/decision point.
+- External content: Embed an external content using OEmbed library.
+- Form: Collect response from learners using Moodle's dynamic form.
+- H5P viewer: Upload H5P activity in .h5p and .html format. (You can convert .h5p to .html using Lumi). Tracking completion using xAPI events is supported in both formats.
+- HTML viewer: Include content such as HTML5 games, simulations, etc.
+- PDF viewer: Display PDF file using PDFjs viewer.
+- Paused annotation: Superimpose audio/image/video/text/shape/file on the video at a certain point.
+- Skip segment: Skip certain segments of the video/audio.
+- XP reward: Simply reward learners with XP points.
 
 ## Installing via uploaded ZIP file ##
 

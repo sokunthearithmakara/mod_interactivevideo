@@ -96,7 +96,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         $mform->setDefault('source', 'file');
         $mform->addHelpButton('source', 'source', 'mod_interactivevideo');
 
-        // Add youtube video url field.
+        // Add url field.
         $mform->addElement(
             'text',
             'videourl',
@@ -105,7 +105,9 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                 'size' => '100',
                 'onkeydown' => 'return ((event.ctrlKey || event.metaKey) && event.key === \'v\') ' .
                     ' || ((event.ctrlKey || event.metaKey) && event.key === \'c\') || ' .
-                    '((event.ctrlKey || event.metaKey) && event.key === \'x\') ' .
+                    '((event.ctrlKey || event.metaKey) && event.key === \'x\') || ' .
+                    '((event.ctrlKey || event.metaKey) && event.key === \'z\') || ' .
+                    '((event.ctrlKey || event.metaKey) && event.key === \'y\') ' .
                     ' || ((event.ctrlKey || event.metaKey) && event.key === \'a\') || event.key === \'Backspace\' ? true : false;',
                 'placeholder' => get_string('videourlplaceholder', 'mod_interactivevideo'),
             ]
@@ -117,13 +119,21 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         $mform->addElement('hidden', 'video', 0);
         $mform->setType('video', PARAM_INT);
 
-        // Add preview button.
+        // Add upload button.
         $mform->addElement('button', 'upload', get_string('uploadvideobutton', 'mod_interactivevideo'));
         $mform->hideIf('upload', 'source', 'eq', 'url');
 
-        // Add preview button.
+        // Add delete button.
         $mform->addElement('button', 'delete', get_string('deletevideobutton', 'mod_interactivevideo'));
         $mform->hideIf('delete', 'source', 'eq', 'url');
+
+        // Poster image url.
+        $mform->addElement(
+            'hidden',
+            'posterimage',
+            null
+        );
+        $mform->setType('posterimage', PARAM_TEXT);
 
         // Adding start time and end time fields.
         $mform->addElement(
@@ -210,6 +220,17 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                 . get_string('appearanceandbehaviorsettings', 'mod_interactivevideo') . '</div></div>',
         );
 
+        // Use distraction-free mode.
+        $mform->addElement(
+            'advcheckbox',
+            'distractionfreemode',
+            '',
+            get_string('distractionfreemode', 'mod_interactivevideo'),
+            ['group' => 1],
+            [0, 1]
+        );
+        $mform->setDefault('distractionfreemode', 1);
+
         // Dark mode.
         $mform->addElement(
             'advcheckbox',
@@ -220,6 +241,18 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             [0, 1]
         );
         $mform->setDefault('darkmode', 1);
+        $mform->hideIf('darkmode', 'distractionfreemode', 'eq', 0);
+
+        // Fix aspect ratio.
+        $mform->addElement(
+            'advcheckbox',
+            'usefixedratio',
+            '',
+            get_string('usefixedratio', 'mod_interactivevideo'),
+            ['group' => 1],
+            [0, 1]
+        );
+        $mform->hideIf('userfixedratio', 'distractionfreemode', 'eq', 0);
 
         // Fix aspect ratio.
         $mform->addElement(
@@ -323,6 +356,17 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         $mform->hideIf('disableinteractionclickuntilcompleted', 'disableinteractionclick', 'eq', 1);
         $mform->hideIf('disableinteractionclickuntilcompleted', 'hidemainvideocontrols', 'eq', 1);
         $mform->hideIf('disableinteractionclickuntilcompleted', 'hideinteractions', 'eq', 1);
+
+        // Pause video if window is not active.
+        $mform->addElement(
+            'advcheckbox',
+            'pauseonblur',
+            '',
+            get_string('pauseonblur', 'mod_interactivevideo'),
+            ['group' => 1],
+            [0, 1]
+        );
+        $mform->setDefault('pauseonblur', 1);
 
         // Add standard grade elements.
         $this->standard_grading_coursemodule_elements();
@@ -437,6 +481,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                 'disableinteractionclickuntilcompleted',
                 'hideinteractions',
                 'theme',
+                'distractionfreemode',
             ];
             if (empty($defaultvalues['displayoptions'])) {
                 $defaultvalues['displayoptions'] = json_encode(array_fill_keys($displayoptions, 0));

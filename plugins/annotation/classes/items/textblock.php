@@ -15,7 +15,6 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace ivplugin_annotation\items;
-
 /**
  * Class text
  *
@@ -174,10 +173,14 @@ class textblock extends \core_form\dynamic_form {
         $availablefonts = array_filter($availablefonts, function ($font) {
             return count($font) === 2;
         });
-        // Add default font.
-        array_unshift($availablefonts, [get_string('defaultfont', 'ivplugin_annotation'), '']);
-        $availablefonts = array_column($availablefonts, 0, 1);
-        $mform->addElement('select', 'textfont', get_string('textfont', 'ivplugin_annotation'), $availablefonts);
+        if (empty($availablefonts)) {
+            $mform->addElement('hidden', 'textfont', '');
+        } else {
+            // Add default font.
+            array_unshift($availablefonts, [get_string('defaultfont', 'ivplugin_annotation'), '']);
+            $availablefonts = array_column($availablefonts, 0, 1);
+            $mform->addElement('select', 'textfont', get_string('textfont', 'ivplugin_annotation'), $availablefonts);
+        }
         $mform->setType('textfont', PARAM_TEXT);
 
         $mform->addElement(

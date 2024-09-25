@@ -151,6 +151,7 @@ export default class Chapter extends Base {
         }
         return listItem;
     }
+
     /**
      * Render the annotation on the video navigation
      * @param {object} annotation The annotation object
@@ -181,6 +182,7 @@ export default class Chapter extends Base {
         data-original-title='<i class="${this.prop.icon} mr-1"></i>${annotation.formattedtitle}'></div></li>`);
         }
     }
+
     /**
      * Run the interaction
      * @param {object} annotation The annotation object

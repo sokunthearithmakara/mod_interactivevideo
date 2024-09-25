@@ -65,8 +65,6 @@ function interactivevideo_supports($feature) {
  */
 function interactivevideo_display_options($moduleinstance) {
     $options = [];
-    $options['darkmode'] = $moduleinstance->darkmode;
-    $options['usefixedratio'] = $moduleinstance->usefixedratio;
     $options['disablechapternavigation'] = $moduleinstance->disablechapternavigation;
     $options['preventskipping'] = $moduleinstance->preventskipping;
     $options['useoriginalvideocontrols'] = $moduleinstance->useoriginalvideocontrols;
@@ -76,6 +74,10 @@ function interactivevideo_display_options($moduleinstance) {
     $options['disableinteractionclickuntilcompleted'] = $moduleinstance->disableinteractionclickuntilcompleted;
     $options['hideinteractions'] = $moduleinstance->hideinteractions;
     $options['theme'] = $moduleinstance->theme;
+    $options['distractionfreemode'] = $moduleinstance->distractionfreemode;
+    $options['darkmode'] = $moduleinstance->distractionfreemode == 1 ? $moduleinstance->darkmode : 0;
+    $options['usefixedratio'] = $moduleinstance->distractionfreemode == 1 ? $moduleinstance->usefixedratio : 1;
+    $options['pauseonblur'] = $moduleinstance->pauseonblur;
     return $options;
 }
 
@@ -284,6 +286,9 @@ function interactivevideo_delete_instance($id) {
 
     // Delete all the completion records.
     $DB->delete_records('interactivevideo_completion', ['cmid' => $id]);
+
+    // Delete all the logs.
+    $DB->delete_records('interactivevideo_log', ['cmid' => $id]);
 
     // Delete all the logs.
     $DB->delete_records('interactivevideo_log', ['cmid' => $id]);
@@ -639,7 +644,6 @@ function interactivevideo_reset_userdata($data) {
  * Get content of the interaction.
  *
  * @param mixed $arg
- * @return void
  */
 function interactivevideo_output_fragment_getcontent($arg) {
     $prop = json_decode($arg['prop']);

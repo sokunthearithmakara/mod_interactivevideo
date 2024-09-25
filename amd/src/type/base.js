@@ -180,7 +180,7 @@ class Base {
         $(document).on('change', 'input[type="color"]', function() {
             $('.modal-backdrop').removeClass('opacity-0');
         });
-        $(document).on('click', '.modal input[type="color"]', function() {
+        $(document).off('click', '.modal input[type="color"]').on('click', '.modal input[type="color"]', function() {
             $('.modal-backdrop').addClass('opacity-0');
         });
     }
@@ -201,7 +201,7 @@ class Base {
      *
      * @param {Object} annotation - The annotation object to render.
      * @param {string} [format='html'] - The format in which to render the annotation. Defaults to 'html'.
-     * @returns {string} The rendered content.
+     * @returns {promise} The rendered content.
      */
     async render(annotation, format = 'html') {
         return renderContent(annotation, format);
@@ -834,6 +834,12 @@ class Base {
             audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/point-awarded.mp3');
             audio.play();
             $(`#message[data-id='${thisItem.id}'] #title .badge`).removeClass('badge-secondary').addClass('alert-success');
+            if (thisItem.xp > 0) {
+                $(`#message[data-id='${thisItem.id}'] #title .badge`).text(thisItem.earned == thisItem.xp ?
+                    Number(thisItem.earned) + ' XP' : `${Number(thisItem.earned)}/${thisItem.xp} XP`);
+            } else {
+                $(`#message[data-id='${thisItem.id}'] #title .badge`).hide();
+            }
         } else if (action == 'mark-undone') {
             $toggleButton
                 .removeClass('btn-success mark-undone').addClass('btn-secondary mark-done');
@@ -845,11 +851,11 @@ class Base {
 
         // Update the completion button.
         $toggleButton.find(`span`).text('');
-        if (thisItem.xp > 0) {
+        if (thisItem.earned > 0) {
             if (action == 'mark-undone') {
-                this.addNotification(M.util.get_string('xplost', 'mod_interactivevideo', thisItem.xp), 'info');
+                this.addNotification(M.util.get_string('xplost', 'mod_interactivevideo', Number(thisItem.earned)), 'info');
             } else if (action == 'mark-done') {
-                this.addNotification(M.util.get_string('xpearned', 'mod_interactivevideo', thisItem.xp), 'success');
+                this.addNotification(M.util.get_string('xpearned', 'mod_interactivevideo', Number(thisItem.earned)), 'success');
             }
         }
 
@@ -882,25 +888,29 @@ class Base {
      * @returns {Promise}
      */
     toggleCompletion(id, action, type = 'manual', details = {}) {
-        // Skip if the page is the interactions page.
+        // Skip if the page is the interactions page or in preview-mode.
         if (this.isEditMode()) {
+            return Promise.resolve(); // Return a resolved promise for consistency
+        }
+        if ($('body').hasClass('preview-mode')) {
+            this.addNotification(M.util.get_string('completionnotrecordedinpreviewmode', 'mod_interactivevideo'));
             return Promise.resolve(); // Return a resolved promise for consistency
         }
         // Gradable items (hascompletion)
         const gradableitems = this.annotations.filter(x => x.hascompletion == '1');
         const totalXp = gradableitems.map(({xp}) => Number(xp)).reduce((a, b) => a + b, 0);
         let completedItems = gradableitems.filter(({completed}) => completed);
-        let earnedXp = completedItems.map(({xp}) => Number(xp)).reduce((a, b) => a + b, 0);
+        let earnedXp = completedItems.map(({earned}) => Number(earned)).reduce((a, b) => a + b, 0);
 
         completedItems = completedItems.map(({id}) => id);
-        const thisItem = gradableitems.find(({id: itemId}) => itemId == id);
+        let thisItem = gradableitems.find(({id: itemId}) => itemId == id);
         let completionDetails = {
             id,
         };
         if (action == 'mark-done') {
             const completeTime = new Date();
             completionDetails.hasDetails = details.details ? true : false;
-            completionDetails.xp = thisItem.xp;
+            completionDetails.xp = details.xp || thisItem.xp;
             completionDetails.duration = details.duration || completeTime.getTime() - $('#video-wrapper').data('timestamp');
             completionDetails.timecompleted = details.timecompleted || completeTime.getTime();
             const completiontime = completeTime.toLocaleString();
@@ -909,14 +919,14 @@ class Base {
                 `<span data-toggle="tooltip" data-html="true"
                  data-title='<span class="d-flex flex-column align-items-start"><span><i class="bi bi-calendar mr-2"></i>
                  ${completiontime}</span><span><i class="bi bi-stopwatch mr-2"></i>${duration}</span></span>'>
-                 <i class="fa fa-check text-success"></i><br><span>${thisItem.xp}</span></span>`;
+                 <i class="fa fa-check text-success"></i><br><span>${Number(completionDetails.xp)}</span></span>`;
         }
         if (action == 'mark-done') {
             completedItems.push(id.toString());
-            earnedXp += Number(thisItem.xp);
+            earnedXp += Number(completionDetails.xp);
         } else if (action == 'mark-undone') {
             completedItems = completedItems.filter(itemId => itemId != id);
-            earnedXp -= Number(thisItem.xp);
+            earnedXp -= Number(thisItem.earned);
         }
 
         let completed;
@@ -948,18 +958,20 @@ class Base {
                     token: this.token,
                     cmid: this.cm,
                     completionid: this.completionid,
+                    contextid: thisItem.contextid,
                 },
                 success: () => {
                     // Update the annotations array.
                     const annotations = this.annotations.map(x => {
                         if (x.id == id) {
                             x.completed = action == 'mark-done';
+                            x.earned = completionDetails.xp;
                         }
                         return x;
                     });
 
                     renderAnnotationItems(annotations, this.start, this.totaltime);
-
+                    thisItem.earned = completionDetails.xp;
                     this.completionCallback(annotations, thisItem, action, type);
                     dispatchEvent('interactionCompletionUpdated', {
                         annotations,
@@ -989,6 +1001,19 @@ class Base {
         $message.off('click', 'button#completiontoggle').on('click', 'button#completiontoggle', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            // Implement required min minutes.
+            if ($(this).hasClass('mark-done') && annotation.requiremintime > 0) {
+                // Duration in minutes
+                const duration = (new Date().getTime() - $('#video-wrapper').data('timestamp')) / 1000 / 60;
+
+                if (duration < annotation.requiremintime) {
+                    self.addNotification(
+                        M.util.get_string('youmustspendatleastminutesbeforemarkingcomplete', 'mod_interactivevideo',
+                            annotation.requiremintime), 'danger');
+                    return;
+                }
+
+            }
             $(this).attr('disabled', true);
             $(this).find('i').removeClass('bi-check2 bi-circle').addClass('fa-spin bi-arrow-repeat');
             $(this).find('span').hide();
@@ -1081,7 +1106,7 @@ class Base {
                 data: {
                     action: 'get_logs_by_userids',
                     annotationid: annotation.id,
-                    contextid: M.cfg.contextid,
+                    contextid: annotation.contextid,
                     userids: userids,
                     sesskey: M.cfg.sesskey,
                     token: self.token,

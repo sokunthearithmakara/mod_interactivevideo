@@ -21,7 +21,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 import {dispatchEvent} from 'core/event_dispatcher';
-import $ from 'jquery';
 
 class Html5Video {
     /**
@@ -61,16 +60,31 @@ class Html5Video {
             quality: false,
         };
         var player = document.getElementById('player');
+        this.posterImage = player.poster;
+        // Check if the url is for video or audio.
+        const video = ['fmp4', 'm4v', 'mov', 'mp4', 'ogv', 'webm'];
+        const ext = url.split('.').pop();
+        if (video.indexOf(ext) === -1) {
+            this.audio = true;
+            // Append a canvas element to the video.
+            const canvas = '<canvas id="visualizer"></canvas>';
+            player.insertAdjacentHTML('afterend', canvas);
+            this.posterImage = M.cfg.wwwroot + '/mod/interactivevideo/pix/audioposter.jpg';
+            player.poster = this.posterImage;
+        }
         player.src = url;
         player.controls = showControls;
-        player.autoplay = false;
         player.currentTime = start;
+        if (document.body.classList.contains('mobiletheme')) {
+            // Preload video on mobile app.
+            player.autoplay = true;
+        }
         // Disable keyboard controls.
         player.tabIndex = -1;
-        this.posterImage = player.poster;
+
         let self = this;
         if (!showControls) {
-            $('body').addClass('no-original-controls');
+            document.body.classList.add('no-original-controls');
         }
 
         // Play inline.
@@ -79,11 +93,14 @@ class Html5Video {
         // Disable picture-in-picture.
         player.setAttribute('disablePictureInPicture', '');
 
+        // Disable picture-in-picture.
+        player.setAttribute('disablePictureInPicture', '');
+
         player.addEventListener('loadedmetadata', function() {
             self.aspectratio = self.ratio();
-            dispatchEvent('iv:playerReady');
             end = !end ? player.duration : Math.min(end, player.duration);
-
+            player.pause();
+            dispatchEvent('iv:playerReady');
         });
 
         player.addEventListener('seeked', function() {
@@ -110,6 +127,62 @@ class Html5Video {
         });
 
         this.player = player;
+    }
+
+    /**
+     * Visualizes the audio frequency data of the HTML5 video player using a canvas element.
+     * Credit: https://codepen.io/nfj525/pen/rVBaab by Nick Jones
+     * This method creates an audio context and connects it to the video player's audio source.
+     * It then sets up an analyser to get the frequency data and renders a bar graph visualization
+     * on a canvas element with the id "visualizer".
+     *
+     * The visualization is updated in real-time using the `requestAnimationFrame` method.
+     *
+     * @method visualizer
+     */
+    visualizer() {
+        var context = new AudioContext();
+        var src = context.createMediaElementSource(this.player);
+        var analyser = context.createAnalyser();
+        var canvas = document.getElementById("visualizer");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        var ctx = canvas.getContext("2d");
+        src.connect(analyser);
+        analyser.connect(context.destination);
+
+        analyser.fftSize = 256;
+
+        var bufferLength = analyser.frequencyBinCount;
+        var dataArray = new Uint8Array(bufferLength);
+
+        var WIDTH = canvas.width;
+        var HEIGHT = canvas.height;
+
+        var barWidth = (WIDTH / bufferLength) * 2.5;
+        var barHeight;
+        var x = 0;
+
+        const renderFrame = () => {
+            requestAnimationFrame(renderFrame);
+            x = 0;
+            analyser.getByteFrequencyData(dataArray);
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+            for (var i = 0; i < bufferLength; i++) {
+                barHeight = dataArray[i];
+                var r = barHeight + (25 * (i / bufferLength));
+                var g = 250 * (i / bufferLength);
+                var b = 50;
+
+                ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+                ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
+
+                x += barWidth + 1;
+            }
+        };
+        renderFrame();
     }
 
     /**
@@ -179,6 +252,7 @@ class Html5Video {
     isPlaying() {
         return !this.player.paused;
     }
+
     /**
      * Checks if the video has ended.
      *
@@ -195,7 +269,9 @@ class Html5Video {
      * @returns {number} The aspect ratio of the video.
      */
     ratio() {
-        // If wide video, use that ratio; otherwise, 16:9
+        if (this.audio) {
+            return 16 / 9;
+        }
         return this.player.videoWidth / this.player.videoHeight;
     }
     /**
@@ -205,6 +281,7 @@ class Html5Video {
      * It is used to clean up the player instance and release any resources it may be holding.
      */
     destroy() {
+        document.getElementById('video-wrapper').innerHTML = '<div id="player" style="width:100%; max-width: 100%"></div>';
         this.player.pause();
         this.player.removeAttribute('src');
         this.player.load();
@@ -217,6 +294,7 @@ class Html5Video {
     getState() {
         return this.player.paused ? 'paused' : 'playing';
     }
+
     /**
      * Sets the playback rate of the video player.
      *
@@ -225,6 +303,7 @@ class Html5Video {
     setRate(rate) {
         this.player.playbackRate = rate;
     }
+
     /**
      * Mutes the HTML5 video player.
      */
@@ -237,6 +316,7 @@ class Html5Video {
     unMute() {
         this.player.muted = false;
     }
+
     /**
      * Returns the original video player instance.
      *
@@ -245,6 +325,7 @@ class Html5Video {
     originalPlayer() {
         return this.player;
     }
+
     /**
      * Sets the video quality.
      *

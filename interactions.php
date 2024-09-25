@@ -158,6 +158,7 @@ $datafortemplate = [
     "contenttype" => $contentoptions,
     "html5" => $moduleinstance->type == 'html5video',
     "title" => format_string($moduleinstance->name),
+    "grade" => $moduleinstance->grade,
 ];
 
 echo $OUTPUT->render_from_template('mod_interactivevideo/editor', $datafortemplate);

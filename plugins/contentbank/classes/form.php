@@ -204,6 +204,16 @@ class form extends \mod_interactivevideo\form\base_form {
         ]);
         $this->xp_form_field();
         $mform->hideIf('xp', 'completiontracking', 'eq', 'none');
+        $mform->addElement(
+            'advcheckbox',
+            'char1',
+            '',
+            get_string('awardpartialpoints', 'mod_interactivevideo'),
+            ['group' => 1],
+            [0, 1]
+        );
+        $mform->hideIf('char1', 'completiontracking', 'in', ['none', 'manual', 'view']);
+        $mform->disabledIf('char1', 'xp', 'eq', 0);
         $this->display_options_field();
         $this->advanced_form_fields(true, true, true, true);
         $this->close_form();
@@ -222,6 +232,10 @@ class form extends \mod_interactivevideo\form\base_form {
             $data->hascompletion = 0;
         } else {
             $data->hascompletion = 1;
+        }
+        // If the completion tracking is set to none, manual, or view, then the partial points should be 0.
+        if (in_array($data->completiontracking, ['none', 'manual', 'view'])) {
+            $data->char1 = 0;
         }
         return $data;
     }

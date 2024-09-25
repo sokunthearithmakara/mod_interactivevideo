@@ -34,7 +34,7 @@ export default class Iframe extends Base {
             $('.preview-iframe').html(embed);
             $('.preview-iframe').css('padding-bottom', ratio);
         };
-        $(document).on('input', '[name="iframeurl"]', function(e) {
+        $(document).off('input', '[name="iframeurl"]').on('input', '[name="iframeurl"]', function(e) {
             e.preventDefault();
             e.stopPropagation();
             $('.preview-iframe').html('').css('padding-bottom', '0');
@@ -53,6 +53,7 @@ export default class Iframe extends Base {
                 data: {
                     action: 'getproviders',
                     sesskey: M.cfg.sesskey,
+                    contextid: M.cfg.contextid,
                 },
                 success: function(data) {
                     var providers = data;
@@ -89,6 +90,7 @@ export default class Iframe extends Base {
                                 url: urlendpoint,
                                 sesskey: M.cfg.sesskey,
                                 action: 'getoembedinfo',
+                                contextid: M.cfg.contextid,
                             },
                             method: "POST",
                             dataType: "text",
@@ -132,7 +134,7 @@ export default class Iframe extends Base {
             });
         });
 
-        $(document).on('input', '[name=content]', function(e) {
+        $(document).off('input', '[name=content]').on('input', '[name=content]', function(e) {
             e.preventDefault();
             if ($(this).val() === '') {
                 $('.preview-iframe').html('').css('padding-bottom', '0');
@@ -159,15 +161,17 @@ export default class Iframe extends Base {
      * @return {void}
      */
     postContentRender(annotation) {
-        var interval = setInterval(() => {
+        const checkIframe = () => {
             if ($(`#message[data-id='${annotation.id}'] iframe`).length > 0) {
-                clearInterval(interval);
-                // Remove the loading background because some iframe has transparent content
-                setTimeout(() => {
-                    $(`#message[data-id='${annotation.id}'] iframe`).css('background', 'none');
-                }, 1000);
+            // Remove the loading background because some iframe has transparent content
+            setTimeout(() => {
+                $(`#message[data-id='${annotation.id}'] iframe`).css('background', 'none');
+            }, 1000);
+            } else {
+            requestAnimationFrame(checkIframe);
             }
-        }, 1000);
+        };
+        requestAnimationFrame(checkIframe);
     }
 
     /**

@@ -58,7 +58,7 @@ export default class PdfViewer extends Iframe {
          * @param {boolean} annotation.completed - The completion status of the annotation.
          */
         const pdfCheck = (annotation) => {
-            var iframeinterval = setInterval(() => {
+            const checkIframe = () => {
                 var iframe = document.querySelector(`#message[data-id='${annotation.id}'] iframe`);
                 var pdf;
                 try {
@@ -67,7 +67,6 @@ export default class PdfViewer extends Iframe {
                     pdf = null;
                 }
                 if (pdf) {
-                    clearInterval(iframeinterval);
                     if (pdf.pagesCount == 1) { // Only one page.
                         self.toggleCompletion(annotation.id, "mark-done", "automatic");
                     } else {
@@ -78,12 +77,15 @@ export default class PdfViewer extends Iframe {
                             }
                         });
                     }
+                } else {
+                    requestAnimationFrame(checkIframe);
                 }
-            }, 1000);
+            };
+            requestAnimationFrame(checkIframe);
         };
 
-        // Apply content
-        const applyContent = async (annotation) => {
+        // Apply content.
+        const applyContent = async(annotation) => {
             const data = await this.render(annotation, 'html');
             $(`#message[data-id='${annotation.id}'] .modal-body`).attr('id', 'content').html(data).fadeIn(300);
             if (annotation.hascompletion == 0 || annotation.completed) {

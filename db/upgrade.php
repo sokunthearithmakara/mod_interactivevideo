@@ -53,5 +53,46 @@ function xmldb_interactivevideo_upgrade($oldversion) {
         // Interactivevideo savepoint reached.
         upgrade_mod_savepoint(true, 2024071416, 'interactivevideo');
     }
+
+    if ($oldversion < 2024092200) {
+
+        // Define field posterimage to be added to interactivevideo.
+        $table = new xmldb_table('interactivevideo');
+        $field = new xmldb_field('posterimage', XMLDB_TYPE_TEXT, null, null, null, null, null, 'displayoptions');
+
+        // Conditionally launch add field posterimage.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Interactivevideo savepoint reached.
+        upgrade_mod_savepoint(true, 2024092200, 'interactivevideo');
+    }
+    if ($oldversion < 2024092202) {
+
+        // Rename field ctxid on table interactivevideo_items to NEWNAMEGOESHERE.
+        $table = new xmldb_table('interactivevideo_items');
+        $field = new xmldb_field('ctxid', XMLDB_TYPE_INTEGER, '20', null, null, null, null, 'text3');
+
+        // Launch rename field ctxid.
+        $dbman->rename_field($table, $field, 'contextid');
+
+        // Interactivevideo savepoint reached.
+        upgrade_mod_savepoint(true, 2024092202, 'interactivevideo');
+    }
+    if ($oldversion < 2024092203) {
+
+        // Define field requiremintime to be added to interactivevideo_items.
+        $table = new xmldb_table('interactivevideo_items');
+        $field = new xmldb_field('requiremintime', XMLDB_TYPE_INTEGER, '20', null, null, null, null, 'contextid');
+
+        // Conditionally launch add field requiremintime.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Interactivevideo savepoint reached.
+        upgrade_mod_savepoint(true, 2024092203, 'interactivevideo');
+    }
     return true;
 }

@@ -67,9 +67,7 @@ define(['jquery',
         replaceProgressBars(percentage);
 
         dispatchEvent('annotationitemsrendered', {'annotations': annos});
-
     };
-
 
     return {
         /**
@@ -202,7 +200,8 @@ define(['jquery',
                         action: 'get_items',
                         sesskey: M.cfg.sesskey,
                         id: interaction,
-                        contextid: M.cfg.courseContextId,
+                        contextid: M.cfg.contextid,
+                        coursecontextid: M.cfg.courseContextId
                     }
                 });
 
@@ -213,6 +212,8 @@ define(['jquery',
                     data: {
                         action: 'getallcontenttypes',
                         sesskey: M.cfg.sesskey,
+                        contextid: M.cfg.contextid,
+                        coursecontextid: M.cfg.courseContextId
                     }
                 });
 
@@ -478,18 +479,23 @@ define(['jquery',
             };
 
             var onPlayingInterval;
+            var visualized = false;
             /**
              * Excute when video plays (i.e. start or resume)
              */
             const onPlaying = () => {
                 $('#message, #end-screen').remove();
                 $('#playpause').find('i').removeClass('bi-play-fill').addClass('bi-pause-fill');
+                if (player.audio && !visualized) {
+                    player.visualizer();
+                    visualized = true;
+                }
                 var intervalFunction = async function() {
                     var thisTime = await player.getCurrentTime();
                     const isPlaying = await player.isPlaying();
                     const isEnded = await player.isEnded();
                     if (!isPlaying || isEnded) {
-                        clearInterval(onPlayingInterval);
+                        cancelAnimationFrame(onPlayingInterval);
                         return;
                     }
 
@@ -500,7 +506,7 @@ define(['jquery',
 
                     if (thisTime >= end) {
                         player.stop(end);
-                        clearInterval(onPlayingInterval);
+                        cancelAnimationFrame(onPlayingInterval);
                         onEnded();
                         return;
                     }
@@ -543,7 +549,11 @@ define(['jquery',
                     }
                 };
                 if (player.type == 'yt' || player.type == 'wistia') {
-                    onPlayingInterval = setInterval(intervalFunction, player.frequency * 100);
+                    const animate = async () => {
+                        intervalFunction();
+                        onPlayingInterval = requestAnimationFrame(animate);
+                    };
+                    onPlayingInterval = requestAnimationFrame(animate);
                 } else {
                     intervalFunction();
                 }
@@ -553,7 +563,7 @@ define(['jquery',
              * Excute when video is paused.
              */
             const onPause = () => {
-                clearInterval(onPlayingInterval);
+                cancelAnimationFrame(onPlayingInterval);
                 $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
             };
 
@@ -590,8 +600,14 @@ define(['jquery',
 
             // Post annotation update (add, edit, clone).
             $(document).on('annotationupdated', function(e) {
-                var updated = e.originalEvent.detail.annotation;
                 var action = e.originalEvent.detail.action;
+                if (action == 'import') {
+                    annotations = e.originalEvent.detail.annotations;
+                    renderAnnotationItems(annotations);
+                    addNotification(M.util.get_string('interactionimported', 'mod_interactivevideo'), 'success');
+                    return;
+                }
+                var updated = e.originalEvent.detail.annotation;
                 if (action == 'edit' || action == 'draft' || action == 'savedraft') {
                     annotations = annotations.filter(function(item) {
                         return item.id != updated.id;
@@ -619,9 +635,9 @@ define(['jquery',
 
                 // If draft exists, activate the save button.
                 if (annotations.find(x => x.status == 'draft')) {
-                    $('#timeline-wrapper #savedraft').removeAttr('disabled');
+                    $('#timeline-wrapper #savedraft').removeAttr('disabled').addClass('pulse');
                 } else {
-                    $('#timeline-wrapper #savedraft').attr('disabled', 'disabled');
+                    $('#timeline-wrapper #savedraft').attr('disabled', 'disabled').removeClass('pulse');
                 }
             });
 
@@ -712,11 +728,11 @@ define(['jquery',
 
             });
 
-            // Implement view annotation
+            // Implement view annotation.
             $(document).on('click', 'tr.annotation  .title', async function(e) {
                 e.preventDefault();
                 var timestamp = $(this).closest('.annotation').data('timestamp');
-                // Update the progress bar
+                // Update the progress bar.
                 var percentage = (timestamp - start) / totaltime * 100;
                 replaceProgressBars(percentage);
                 await player.seek(timestamp, true);
@@ -728,7 +744,7 @@ define(['jquery',
                 }, 500);
             });
 
-            // Implement go to timestamp
+            // Implement go to timestamp.
             $(document).on('click', 'tr.annotation .timestamp', async function(e) {
                 e.preventDefault();
                 var timestamp = $(this).data('timestamp');
@@ -795,11 +811,11 @@ define(['jquery',
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 var id = $(this).data('id');
-                // Trigger click on the edit button
+                // Trigger click on the edit button.
                 $(`tr.annotation[data-id="${id}"] .edit`).trigger('click');
             });
 
-            // Quick edit
+            // Quick edit.
             $(document).on('contextmenu', '[data-editable]', function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -820,7 +836,7 @@ define(['jquery',
                     $(this).addClass('is-invalid');
                 }
 
-                // If escape key is pressed, revert the value
+                // If escape key is pressed, revert the value.
                 if (e.key == 'Escape') {
                     $(this).val(initialValue);
                     $(this).removeClass('editing');
@@ -828,7 +844,7 @@ define(['jquery',
                     $(this).siblings('[data-editable]').show();
                     return;
                 }
-                // If enter key is pressed, save the value
+                // If enter key is pressed, save the value.
                 if (e.key == 'Enter') {
                     var seconds;
                     if (fld == 'timestamp') {
@@ -888,7 +904,7 @@ define(['jquery',
                 $(this).addClass('d-none');
                 $(this).siblings('[data-editable]').show();
             });
-            // End quick edit
+            // End quick edit.
 
             $(document).on('click', '#end-screen #restart', async function(e) {
                 e.preventDefault();
@@ -953,7 +969,13 @@ define(['jquery',
                 });
                 // Put the minute markers on the timeline;
                 let targetAnnotation = null;
-                // Tested
+                // Destroy draggable and resizable if already initialized.
+                try {
+                    $('#timeline-items .annotation, #video-timeline-wrapper .skipsegment').draggable('destroy');
+                    $('#timeline-items .annotation, #video-timeline-wrapper .skipsegment').resizable('destroy');
+                } catch (e) {
+                    // Do nothing.
+                }
                 $('#timeline-items .annotation.li-draggable').draggable({
                     'axis': 'x',
                     'start': function() {
@@ -1165,21 +1187,21 @@ define(['jquery',
                     }
                 });
 
-                $('#video-timeline-wrapper .skipsegment').on('contextmenu', function(e) {
+                $('#video-timeline-wrapper .skipsegment').off('contextmenu').on('contextmenu', function(e) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     const id = $(this).data('id');
                     $(`tr.annotation[data-id="${id}"] .edit`).trigger('click');
                 });
 
-                $('#video-timeline-wrapper .skipsegment').on('click', async function(e) {
+                $('#video-timeline-wrapper .skipsegment').off('click').on('click', async function(e) {
                     e.preventDefault();
                     const timestamp = $(this).data('timestamp');
                     await player.seek(timestamp);
                     player.pause();
                 });
 
-                $('#video-timeline-wrapper .skipsegment .delete-skipsegment').on('click', function(e) {
+                $('#video-timeline-wrapper .skipsegment .delete-skipsegment').off('click').on('click', function(e) {
                     e.preventDefault();
                     const id = $(this).closest('.skipsegment').data('id');
                     $(`tr.annotation[data-id="${id}"] .delete`).trigger('click');
@@ -1521,6 +1543,262 @@ define(['jquery',
             });
 
             resizeObserver.observe(timelineWrapper);
+
+            // Implement import content
+            $(document).on('click', '#importcontent', function(e) {
+                e.preventDefault();
+                const importmodal = `<div class="modal fade" id="importmodal" tabindex="-1" aria-labelledby="importmodalLabel"
+                 aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="importmodalLabel">
+                                ${M.util.get_string('importcontent', 'mod_interactivevideo')}</h5>
+                                <button type="button" class="btn p-0 " data-dismiss="modal" aria-label="Close">
+                                    <i class="bi bi-x-lg fa-fw fs-25px"></i>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                ${M.util.get_string('cancel', 'mod_interactivevideo')}</button>
+                                <button type="button" class="btn btn-primary" id="importcontentbutton">
+                                ${M.util.get_string('import', 'mod_interactivevideo')}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                $('body').append(importmodal);
+                $('#importmodal').modal('show');
+
+                $('#importmodal').on('hidden.bs.modal', function() {
+                    $('#importmodal').remove();
+                });
+
+                $('#importmodal').off('shown.bs.modal').on('shown.bs.modal', function() {
+                    // Make the modal draggable.
+                    $('#importmodal .modal-dialog').draggable({
+                        handle: ".modal-header"
+                    });
+                    // Render the course select dropdown.
+                    $.ajax({
+                        url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                        method: "POST",
+                        dataType: "text",
+                        data: {
+                            action: 'get_taught_courses',
+                            sesskey: M.cfg.sesskey,
+                            contextid: M.cfg.contextid,
+                            userid: M.cfg.userId
+                        },
+                        success: function(data) {
+                            let courses = JSON.parse(data);
+                            // Sort courses by name.
+                            courses.sort((a, b) => b.fullname.localeCompare(a.fullname));
+                            let courseSelect = `<select class="custom-select w-100" id="importcourse">`;
+                            courses.forEach(course => {
+                                courseSelect += `<option value="${course.id}">${course.fullname} (${course.shortname})</option>`;
+                            });
+                            courseSelect += `</select>`;
+                            let selectfield = `<div class="form-group selectcourse">
+                            <label class="font-weight-bold" for="importcourse">
+                            ${M.util.get_string('selectcourse', 'mod_interactivevideo')}</label>
+                            ${courseSelect}</div>`;
+                            $('#importmodal .modal-body').append(selectfield);
+                            // Default current course.
+                            $('#importmodal #importcourse').val(course);
+                            $('#importmodal #importcourse').trigger('change');
+                        }
+                    });
+                });
+            });
+
+            $(document).on('change', '#importmodal #importcourse', function() {
+                $(`#importmodal .selectcm, #importmodal .select-interaction`).remove();
+                $.ajax({
+                    url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                    method: "POST",
+                    dataType: "text",
+                    data: {
+                        action: 'get_cm_by_courseid',
+                        sesskey: M.cfg.sesskey,
+                        contextid: M.cfg.contextid,
+                        courseid: $(this).val()
+                    },
+                    success: function(data) {
+                        let cms = JSON.parse(data);
+                        cms.sort((a, b) => b.name.localeCompare(a.name));
+                        let cmSelect = `<select class="custom-select w-100" id="importcm">
+                        <option value="">${M.util.get_string('select', 'mod_interactivevideo')}</option>`;
+                        cms.forEach(cm => {
+                            cmSelect += `<option value="${cm.id}" ${cm.id == interaction ? 'disabled' : ''}>${cm.name}</option>`;
+                        });
+                        cmSelect += `</select>`;
+                        let selectfield = `<div class="form-group selectcm">
+                        <label for="importcm" class="font-weight-bold">
+                        ${M.util.get_string('selectactivity', 'mod_interactivevideo')}</label>
+                        ${cmSelect}</div>`;
+                        $(`#importmodal .selectcourse`).after(selectfield);
+                    }
+                });
+            });
+
+            $(document).on('change', '#importmodal #importcm', async function() {
+                $(`#importmodal .select-interaction`).remove();
+                $(`#importmodal #importcm`).after(`<div class="select-interaction py-3">
+                    <iframe src="${M.cfg.wwwroot + '/mod/interactivevideo/view.php?i=' + $(this).val()}&embed=1&preview=1"
+                    frameborder=0 width="100%" height="500" class="loader"></iframe></div>`);
+                let interactions = await $.ajax({
+                    url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                    method: "POST",
+                    dataType: "text",
+                    data: {
+                        action: 'get_items',
+                        sesskey: M.cfg.sesskey,
+                        id: $(this).val(),
+                        contextid: M.cfg.contextid,
+                        coursecontextid: M.cfg.courseContextId
+                    }
+                });
+                interactions = JSON.parse(interactions);
+                interactions = interactions.filter(x => x.type != 'skipsegment');
+                if (interactions.length == 0) {
+                    $(`#importmodal .select-interaction`).append(`<div class="alert alert-warning mt-3">
+                        ${M.util.get_string('nocontent', 'mod_interactivevideo')}</div>`);
+                    return;
+                }
+
+                $(`#importmodal .select-interaction`).append(`<div class="input-group mb-1 w-100 flex-nowrap align-items-center
+                     no-pointer">
+                     <div class="input-group-prepend border-0 invisible">
+                            <label class="input-group-text bg-white">
+                                <input type="checkbox"/>
+                                <i class="bi bi-plus ml-3 fs-unset"></i>
+                            </label>
+                        </div>
+                <input type="text" class="form-control border-0 font-weight-bold"
+                 value="${M.util.get_string('title', 'mod_interactivevideo')}">
+                <input type="text" class="form-control border-0 font-weight-bold" style="max-width: 50px;"
+                value="XP">
+                <input type="text" style="max-width: 150px;" value="${M.util.get_string('timestamp', 'mod_interactivevideo')}"
+                 class="form-control border-0 font-weight-bold"></div>`);
+
+                interactions = interactions.map(int => {
+                    // Get the icon and check if the interaction is out of range (start, end time);
+                    const ctype = contentTypes.find(y => y.name === int.type);
+                    int.prop = JSON.stringify(ctype);
+                    int.icon = ctype.icon;
+                    if ((int.timestamp > end || int.timestamp < start) && int.timestamp > 0) {
+                        int.outside = true;
+                    } else {
+                        int.outside = false;
+                    }
+                    // Check if the interaction can be added (e.g. annotation content type can only be added once per activity);
+                    if (!ctype.allowmultiple && annotations.find(x => x.type == int.type)) {
+                        int.disabled = true;
+                    }
+                    return int;
+                });
+
+                interactions.sort((a, b) => a.timestamp - b.timestamp);
+                interactions.forEach(int => {
+                    const inputgroup = `<div class="input-group mb-1 w-100 flex-nowrap align-items-center"
+                     data-id="${int.id}">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text">
+                                <input type="checkbox" ${int.disabled ? 'disabled' : ''}/>
+                                <i class="${int.icon} ml-3 fs-unset"></i>
+                            </label>
+                        </div>
+                <input type="text" class="form-control name" ${int.timestamp < 0 ? 'readonly' : ''}
+                 value="${int.title}">
+                <input type="text" style="max-width: 50px;" ${int.timestamp < 0 || int.hascompletion == 0 ? 'readonly' : ''}
+                 class="form-control xp" value="${int.xp}">
+                <input type="text" placeholder="00:00:00" style="max-width: 150px;" ${int.timestamp < 0 ? 'readonly' : ''}
+                 class="form-control timestamp-input ${int.outside ? 'is-invalid' : ''}"
+                value="${int.timestamp < 0 ? int.timestamp :
+                            convertSecondsToHMS(int.timestamp, false, false)}"></div>`;
+                    $(`#importmodal .select-interaction`).append(inputgroup);
+                });
+
+                $(document).off('click', '#importmodal #importcontentbutton').on('click', '#importmodal #importcontentbutton',
+                    async function(e) {
+                        e.preventDefault();
+                        let $selected = $(`#importmodal .select-interaction input[type="checkbox"]:checked`);
+                        let selectedInt = [];
+                        $selected.each(function() {
+                            let $row = $(this).closest('.input-group');
+                            const name = $row.find('.name').val();
+                            if (name.trim() == '') {
+                                return;
+                            }
+                            let timestamp = $row.find('.timestamp-input').val();
+                            if (timestamp == '') {
+                                return;
+                            }
+
+                            if (Number(timestamp) < 0) {
+                                timestamp = Number(timestamp);
+                            } else {
+                                var parts = timestamp.split(':');
+                                timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+                                if (annotations.find(x => x.timestamp == timestamp)) {
+                                    return;
+                                }
+                            }
+                            let id = $row.data('id');
+                            let int = interactions.find(x => x.id == id);
+                            int.title = name;
+                            int.timestamp = timestamp;
+                            let xp = Number($row.find('.xp').val());
+                            if (isNaN(xp) || xp == '') {
+                                xp = 0;
+                            }
+                            int.xp = xp;
+                            selectedInt.push(int);
+                        });
+                        if (selectedInt.length == 0) {
+                            addNotification(M.util.get_string('selectinteraction', 'mod_interactivevideo'), 'danger');
+                            return;
+                        } else {
+                            let interactions = await $.ajax({
+                                url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                                method: "POST",
+                                dataType: "text",
+                                data: {
+                                    action: 'import_annotations',
+                                    sesskey: M.cfg.sesskey,
+                                    contextid: M.cfg.contextid,
+                                    annotations: JSON.stringify(selectedInt),
+                                    tocourse: M.cfg.courseId,
+                                    fromcourse: $('#importcourse').val(),
+                                    tocm: interaction,
+                                    fromcm: $('#importcm').val(),
+                                    module: coursemodule
+                                }
+                            });
+                            interactions = JSON.parse(interactions);
+
+                            // Dismiss modal.
+                            $('#importmodal').modal('hide');
+
+                            // Add the imported annotations to the current annotations.
+                            annotations = annotations.concat(interactions);
+                            dispatchEvent('annotationupdated', {
+                                annotations: annotations,
+                                action: 'import'
+                            });
+
+                            // Get interaction that allowmultiple false and init each one.
+                            interactions.forEach(int => {
+                                if (!int.allowmultiple) {
+                                    ctRenderer[int.type].init();
+                                }
+                            });
+                        }
+                    });
+            });
         }
     };
 });

@@ -46,6 +46,7 @@ const init = (cmid, groupid) => {
         data: {
             action: 'getallcontenttypes',
             sesskey: M.cfg.sesskey,
+            contextid: M.cfg.contextid,
         }
     });
 
@@ -56,7 +57,8 @@ const init = (cmid, groupid) => {
             action: 'getreportdatabygroup',
             cmid: cmid,
             sesskey: M.cfg.sesskey,
-            cxtid: M.cfg.courseContextId,
+            contextid: M.cfg.contextid,
+            ctxid: M.cfg.courseContextId,
             groupid: groupid
         }
     });

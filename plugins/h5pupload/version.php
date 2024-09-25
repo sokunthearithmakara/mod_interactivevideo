@@ -33,5 +33,4 @@ $plugin->maturity     = MATURITY_STABLE;
 $plugin->dependencies = [
     'interactivevideo' => 2024042720,
     'ivplugin_richtext' => 2024071500,
-    'ivplugin_pdfviewer' => 2024071500,
 ];

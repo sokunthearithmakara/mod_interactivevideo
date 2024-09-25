@@ -255,7 +255,7 @@ export default class Form extends Base {
                 }
             });
         });
-        $(document).on('click', `${node} .repeatable .add-row`, function(e) {
+        $(document).off('click', `${node} .repeatable .add-row`).on('click', `${node} .repeatable .add-row`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             let $thisrow = $(this);
@@ -266,7 +266,7 @@ export default class Form extends Base {
             $row.find('.delete-row').removeClass('disabled').removeAttr('disabled');
             $parent.after($row);
         });
-        $(document).on('click', `${node} .repeatable .delete-row`, function(e) {
+        $(document).off('click', `${node} .repeatable .delete-row`).on('click', `${node} .repeatable .delete-row`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             let $thisrow = $(this);
@@ -333,9 +333,9 @@ export default class Form extends Base {
                         userid: this.userid,
                         cmid: annotation.annotationid,
                         annotationid: annotation.id,
-                        contextid: M.cfg.contextid,
+                        contextid: annotation.contextid,
                     },
-                    contextid: M.cfg.contextid,
+                    contextid: annotation.contextid,
                     methodname: 'ivplugin_form_get_log',
                 }])[0].then((response) => {
                     resolve(JSON.parse(response.record));
@@ -453,18 +453,19 @@ export default class Form extends Base {
             $('#form-preview').addClass('loader');
             formdata.formjson = JSON.stringify(data);
             previewform.load(formdata);
-            let interval = setInterval(() => {
+            const checkFormLoaded = () => {
                 if ($message.find(`#form-preview form`).length > 0) {
-                    clearInterval(interval);
                     self.postFormRender();
+                } else {
+                    requestAnimationFrame(checkFormLoaded);
                 }
-            }, 100);
+            };
+            requestAnimationFrame(checkFormLoaded);
             if (id) {
                 // Loop until the form element is found and highlight the current field.
-                let interval = setInterval(() => {
+                const highlightField = () => {
                     let element = document.querySelector('#form-preview form');
                     if (element) {
-                        clearInterval(interval);
                         $(`#form-preview #fitem_field-${id},
                              #form-preview fieldset[id^=id_field-${id}],
                              #form-preview div#field-${id}, #form-preview [data-groupname=field-${id}],
@@ -474,17 +475,19 @@ export default class Form extends Base {
                         if (field) {
                             field.scrollIntoView({behavior: 'smooth', block: isHeader ? 'start' : 'center'});
                         }
+                    } else {
+                        requestAnimationFrame(highlightField);
                     }
-                }, 100);
+                };
+                requestAnimationFrame(highlightField);
             }
             if (updateDraft) {
                 saveTracking(data, id);
             }
 
             if (!self.isEditMode() && $message.attr('data-placement') == 'popup') {
-                const interval = setInterval(() => {
+                const checkFormLoaded = () => {
                     if ($message.find(`#form-preview form`).length > 0) {
-                        clearInterval(interval);
                         // Create the modal footer
                         let $actionbtns = $message.find(`#form-preview #form-action-btns`);
                         let $clone = $actionbtns.clone();
@@ -494,17 +497,22 @@ export default class Form extends Base {
                             </div>`;
                         $message.find(`.modal-content .modal-footer`).remove();
                         $message.find(`.modal-content`).append(footer);
+                    } else {
+                        requestAnimationFrame(checkFormLoaded);
                     }
-                }, 100);
+                };
+                requestAnimationFrame(checkFormLoaded);
             }
 
             if (this.isEditMode()) {
-                let interval = setInterval(() => {
+                const checkFormLoaded = () => {
                     if ($('#form-preview form').length > 0) {
-                        clearInterval(interval);
                         activateFieldsSortable();
+                    } else {
+                        requestAnimationFrame(checkFormLoaded);
                     }
-                }, 100);
+                };
+                requestAnimationFrame(checkFormLoaded);
             }
         };
 
@@ -516,9 +524,9 @@ export default class Form extends Base {
         if (reportpage) {
             formdata = {
                 id: annotation.id,
-                contextid: M.cfg.contextid,
+                contextid: annotation.contextid,
                 type: 'form',
-                courseid: M.cfg.courseId,
+                courseid: annotation.courseid,
                 annotationid: 0,
                 editing: 0,
                 formjson: JSON.stringify(formjson),
@@ -529,7 +537,7 @@ export default class Form extends Base {
 
         formdata = {
             id: annotation.id,
-            contextid: M.cfg.contextid,
+            contextid: annotation.contextid,
             type: self.prop.name,
             courseid: self.course,
             annotationid: self.interaction,
@@ -538,31 +546,14 @@ export default class Form extends Base {
             formjson: JSON.stringify(formjson),
         };
 
-        $message.on('click', `#submitform-submit`, e => {
+        $message.off('click', `#submitform-submit`).on('click', `#submitform-submit`, e => {
+            if ($('body').hasClass('preview-mode')) { // Do not allow form submission in preview mode.
+                self.addNotification(M.util.get_string('formsubmissionisnotsavedinpreviewmode', 'ivplugin_form'), 'danger');
+                return;
+            }
             e.preventDefault();
             e.stopImmediatePropagation();
-            const event = previewform.trigger(previewform.events.SUBMIT_BUTTON_PRESSED);
-            if (!event.defaultPrevented) {
-                previewform.submitFormAjax();
-            }
-
-            // On validation error we have to rerender the custom fields.
-            previewform.addEventListener(previewform.events.SERVER_VALIDATION_ERROR, (e) => {
-                e.stopImmediatePropagation();
-                self.addNotification(M.util.get_string('formvalidationerror', 'ivplugin_form'), 'danger');
-                previewform.notifyResetFormChanges();
-                self.postFormRender();
-            });
-
-            previewform.addEventListener(previewform.events.CLIENT_VALIDATION_ERROR, (e) => {
-                e.stopImmediatePropagation();
-                self.addNotification(M.util.get_string('formvalidationerror', 'ivplugin_form'), 'danger');
-                previewform.notifyResetFormChanges();
-            });
-
-            previewform.addEventListener(previewform.events.FORM_SUBMITTED, e => {
-                e.preventDefault();
-                e.stopImmediatePropagation(); // Important; otherwise, event will repeat multiple times.
+            const submitted = () => {
                 let details = {};
                 const completeTime = new Date();
                 details.xp = annotation.xp;
@@ -579,10 +570,40 @@ export default class Form extends Base {
                 if (annotation.char2 == 1 && (annotation.text1 == 0 || annotation.text1 > new Date().getTime() / 1000)) {
                     $('#editsubmission').show();
                 }
+            };
+
+            if (self.userid == 1) { // Fake submission for guest user.
+                submitted();
+                return;
+            }
+            const event = previewform.trigger(previewform.events.SUBMIT_BUTTON_PRESSED);
+            if (!event.defaultPrevented) {
+                previewform.submitFormAjax();
+            }
+
+            // On validation error we have to rerender the custom fields.
+            previewform.addEventListener(previewform.events.SERVER_VALIDATION_ERROR, (e) => {
+                e.stopImmediatePropagation();
+                self.addNotification(M.util.get_string('formvalidationerror', 'ivplugin_form'), 'danger');
+                previewform.notifyResetFormChanges();
+                self.postFormRender();
+                $message.find(`#form-preview #form-action-btns`).remove();
+            });
+
+            previewform.addEventListener(previewform.events.CLIENT_VALIDATION_ERROR, (e) => {
+                e.stopImmediatePropagation();
+                self.addNotification(M.util.get_string('formvalidationerror', 'ivplugin_form'), 'danger');
+                previewform.notifyResetFormChanges();
+            });
+
+            previewform.addEventListener(previewform.events.FORM_SUBMITTED, e => {
+                e.preventDefault();
+                e.stopImmediatePropagation(); // Important; otherwise, event will repeat multiple times.
+                submitted();
             });
         });
 
-        $message.on('click', `#editsubmission`, (e) => {
+        $message.off('click', `#editsubmission`).on('click', `#editsubmission`, (e) => {
             e.preventDefault();
             e.stopImmediatePropagation();
             formdata.reviewing = 0;
@@ -592,7 +613,7 @@ export default class Form extends Base {
             previewForm(formjson);
         });
 
-        $message.on('click', `#cancel-submit`, (e) => {
+        $message.off('click', `#cancel-submit`).on('click', `#cancel-submit`, (e) => {
             e.preventDefault();
             e.stopImmediatePropagation();
             $message.find(`.modal-content .modal-footer`).remove();
@@ -652,6 +673,11 @@ export default class Form extends Base {
         }
 
         if (this.isEditMode()) {
+            if (formjson.length == 0) {
+                $('#form-field-list').append(`<div class="alert d-flex align-items-center rounded-0
+                     alert-warning ui-sortable-handle"><i class="bi bi-card-checklist fs-25px mr-3"></i>
+                    ${M.util.get_string('formempty', 'ivplugin_form')}</div>`);
+            }
 
             /**
              * Put form fields in DOM.
@@ -687,7 +713,7 @@ export default class Form extends Base {
             });
 
             // Add the form field.
-            $message.on('click', `button.add-field`, function(e) {
+            $message.off('click', `button.add-field`).on('click', `button.add-field`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 let type = $(this).data('type');
@@ -772,15 +798,17 @@ export default class Form extends Base {
                     });
 
                     self.setModalDraggable('#newfield-modal .modal-dialog');
-                    let formInterval = setInterval(() => {
+                    const checkFormLoaded = () => {
                         if ($('#newfield-modal .modal-body').find('form').length > 0) {
-                            clearInterval(formInterval);
                             self.postFormRender();
                             if (type == 'advcheckbox' || type == 'radio' || type == 'select') {
                                 self.repeatableValues('#newfield-modal');
                             }
+                        } else {
+                            requestAnimationFrame(checkFormLoaded);
                         }
-                    }, 100);
+                    };
+                    requestAnimationFrame(checkFormLoaded);
 
                     $(formfieldform).on('core_form_dynamicform_clientvalidationerror core_form_dynamicform_validationerror',
                         function(e) {
@@ -796,29 +824,30 @@ export default class Form extends Base {
             });
 
             // Edit the form field
-            $message.on('click', `#form-field-list button.editfield`, function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                let type = $(this).closest('li').attr('data-type');
-                let fieldid = $(this).closest('li').attr('data-id');
-                formjson = JSON.parse($message.find(`#formjson`).text());
-                let formfielddata = formjson.find((item) => item.id == fieldid);
-                let fields = formjson.map((item) => {
-                    return {
-                        id: item.id,
-                        label: item.label,
-                        type: item.type,
-                    };
-                });
-                formfielddata.fields = JSON.stringify(fields);
-                let typeString = M.util.get_string(type + 'field', 'ivplugin_form');
-                let editform = `<div class="modal fade" id="editfield-modal"
+            $message.off('click', `#form-field-list button.editfield`).on('click', `#form-field-list button.editfield`,
+                function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    let type = $(this).closest('li').attr('data-type');
+                    let fieldid = $(this).closest('li').attr('data-id');
+                    formjson = JSON.parse($message.find(`#formjson`).text());
+                    let formfielddata = formjson.find((item) => item.id == fieldid);
+                    let fields = formjson.map((item) => {
+                        return {
+                            id: item.id,
+                            label: item.label,
+                            type: item.type,
+                        };
+                    });
+                    formfielddata.fields = JSON.stringify(fields);
+                    let typeString = M.util.get_string(type + 'field', 'ivplugin_form');
+                    let editform = `<div class="modal fade" id="editfield-modal"
                  aria-labelledby="editfield-modal" aria-hidden="true" style="background: rgba(0,0,0,0.5);">
                     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title">${M.util.get_string('editformfield',
-                    'ivplugin_form', typeString)}</h5>
+                        'ivplugin_form', typeString)}</h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                 <i class="bi bi-x-lg fs-25px"></i>
                                 </button>
@@ -827,122 +856,127 @@ export default class Form extends Base {
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">${M.util.get_string('close',
-                        'mod_interactivevideo')}</button>
-                                <button type="button" class="btn btn-primary" id="editfield-submit">${M.util.get_string('save',
                             'mod_interactivevideo')}</button>
+                                <button type="button" class="btn btn-primary" id="editfield-submit">${M.util.get_string('save',
+                                'mod_interactivevideo')}</button>
                             </div>
                         </div>
                     </div>
                 </div>`;
-                $('body').append(editform);
-                $('#editfield-modal').modal('show');
-                $('#editfield-modal').on('hidden.bs.modal', function() {
-                    $(this).remove();
-                    $('body').addClass('modal-open');
-                });
-                $('#editfield-modal').on('shown.bs.modal', function() {
-                    let formfieldform = new DynamicForm(document.querySelector('#editfield-modal .modal-body'),
-                        'ivplugin_form\\form_fields\\' + type);
-                    formfieldform.load(formfielddata);
-
-                    document.querySelector('#editfield-submit').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        const event = formfieldform.trigger(formfieldform.events.SUBMIT_BUTTON_PRESSED);
-                        if (!event.defaultPrevented) {
-                            formfieldform.submitFormAjax();
-                        }
+                    $('body').append(editform);
+                    $('#editfield-modal').modal('show');
+                    $('#editfield-modal').on('hidden.bs.modal', function() {
+                        $(this).remove();
+                        $('body').addClass('modal-open');
                     });
+                    $('#editfield-modal').on('shown.bs.modal', function() {
+                        let formfieldform = new DynamicForm(document.querySelector('#editfield-modal .modal-body'),
+                            'ivplugin_form\\form_fields\\' + type);
+                        formfieldform.load(formfielddata);
 
-                    formfieldform.addEventListener(formfieldform.events.FORM_SUBMITTED, (e) => {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        const response = e.detail;
-                        const index = formjson.findIndex((item) => item.id == response.id);
-                        if (index !== -1) {
-                            formjson[index] = response;
-                        }
-                        renderList(formjson);
-                        previewForm(formjson, response.id, true);
-                        $('#editfield-modal').modal('hide');
-                    });
-
-                    self.setModalDraggable('#editfield-modal .modal-dialog');
-                    let formInterval = setInterval(() => {
-                        if ($('#editfield-modal .modal-body').find('form').length > 0) {
-                            clearInterval(formInterval);
-                            if (type == 'advcheckbox' || type == 'radio' || type == 'select') {
-                                self.repeatableValues('#editfield-modal');
-                            }
-                            self.postFormRender();
-                        }
-                    }, 100);
-
-                    $(formfieldform).on('core_form_dynamicform_clientvalidationerror core_form_dynamicform_validationerror',
-                        function(e) {
+                        document.querySelector('#editfield-submit').addEventListener('click', (e) => {
                             e.preventDefault();
                             e.stopImmediatePropagation();
-                            self.postFormRender();
-                            if (type == 'advcheckbox' || type == 'radio' || type == 'select') {
-                                self.repeatableValues('#editfield-modal');
+                            const event = formfieldform.trigger(formfieldform.events.SUBMIT_BUTTON_PRESSED);
+                            if (!event.defaultPrevented) {
+                                formfieldform.submitFormAjax();
                             }
-                            self.addNotification(M.util.get_string('formvalidationerror', 'ivplugin_form'), 'danger');
                         });
+
+                        formfieldform.addEventListener(formfieldform.events.FORM_SUBMITTED, (e) => {
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            const response = e.detail;
+                            const index = formjson.findIndex((item) => item.id == response.id);
+                            if (index !== -1) {
+                                formjson[index] = response;
+                            }
+                            renderList(formjson);
+                            previewForm(formjson, response.id, true);
+                            $('#editfield-modal').modal('hide');
+                        });
+
+                        self.setModalDraggable('#editfield-modal .modal-dialog');
+                        const checkFormLoaded = () => {
+                            if ($('#editfield-modal .modal-body').find('form').length > 0) {
+                                if (type == 'advcheckbox' || type == 'radio' || type == 'select') {
+                                    self.repeatableValues('#editfield-modal');
+                                }
+                                self.postFormRender();
+                            } else {
+                                requestAnimationFrame(checkFormLoaded);
+                            }
+                        };
+                        requestAnimationFrame(checkFormLoaded);
+
+
+                        $(formfieldform).on('core_form_dynamicform_clientvalidationerror core_form_dynamicform_validationerror',
+                            function(e) {
+                                e.preventDefault();
+                                e.stopImmediatePropagation();
+                                self.postFormRender();
+                                if (type == 'advcheckbox' || type == 'radio' || type == 'select') {
+                                    self.repeatableValues('#editfield-modal');
+                                }
+                                self.addNotification(M.util.get_string('formvalidationerror', 'ivplugin_form'), 'danger');
+                            });
+                    });
                 });
-            });
 
             // Copy the form field
-            $message.on('click', `#form-field-list button.copyfield`, function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                let fieldid = $(this).closest('li').attr('data-id');
-                formjson = JSON.parse($message.find(`#formjson`).text());
-                let formfielddata = JSON.parse(JSON.stringify(formjson.find((item) => item.id == fieldid)));
-                const index = formjson.findIndex((item) => item.id == formfielddata.id);
-                if (index !== -1) {
-                    formfielddata.id = Math.floor(new Date().getTime() / 1000);
-                    formjson.splice(index + 1, 0, formfielddata);
-                }
-                renderList(formjson);
-                previewForm(formjson, formfielddata.id, true);
-            });
+            $message.off('click', `#form-field-list button.copyfield`).on('click', `#form-field-list button.copyfield`,
+                function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    let fieldid = $(this).closest('li').attr('data-id');
+                    formjson = JSON.parse($message.find(`#formjson`).text());
+                    let formfielddata = JSON.parse(JSON.stringify(formjson.find((item) => item.id == fieldid)));
+                    const index = formjson.findIndex((item) => item.id == formfielddata.id);
+                    if (index !== -1) {
+                        formfielddata.id = Math.floor(new Date().getTime() / 1000);
+                        formjson.splice(index + 1, 0, formfielddata);
+                    }
+                    renderList(formjson);
+                    previewForm(formjson, formfielddata.id, true);
+                });
 
             // Delete the form field
-            $message.on('click', `#form-field-list button.deletefield`, function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                let currentFormFields = JSON.parse($message.find(`#formjson`).text());
-                const $this = $(this);
-                Notification.saveCancel(
-                    M.util.get_string('deletefield', 'ivplugin_form'),
-                    M.util.get_string('deletefieldconfirm', 'ivplugin_form'),
-                    M.util.get_string('delete', 'mod_interactivevideo'),
-                    function() {
-                        let li = $this.closest('li');
-                        let id = li.attr('data-id');
-                        li.remove();
-                        $(`#form-preview #fitem_field-${id},
+            $message.off('click', `#form-field-list button.deletefield`).on('click', `#form-field-list button.deletefield`,
+                function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    let currentFormFields = JSON.parse($message.find(`#formjson`).text());
+                    const $this = $(this);
+                    Notification.deleteCancel(
+                        M.util.get_string('deletefield', 'ivplugin_form'),
+                        M.util.get_string('deletefieldconfirm', 'ivplugin_form'),
+                        M.util.get_string('delete', 'mod_interactivevideo'),
+                        function() {
+                            let li = $this.closest('li');
+                            let id = li.attr('data-id');
+                            li.remove();
+                            $(`#form-preview #fitem_field-${id},
                             #form-preview fieldset[id^=id_field-${id}],
                             #form-preview div#field-${id}, #form-preview [data-groupname=field-${id}],
                             #form-preview [id^=fitem_id_field-${id}]`).addClass('field-highlight');
-                        let isHeader = $('.field-highlight').hasClass(`collapsible`);
-                        let ff = currentFormFields.filter((item) => item.id != id);
-                        renderList(ff);
-                        if (isHeader) {
-                            previewForm(ff, id, true);
-                        } else {
-                            $('.field-highlight').fadeOut(300, 'linear', function() {
-                                $(this).remove();
-                            });
-                            saveTracking(ff, id);
-                        }
-                    },
-                    null
-                );
-            });
+                            let isHeader = $('.field-highlight').hasClass(`collapsible`);
+                            let ff = currentFormFields.filter((item) => item.id != id);
+                            renderList(ff);
+                            if (isHeader) {
+                                previewForm(ff, id, true);
+                            } else {
+                                $('.field-highlight').fadeOut(300, 'linear', function() {
+                                    $(this).remove();
+                                });
+                                saveTracking(ff, id);
+                            }
+                        },
+                        null
+                    );
+                });
 
             // Save the form fields
-            $message.on('click', `button#save`, function(e) {
+            $message.off('click', `button#save`).on('click', `button#save`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 getFormJson();
@@ -988,7 +1022,7 @@ export default class Form extends Base {
             });
 
             // Scroll to the form field on label click
-            $message.on('click', `#form-field-list li .field-label`, function() {
+            $message.off('click', `#form-field-list li .field-label`).on('click', `#form-field-list li .field-label`, function() {
                 let id = $(this).closest('li').attr('data-id');
                 let type = $(this).closest('li').attr('data-type');
                 $(`#form-preview #fitem_field-${id}, #form-preview fieldset[id^=id_field-${id}],
@@ -1016,7 +1050,7 @@ export default class Form extends Base {
                 $(`#form-preview .field-highlight`).removeClass('field-highlight');
             });
 
-            $message.on('mouseover', `#form-preview .fitem`, function() {
+            $message.on('mouseover', `#form-preview .fitem.row`, function() {
                 $(`#form-field-list li`).removeClass('field-highlight');
                 let group = $(this).attr('data-groupname');
                 let id;
@@ -1033,12 +1067,12 @@ export default class Form extends Base {
                 $(`#form-field-list li[data-id=${id}]`).addClass('field-highlight');
             });
 
-            $message.on('mouseout', `#form-preview .fitem`, function() {
+            $message.on('mouseout', `#form-preview .fitem.row`, function() {
                 $(`#form-field-list li`).removeClass('field-highlight');
             });
 
             // Edit the form field from the preview.
-            $message.on('click', `#form-preview i.edit`, function(e) {
+            $message.off('click', `#form-preview i.edit`).on('click', `#form-preview i.edit`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 let id = $(this).data('id');
@@ -1046,7 +1080,7 @@ export default class Form extends Base {
             });
 
             // Delete the form field from the preview.
-            $message.on('click', `#form-preview i.delete`, function(e) {
+            $message.off('click', `#form-preview i.delete`).on('click', `#form-preview i.delete`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 let id = $(this).data('id');
@@ -1054,7 +1088,7 @@ export default class Form extends Base {
             });
 
             // Copy the form field from the preview.
-            $message.on('click', `#form-preview i.copy`, function(e) {
+            $message.off('click', `#form-preview i.copy`).on('click', `#form-preview i.copy`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 let id = $(this).data('id');
@@ -1062,7 +1096,7 @@ export default class Form extends Base {
             });
 
             // Undo the form field changes.
-            $message.on('click', `#save-close #undo`, async function(e) {
+            $message.off('click', `#save-close #undo`).on('click', `#save-close #undo`, async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if (trackingIndex == 0) {
@@ -1087,7 +1121,7 @@ export default class Form extends Base {
             });
 
             // Redo the form field changes.
-            $message.on('click', `#save-close #redo`, async function(e) {
+            $message.off('click', `#save-close #redo`).on('click', `#save-close #redo`, async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if (trackingIndex == tracking.length - 1) {
@@ -1112,13 +1146,13 @@ export default class Form extends Base {
             });
 
             // Close the form field modal.
-            $message.on('click', `#save-close #close`, async function(e) {
+            $message.off('click', `#save-close #close`).on('click', `#save-close #close`, async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if (tracking.length > 1) {
                     Notification.saveCancel(
-                        M.util.get_string('savechanges', 'mod_interactivevideo'),
-                        M.util.get_string('savechangesconfirm', 'mod_interactivevideo'),
+                        M.util.get_string('savechanges', 'ivplugin_form'),
+                        M.util.get_string('savechangesconfirm', 'ivplugin_form'),
                         M.util.get_string('save', 'mod_interactivevideo'),
                         function() {
                             $('#save-close #save').trigger('click');
@@ -1159,7 +1193,7 @@ export default class Form extends Base {
                 $(this).removeClass('no-pointer');
                 $('#form-preview form .fcontainer').removeClass('empty-container');
                 let sortables = $message.find(`#form-preview form`)
-                    .find('.fitem:not(.femptylabel):not([hidden]), fieldset.collapsible');
+                    .find('.row.fitem:not(.femptylabel):not([hidden]), fieldset.collapsible');
                 let fieldsets = $message.find(`#form-preview form`).find('fieldset.collapsible');
 
                 let fields = sortables.map(function() {
@@ -1176,7 +1210,12 @@ export default class Form extends Base {
                 let newFormJson = [];
                 fields.forEach(x => {
                     let y = x.split('field-')[1];
-                    y = y.split('_')[0];
+                    try {
+                        y = y.split('_')[0];
+                    } catch (e) {
+                        window.console.log(x);
+                    }
+
                     let row = currentFormFields.find(f => f.id == y);
                     if (fieldsetsIds.includes(x)) {
                         // Get the next sibling after this collapsible section
@@ -1201,10 +1240,11 @@ export default class Form extends Base {
             });
 
             // Add field-highlight class when the field is clicked.
-            $message.on('click', `#form-preview .fitem.row`, function() {
-                $(`#form-preview .field-active`).removeClass('field-active');
-                $(this).addClass('field-active');
-            });
+            $message.off('click', `#form-preview .fitem.row:not([data-groupname="buttonar"])`)
+                .on('click', `#form-preview .fitem.row:not([data-groupname="buttonar"])`, function() {
+                    $(`#form-preview .field-active`).removeClass('field-active');
+                    $(this).addClass('field-active');
+                });
         } else {
             if (annotation.completiontracking && annotation.completiontracking != 'manual') {
                 let $message = $(`#message[data-id='${annotation.id}']`);
@@ -1262,9 +1302,9 @@ export default class Form extends Base {
 
         let formdata = {
             id: annotation.id,
-            contextid: M.cfg.contextid,
+            contextid: annotation.contextid,
             type: 'form',
-            courseid: M.cfg.courseId,
+            courseid: annotation.courseid,
             annotationid: 0,
             editing: 0,
         };
@@ -1277,6 +1317,9 @@ export default class Form extends Base {
                 newformjson = ff.map((item) => {
                     item.value = submission['field-' + item.id];
                     item.default = submission['field-' + item.id];
+                    if (item.type == 'radio') { // Handle other option text for radio buttons.
+                        item.othertext = submission['field-' + item.id + '-otheroptiontext'];
+                    }
                     return item;
                 });
                 formdata.reviewing = 1;
@@ -1289,12 +1332,14 @@ export default class Form extends Base {
                 querySelector(`#message[data-id='${annotation.id}'] ${node} #form-preview`),
                 'ivplugin_form\\submitform_form');
             previewform.load(formdata);
-            let interval = setInterval(() => {
+            const checkFormLoaded = () => {
                 if ($(`#message[data-id='${annotation.id}'] ${node} #form-preview form`).length > 0) {
-                    clearInterval(interval);
                     self.postFormRender();
+                } else {
+                    requestAnimationFrame(checkFormLoaded);
                 }
-            }, 100);
+            };
+            requestAnimationFrame(checkFormLoaded);
         };
 
         if (!f) {
@@ -1376,13 +1421,12 @@ export default class Form extends Base {
              title="${M.util.get_string('responses', 'ivplugin_form')}"></i>
             </button>`);
 
-        $(document).on('click', '#print', function() {
-            var divContents = document.querySelector('#responseview #form-preview').innerHTML;
-            var originalContents = document.body.innerHTML;
-
-            document.body.innerHTML = divContents;
+        $(document).off('click', '#print').on('click', '#print', function() {
+            $('#responseview').css('max-width', '100%');
+            $('#responseview #title').toggleClass('d-none d-flex');
             window.print();
-            document.body.innerHTML = originalContents;
+            $('#responseview').css('max-width', '900px');
+            $('#responseview #title').toggleClass('d-none d-flex');
         });
 
         this.render(annotation, 'json').then(async (ct) => {
@@ -1451,7 +1495,8 @@ export default class Form extends Base {
                         case 'text':
                         case 'time':
                         case 'textarea':
-                            row.push(response);
+                            // Replace new lines with <br> tags.
+                            row.push(response.replace(/\n/g, '<br>'));
                             break;
                         case 'range':
                             row.push(response + '/[' + f.minlength + '-' + f.maxlength + ']');
@@ -1530,7 +1575,7 @@ export default class Form extends Base {
                                     // Other: Other Text.
                                     if (key == 'otheroption') {
                                         v = M.util.get_string('otheroption', 'ivplugin_form')
-                                            + (response['otheroptiontext'] != '' ? ': ' + response['otheroptiontext'] : '');
+                                            + (response.otheroptiontext != '' ? ': ' + response.otheroptiontext : '');
                                     }
                                     ares.push(v);
                                 }
@@ -1634,7 +1679,7 @@ export default class Form extends Base {
                 rows: rows,
             }, '#formresponsetable', annotation.formattedtitle);
 
-            $message.find('.btns').on('click', `[data-toggle="tab"]`, function() {
+            $message.find('.btns').off('click', `[data-toggle="tab"]`).on('click', `[data-toggle="tab"]`, function() {
                 $(`[data-toggle="tab"]`).removeClass('active');
                 // Always remove the rendered form.
                 $(`#message[data-id='${annotation.id}']`).find(`#responseview #form-preview, .tab-content #form-preview`).empty();
@@ -1643,48 +1688,50 @@ export default class Form extends Base {
                 }
             });
 
-            $(document).on('click', `#message[data-id='${annotation.id}'] table .helptext`, async function(e) {
-                // Dismiss all other popovers.
-                $('.popover').remove();
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                let $this = $(this);
-                let contentid = $(this).attr('data-fieldid');
-                let field = formfields.find((field) => field.id == contentid);
-                let content = field.helptext.text;
-                $this.popover({
-                    content: '<div class="loader"></div>',
-                    title: `<span class="mr-2">${field.formattedlabel}</span>`
-                        + `<i class="bi bi-x-circle-fill ml-auto popover-dismiss cursor-pointer" style="font-size:1.5em;"></i>`,
-                    placement: 'top',
-                    html: true,
-                    trigger: 'focus',
-                    template: `<div class="popover inlineannotation-popover id-${contentid}"
+            $(document).off('click', `#message[data-id='${annotation.id}'] table .helptext`)
+                .on('click', `#message[data-id='${annotation.id}'] table .helptext`, async function(e) {
+                    // Dismiss all other popovers.
+                    $('.popover').remove();
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    let $this = $(this);
+                    let contentid = $(this).attr('data-fieldid');
+                    let field = formfields.find((field) => field.id == contentid);
+                    let content = field.helptext.text;
+                    $this.popover({
+                        content: '<div class="loader"></div>',
+                        title: `<span class="mr-2">${field.formattedlabel}</span>`
+                            + `<i class="bi bi-x-circle-fill ml-auto popover-dismiss cursor-pointer" style="font-size:1.5em;"></i>`,
+                        placement: 'top',
+                        html: true,
+                        trigger: 'focus',
+                        template: `<div class="popover inlineannotation-popover id-${contentid}"
                      role="tooltip"><div class="arrow"></div><h3 class="popover-header d-flex justify-content-between"></h3>
                      <div class="popover-body rounded"></div></div>`,
+                    });
+                    $this.popover('show');
+                    $this.on('shown.bs.popover', async function() {
+                        let $body = $(`.popover.id-${contentid} .popover-body`);
+                        const html = await self.formatContent(content, M.cfg.contextid);
+                        $body.html(html);
+                        notifyFilter($body);
+                        $this.popover('update');
+                    });
                 });
-                $this.popover('show');
-                $this.on('shown.bs.popover', async function() {
-                    let $body = $(`.popover.id-${contentid} .popover-body`);
-                    const html = await self.formatContent(content, M.cfg.contextid);
-                    $body.html(html);
-                    notifyFilter($body);
-                    $this.popover('update');
-                });
-            });
 
-            $(document).on('click', `.popover-dismiss`, function(e) {
+            $(document).off('click', `.popover-dismiss`).on('click', `.popover-dismiss`, function(e) {
                 e.stopImmediatePropagation();
                 $(this).closest('.popover').remove();
             });
 
-            $(document).on('click', `#message[data-id='${annotation.id}'] .viewsubmission`, function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                let id = $(this).attr('data-id');
-                $(`#message[data-id='${annotation.id}']`).find('#responseview').addClass('show');
-                $(`#message[data-id='${annotation.id}']`).find('#submission-list').val(id).trigger('change');
-            });
+            $(document).off('click', `#message[data-id='${annotation.id}'] .viewsubmission`)
+                .on('click', `#message[data-id='${annotation.id}'] .viewsubmission`, function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    let id = $(this).attr('data-id');
+                    $(`#message[data-id='${annotation.id}']`).find('#responseview').addClass('show');
+                    $(`#message[data-id='${annotation.id}']`).find('#submission-list').val(id).trigger('change');
+                });
 
             $(document).on('change', `#message[data-id='${annotation.id}'] #submission-list`, function(e) {
                 e.preventDefault();
@@ -1705,29 +1752,32 @@ export default class Form extends Base {
                 }
             });
 
-            $(document).on('click', `#message[data-id='${annotation.id}'] #responseview .close`, function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                $(`#message[data-id='${annotation.id}']`).find('#responseview').removeClass('show');
-            });
+            $(document).off('click', `#message[data-id='${annotation.id}'] #responseview .close`)
+                .on('click', `#message[data-id='${annotation.id}'] #responseview .close`, function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    $(`#message[data-id='${annotation.id}']`).find('#responseview').removeClass('show');
+                });
 
-            $(document).on('click', `#message[data-id='${annotation.id}'] #responseview .previous`, function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                let id = $(`#message[data-id='${annotation.id}']`).find('#submission-list').val();
-                let index = users.findIndex((item) => item.id == id);
-                let prev = users[index - 1];
-                $(`#message[data-id='${annotation.id}']`).find('#submission-list').val(prev.id).trigger('change');
-            });
+            $(document).off('click', `#message[data-id='${annotation.id}'] #responseview .previous`)
+                .on('click', `#message[data-id='${annotation.id}'] #responseview .previous`, function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    let id = $(`#message[data-id='${annotation.id}']`).find('#submission-list').val();
+                    let index = users.findIndex((item) => item.id == id);
+                    let prev = users[index - 1];
+                    $(`#message[data-id='${annotation.id}']`).find('#submission-list').val(prev.id).trigger('change');
+                });
 
-            $(document).on('click', `#message[data-id='${annotation.id}'] #responseview .next`, function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                let id = $(`#message[data-id='${annotation.id}']`).find('#submission-list').val();
-                let index = users.findIndex((item) => item.id == id);
-                let next = users[index + 1];
-                $(`#message[data-id='${annotation.id}']`).find('#submission-list').val(next.id).trigger('change');
-            });
+            $(document).off('click', `#message[data-id='${annotation.id}'] #responseview .next`)
+                .on('click', `#message[data-id='${annotation.id}'] #responseview .next`, function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    let id = $(`#message[data-id='${annotation.id}']`).find('#submission-list').val();
+                    let index = users.findIndex((item) => item.id == id);
+                    let next = users[index + 1];
+                    $(`#message[data-id='${annotation.id}']`).find('#submission-list').val(next.id).trigger('change');
+                });
             return;
         }).catch(() => {
             // Do nothing.
@@ -1746,19 +1796,17 @@ export default class Form extends Base {
                 userid: userid,
                 cmid: annotation.annotationid,
                 annotationid: annotation.id,
-                contextid: M.cfg.contextid,
+                contextid: annotation.contextid,
             },
-            contextid: M.cfg.contextid,
+            contextid: annotation.contextid,
             methodname: 'ivplugin_form_get_log',
         }])[0];
-        window.console.log(response);
         response = JSON.parse(response.record);
-        window.console.log(response);
         let modal = `<div class="modal fade ${$('body').hasClass('iframe') ? 'modal-fullscreen' : ''}"
-        id="annotation-modal" role="dialog" aria-labelledby="annotation-modal"
-    aria-hidden="true" data-backdrop="static" data-keyboard="false">
-    <div id="message" data-id="${annotation.id}" data-placement="popup"
-     class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+        id="annotation-modal" role="dialog" aria-labelledby="annotation-modal" aria-hidden="true" data-backdrop="static"
+         data-keyboard="false">
+                        <div id="message" data-id="${annotation.id}" data-placement="popup"
+                        class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
                                <div class="modal-content rounded-lg">
                                    <div class="modal-header d-flex align-items-center shadow-sm pr-0" id="title">
                                        <button class="btn mx-2 p-0 ml-auto" data-dismiss="modal" aria-label="Close">

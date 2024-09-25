@@ -181,6 +181,7 @@ class submitform_form extends \core_form\dynamic_form {
      * @return void
      */
     public function definition() {
+        global $USER;
         $this->render_duration_element();
         $mform = &$this->_form;
 
@@ -650,6 +651,15 @@ class submitform_form extends \core_form\dynamic_form {
 
                     break;
                 case 'filemanager':
+                    if ($USER->id == 1) {
+                        $html = '<div id="' . $field->fieldid . '" class="fitem row form-group d-block flex-column w-100">'
+                            . $label . '<div class="alert alert-warning mt-3">' .
+                            get_string('guestmustlogintouploadfiles', 'ivplugin_form') . '</div></div>';
+                        $htmlgroup = [];
+                        $htmlgroup[] = $mform->createElement('html', $html);
+                        $mform->addGroup($htmlgroup, $field->fieldid, '-', '', false, ['class' => 'fhtml']);
+                        break;
+                    }
                     if ($isreviewing) {
                         $html = '<div id="' . $field->fieldid . '" class="fitem row form-group d-block flex-column">'
                             . $label . '<div>' . format_text(
@@ -689,7 +699,6 @@ class submitform_form extends \core_form\dynamic_form {
                         }
                         $mform->addElement('filemanager', $field->fieldid, $label, ['id' => $field->fieldid], $options);
                     }
-
                     break;
                 case 'linebreak':
                     $mform->addElement('static', $field->fieldid, $label, '<hr>', ['id' => $field->fieldid]);

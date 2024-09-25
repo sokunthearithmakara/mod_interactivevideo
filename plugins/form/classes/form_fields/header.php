@@ -54,27 +54,13 @@ class header extends base {
         ]);
 
         // Show expanded.
-        $mform->addElement('advcheckbox', 'expanded', '', get_string('showexpanded', 'ivplugin_form'));
+        $mform->addElement('advcheckbox', 'expanded', '', get_string('showexpanded', 'ivplugin_form'), null, [0, 1]);
+        $mform->setType('expanded', PARAM_INT);
+        $mform->setDefault('expanded', 1);
 
         // Close at.
-        $fields = $this->optional_param('fields', null, PARAM_TEXT);
-        if (empty($fields)) {
-            $fields = [];
-        } else {
-            $fields = json_decode($fields, true);
-        }
-
-        $fields = array_filter($fields, function ($field) {
-            return $field['type'] !== 'header'
-                && $field['id'] !== $this->optional_param('id', null, PARAM_INT);
-        });
-
-        $flds = array_column($fields, 'label', 'id');
-        $flds = array_map('format_string', $flds);
-        $flds = ['' => get_string('unset', 'ivplugin_form')] + $flds;
-        $mform->addElement('select', 'closeat', get_string('closeat', 'ivplugin_form'), $flds);
+        $mform->addElement('hidden', 'closeat', null);
         $mform->setType('closeat', PARAM_TEXT);
-        $mform->addHelpButton('closeat', 'closeat', 'ivplugin_form');
 
         $this->set_display_vertical();
     }

@@ -28,20 +28,21 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
          * @param {Number} usercontextid user context id
          */
         'init': function(id, usercontextid) {
-            var totaltime, player;
-            var videowrapper = $('#video-wrapper');
-            var endinput = $('input[name=end]');
-            var startinput = $('input[name=start]');
-            var startassistinput = $('input[name=startassist]');
-            var endassistinput = $('input[name=endassist]');
-            var totaltimeinput = $('input[name=totaltime]');
-            var videourlinput = $('input[name=videourl]');
-            var sourceinput = $('input[name=source]');
-            var videoinput = $('input[name=video]');
-            var uploadfield = $("#fitem_id_upload");
-            var deletefield = $("#fitem_id_delete");
-            var videofile = $('input[name=videofile]');
-            var videotype = $('input[name=type]');
+            let totaltime, player;
+            let videowrapper = $('#video-wrapper');
+            let endinput = $('input[name=end]');
+            let startinput = $('input[name=start]');
+            let startassistinput = $('input[name=startassist]');
+            let endassistinput = $('input[name=endassist]');
+            let totaltimeinput = $('input[name=totaltime]');
+            let videourlinput = $('input[name=videourl]');
+            let sourceinput = $('input[name=source]');
+            let videoinput = $('input[name=video]');
+            let uploadfield = $("#fitem_id_upload");
+            let deletefield = $("#fitem_id_delete");
+            let videofile = $('input[name=videofile]');
+            let videotype = $('input[name=type]');
+            let posterimage = $('input[name=posterimage]');
 
             /**
              * Format seconds to HH:MM:SS.
@@ -89,6 +90,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     endinput.val(totaltime);
                 }
                 $("#videototaltime").text("<= " + convertSecondsToHMS(totaltime));
+                posterimage.val(player.posterImage);
             };
 
             $(document).on('iv:playerReady', function() {
@@ -154,8 +156,6 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 if (vid) {
                     url = 'https://vimeo.com/' + vid;
                     videourlinput.val(url);
-
-                    // Show loader while the video is loading
                     videowrapper.html('<div id="player" class="w-100"></div>');
                     videotype.val('vimeo');
                     require(['mod_interactivevideo/player/vimeo'], function(VP) {
@@ -178,7 +178,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     return;
                 }
 
-                // WISTIA:: Check if the video is from wistia e.g. https://sokunthearithmakara.wistia.com/medias/kojs3bi9bf.
+                // WISTIA:: Check if the video is from wistia e.g. https://sokunthearithmakara.wistia.com/medias/88s059vu6s.
                 const regexWistia = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^/]+)/g;
                 match = regexWistia.exec(url);
                 const mediaId = match ? match[1] : null;
@@ -300,9 +300,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                         player = new VP(url, 0, null, true);
                     });
                     videoinput.val(e.detail.video);
-                    // Hide the upload button.
                     uploadfield.hide();
-                    // Show the delete button.
                     deletefield.show();
                 });
             });
@@ -328,14 +326,14 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     {key: 'deletevideoconfirm', component: 'mod_interactivevideo'},
                     {key: 'delete', component: 'mod_interactivevideo'},
                 ]);
-                notification.saveCancel(
+                notification.deleteCancel(
                     strings[0],
                     strings[1],
                     strings[2],
                     function() {
                         videoinput.val('');
                         videofile.val('');
-                        videowrapper.html("").hide();
+                        videowrapper.empty().hide();
                         uploadfield.show();
                         deletefield.hide();
                     });
@@ -343,15 +341,12 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
             // DOM ready
             $(function() {
+                uploadfield.hide();
+                deletefield.hide();
                 if (videourlinput.val() != '') {
                     videourlinput.trigger('input');
-                    uploadfield.hide();
-                    deletefield.hide();
                 }
-                if (sourceinput.val() == 'url') {
-                    uploadfield.hide();
-                    deletefield.hide();
-                } else {
+                if (sourceinput.val() != 'url') {
                     if (videoinput.val() != '' && videoinput.val() != '0') {
                         uploadfield.hide();
                         deletefield.show();
@@ -365,7 +360,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                         deletefield.hide();
                     }
                 }
-
+                // Display warning message if the completion is not unlocked.
                 if ($('[name=completionunlocked]').val() == '0') {
                     $('#warning').removeClass('d-none');
                     $('[name=videourl], [name=startassist], [name=endassist]').prop('readonly', 'true');

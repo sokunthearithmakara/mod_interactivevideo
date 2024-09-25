@@ -22,7 +22,8 @@
  */
 import $ from 'jquery';
 import Base from 'mod_interactivevideo/type/base';
-
+import DynamicForm from 'core_form/dynamicform';
+import {dispatchEvent} from 'core/event_dispatcher';
 export default class Decision extends Base {
     /**
      * Initializes the decision plugin for interactive videos.
@@ -57,13 +58,191 @@ export default class Decision extends Base {
                 const t = Number(e.originalEvent.detail.time);
                 const firstCantSkip = cantSkip[0];
                 if (t > Number(firstCantSkip.timestamp)) {
-                    self.player.seek(Number(firstCantSkip.timestamp));
-                    self.player.pause();
+                    self.runInteraction(firstCantSkip);
                 }
             });
         }
+    }
 
-        // We want to hide the interactions on the navigation if decision elements do not allow skipping.
+    /**
+     * Add an annotation
+     * @param {Array} annotations The annotations array
+     * @param {number} timestamp The timestamp
+     * @param {number} coursemodule The course module id
+     * @returns {void}
+     */
+    addAnnotation(annotations, timestamp, coursemodule) {
+        $('#addcontent, #interaction-timeline').addClass('no-pointer-events');
+        var self = this;
+        this.annotations = annotations;
+        if (!this.isBetweenStartAndEnd(timestamp)) {
+            var message = M.util.get_string('interactioncanonlybeaddedbetweenstartandendtime', 'mod_interactivevideo', {
+                "start": self.convertSecondsToHMS(self.start),
+                "end": self.convertSecondsToHMS(self.end),
+            });
+            self.addNotification(message);
+            return;
+        }
+
+        if (self.isAlreadyAdded(timestamp)) {
+            self.addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'));
+            return;
+        }
+
+        if (self.isInSkipSegment(timestamp)) {
+            self.addNotification(M.util.get_string('interactionisbetweentheskipsegment', 'mod_interactivevideo'));
+            return;
+        }
+
+        const startHMS = self.convertSecondsToHMS(self.start);
+        const endHMS = self.convertSecondsToHMS(self.end);
+        const timestampHMS = timestamp > 0 ? self.convertSecondsToHMS(timestamp) : startHMS;
+
+        const data = {
+            id: 0,
+            timestamp: timestamp > 0 ? timestamp : self.start,
+            timestampassist: timestampHMS,
+            title: self.prop.title,
+            start: startHMS,
+            end: endHMS,
+            contextid: M.cfg.contextid,
+            type: self.prop.name,
+            courseid: self.course,
+            cmid: coursemodule,
+            annotationid: self.interaction,
+            hascompletion: self.prop.hascompletion ? 1 : 0,
+        };
+
+        $('#annotationwrapper table').hide();
+        $('#annotationwrapper').append('<div id="form" class="w-100 p-3"></div>');
+        $("#contentmodal").modal('hide');
+        $('#addcontentdropdown a').removeClass('active');
+
+        const selector = document.querySelector(`#annotationwrapper #form`);
+        const decisionform = new DynamicForm(selector, self.prop.form);
+        decisionform.load(data);
+
+        self.onEditFormLoaded(decisionform);
+        self.validateTimestampFieldValue('timestampassist', 'timestamp');
+
+        $(document).off('click', '#cancel-submit').on('click', '#cancel-submit', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            $('#annotationwrapper #form').remove();
+            $('#annotationwrapper table').show();
+        });
+
+        $(document).off('click', '#submitform-submit').on('click', '#submitform-submit', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const event = decisionform.trigger(decisionform.events.SUBMIT_BUTTON_PRESSED);
+            if (!event.defaultPrevented) {
+                decisionform.submitFormAjax();
+            }
+        });
+
+        decisionform.addEventListener(decisionform.events.FORM_SUBMITTED, (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            $.ajax({
+                url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                method: "POST",
+                dataType: "text",
+                data: {
+                    action: 'get_item',
+                    id: e.detail.id,
+                    sesskey: M.cfg.sesskey,
+                    contextid: M.cfg.courseContextId,
+                    token: self.token,
+                    cmid: self.cm,
+                },
+                success: function(data) {
+                    var newAnnotation = JSON.parse(data);
+                    dispatchEvent('annotationupdated', {
+                        annotation: newAnnotation,
+                        action: 'add'
+                    });
+                }
+            });
+            $('#annotationwrapper #form').remove();
+            $('#annotationwrapper table').show();
+            $('#addcontent, #interaction-timeline').removeClass('no-pointer-events');
+        });
+
+    }
+
+    /**
+     * Edit an annotation
+     * @param {Array} annotations The annotations array
+     * @param {number} id The annotation id
+     * @returns {void}
+     */
+    editAnnotation(annotations, id) {
+        // Disable pointer events on some DOMs.
+        $('#addcontent, #interaction-timeline').addClass('no-pointer-events');
+        this.annotations = annotations;
+        let self = this;
+        const annotation = annotations.find(x => x.id == id);
+        const timestamp = annotation.timestamp;
+        const timestampassist = this.convertSecondsToHMS(timestamp);
+
+        annotation.timestampassist = timestampassist;
+        annotation.start = this.convertSecondsToHMS(this.start);
+        annotation.end = this.convertSecondsToHMS(this.end);
+        annotation.contextid = M.cfg.contextid;
+
+        $('#annotationwrapper table').hide();
+        $('#annotationwrapper').append('<div id="form" class="w-100 p-3"></div>');
+        const selector = document.querySelector(`#annotationwrapper #form`);
+        const decisionform = new DynamicForm(selector, self.prop.form);
+        decisionform.load(annotation);
+
+        self.onEditFormLoaded(decisionform);
+        self.validateTimestampFieldValue('timestampassist', 'timestamp');
+
+        $(document).off('click', '#cancel-submit').on('click', '#cancel-submit', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            $('#annotationwrapper #form').remove();
+            $('#annotationwrapper table').show();
+        });
+
+        $(document).off('click', '#submitform-submit').on('click', '#submitform-submit', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const event = decisionform.trigger(decisionform.events.SUBMIT_BUTTON_PRESSED);
+            if (!event.defaultPrevented) {
+                decisionform.submitFormAjax();
+            }
+        });
+
+        decisionform.addEventListener(decisionform.events.FORM_SUBMITTED, (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.annotations = this.annotations.filter(x => x.id != id);
+            $.ajax({
+                url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                method: "POST",
+                dataType: "text",
+                data: {
+                    action: 'get_item',
+                    id: e.detail.id,
+                    sesskey: M.cfg.sesskey,
+                    contextid: M.cfg.courseContextId,
+                    token: self.token,
+                    cmid: self.cm,
+                },
+            }).done(function(data) {
+                var updated = JSON.parse(data);
+                dispatchEvent('annotationupdated', {
+                    annotation: updated,
+                    action: 'edit'
+                });
+            });
+            $('#annotationwrapper #form').remove();
+            $('#annotationwrapper table').show();
+            $('#addcontent, #interaction-timeline').removeClass('no-pointer-events');
+        });
     }
 
     /**
@@ -75,40 +254,39 @@ export default class Decision extends Base {
      */
     onEditFormLoaded(form, event) {
         let self = this;
-        let body = super.onEditFormLoaded(form, event);
+        let body = $('#annotationwrapper #form');
 
-        var int = setInterval(() => {
-            if ($('[name=content').length > 0) {
-                clearInterval(int);
-                var dest = $('[name=content').val();
-                if (dest == '') {
-                    $('#destination-list').append(`<div class="input-group mb-1">
-                        <div class="input-group-prepend">
-                            <label class="input-group-text">
-                            <i class="bi bi-grip-vertical fs-unset cursor-move"></i></label>
-                        </div>
-                        <input type="text" class="form-control">
-                        <input type="text" value="${this.convertSecondsToHMS(this.start)}"
-                        placeholder="00:00:00" style="max-width: 120px;" class="form-control timestamp-input">
-                        <div class="input-group-append">
-                        <button class="btn add-dest btn-secondary" type="button"><i class="bi bi-plus-lg fs-unset"></i></button>
-                        <button class="btn btn-danger delete-dest disabled" disabled type="button">
-                            <i class="bi bi-trash3-fill fs-unset"></i></button></div></div>`);
+        const checkContentField = () => {
+            if ($('[name=content]').length > 0) {
+                var dest = $('[name=content]').val();
+                if (dest == '' || JSON.parse(dest).length == 0) {
+                    $('#destination-list').append(`<div class="input-group mb-1 d-none">
+                <div class="input-group-prepend">
+                    <label class="input-group-text">
+                    <i class="bi bi-grip-vertical fs-unset cursor-move"></i></label>
+                </div>
+                <input type="text" class="form-control">
+                <input type="text" value="${this.convertSecondsToHMS(this.start)}"
+                placeholder="00:00:00" style="max-width: 120px;" class="form-control timestamp-input">
+                <div class="input-group-append">
+                <button class="btn add-dest btn-secondary" type="button"><i class="bi bi-plus-lg fs-unset"></i></button>
+                <button class="btn btn-danger delete-dest disabled" disabled type="button">
+                    <i class="bi bi-trash3-fill fs-unset"></i></button></div></div>`);
                 } else {
                     dest = JSON.parse(dest);
                     dest.forEach((d, i) => {
                         $('#destination-list').append(`<div class="input-group mb-1">
-                            <div class="input-group-prepend">
-                            <label class="input-group-text">
-                            <i class="bi bi-grip-vertical cursor-move fs-unset"></i></label>
-                        </div>
-                            <input type="text" class="form-control" value="${d.title}">
-                            <input type="text" value="${this.convertSecondsToHMS(d.timestamp)}"
-                            placeholder="00:00:00" style="max-width: 120px;" class="form-control timestamp-input">
-                            <div class="input-group-append">
-                            <button class="btn add-dest btn-secondary" type="button"><i class="bi bi-plus-lg fs-unset"></i></button>
-                            <button class="btn btn-danger delete-dest ${i == 0 ? 'disabled' : ''}" ${i == 0 ? 'disabled' : ''}
-                            type="button"><i class="bi bi-trash3-fill fs-unset"></i></button></div></div>`);
+                    <div class="input-group-prepend">
+                    <label class="input-group-text">
+                    <i class="bi bi-grip-vertical cursor-move fs-unset"></i></label>
+                </div>
+                    <input type="text" class="form-control" value="${d.title}">
+                    <input type="text" value="${this.convertSecondsToHMS(d.timestamp)}"
+                    placeholder="00:00:00" style="max-width: 120px;" class="form-control timestamp-input">
+                    <div class="input-group-append">
+                    <button class="btn add-dest btn-secondary" type="button"><i class="bi bi-plus-lg fs-unset"></i></button>
+                    <button class="btn btn-danger delete-dest ${i == 0 ? 'disabled' : ''}" ${i == 0 ? 'disabled' : ''}
+                    type="button"><i class="bi bi-trash3-fill fs-unset"></i></button></div></div>`);
                     });
                     $('.input-group [type="text"]').trigger('input');
                 }
@@ -126,23 +304,34 @@ export default class Decision extends Base {
                         $('.input-group .delete-dest').first().addClass('disabled');
                     }
                 });
+            } else {
+                requestAnimationFrame(checkContentField);
             }
-        }, 100);
+        };
 
-        body.on('click', '.input-group .add-dest', function(e) {
+        requestAnimationFrame(checkContentField);
+
+        body.off('click', '#add-destination').on('click', '#add-destination', function() {
+            const $last = $('#destination-list .input-group').last();
+            $last.find('.add-dest').trigger('click');
+        });
+
+        body.off('click', '.input-group .add-dest').on('click', '.input-group .add-dest', async function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             let $thisrow = $(this);
             let $parent = $thisrow.closest('.input-group');
             let $row = $parent.clone();
+            $row.removeClass('d-none');
             $row.find('input').val('');
-            $row.find('input.timestamp-input').val(self.convertSecondsToHMS(self.start));
+            let currentTime = await self.player.getCurrentTime();
+            $row.find('input.timestamp-input').val(self.convertSecondsToHMS(currentTime));
             $row.find('.delete-dest').removeClass('disabled').removeAttr('disabled');
             $parent.after($row);
             $parent.find('[type="text"]').trigger('input');
         });
 
-        body.on('click', '.input-group .delete-dest', function(e) {
+        body.off('click', '.input-group .delete-dest').on('click', '.input-group .delete-dest', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(this).closest('.input-group').remove();
@@ -166,6 +355,7 @@ export default class Decision extends Base {
             });
             $('[name=content').val(JSON.stringify(dest));
         });
+
         return {form, event};
     }
 
@@ -220,7 +410,7 @@ export default class Decision extends Base {
                      ${M.util.get_string('skip', 'ivplugin_decision')}
                      <i class="ml-2 bi bi-chevron-right"></i></button>`);
             }
-            $(document).on('click', '#close-decision', function(e) {
+            $(document).off('click', '#close-decision').on('click', '#close-decision', function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 self.player.play();
@@ -234,20 +424,21 @@ export default class Decision extends Base {
             }
         });
 
-        $(document).on('click', `#message[data-id='${annotation.id}'] .decision-option`, function(e) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            var time = Number($(this).data('timestamp'));
-            if (time < this.start) {
-                time = this.start;
-            } else if (time > this.end) {
-                time = this.end;
-            }
-            self.player.seek(time);
-            $(`#message[data-id='${annotation.id}']`).fadeOut(300);
-            self.player.play();
-            $('#taskinfo').fadeIn(300);
-            $('[data-region="chapterlists"], #controller').removeClass('no-pointer-events');
-        });
+        $(document).off('click', `#message[data-id='${annotation.id}'] .decision-option`)
+            .on('click', `#message[data-id='${annotation.id}'] .decision-option`, function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                var time = Number($(this).data('timestamp'));
+                if (time < this.start) {
+                    time = this.start;
+                } else if (time > this.end) {
+                    time = this.end;
+                }
+                self.player.seek(time);
+                $(`#message[data-id='${annotation.id}']`).fadeOut(300);
+                self.player.play();
+                $('#taskinfo').fadeIn(300);
+                $('[data-region="chapterlists"], #controller').removeClass('no-pointer-events');
+            });
     }
 }

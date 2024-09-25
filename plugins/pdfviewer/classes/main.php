@@ -65,7 +65,8 @@ class main extends \ivplugin_richtext\main {
             )->out();
             // Encode URL for PDF.js.
             $url = urlencode($url);
-            return '<iframe id="iframe" src="' . $CFG->wwwroot . '/mod/interactivevideo/libraries/pdfjs/web/viewer.html?file=' .
+            return '<iframe id="iframe" src="' . $CFG->wwwroot .
+                '/mod/interactivevideo/plugins/pdfviewer/libraries/pdfjs/web/viewer.html?file=' .
                 $url . '#locale=' . $lang .
                 '" style="width: 100%; height: 100%" frameborder="0" allow="autoplay" class="rounded-0"></iframe>';
         }

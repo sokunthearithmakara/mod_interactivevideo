@@ -49,6 +49,7 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
             'grade',
             'type',
             'displayoptions',
+            'posterimage',
         ]);
 
         $items = new backup_nested_element('items');
@@ -75,6 +76,7 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
             'text1',
             'text2',
             'text3',
+            'contextid',
             'cbname',
             'cbcontextid',
             'cbcontenttype',

@@ -32,20 +32,22 @@ export default class H5pUpload extends Base {
         let $message = $(`#message[data-id='${annotation.id}']`);
         super.renderContainer(annotation);
         let $completiontoggle = $message.find('#completiontoggle');
+        $message.find('#title .info').remove();
         switch (annotation.completiontracking) {
             case 'complete':
-                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-                    data-trigger="hover"
+                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2 info" data-toggle="tooltip"
+                     data-container="#wrapper" data-trigger="hover"
                      data-title="${M.util.get_string("completiononcomplete", "mod_interactivevideo")}"></i>`);
                 break;
             case 'completepass':
-                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-    data-trigger="hover"
-     data-title="${M.util.get_string("completiononcompletepass", "mod_interactivevideo")}"></i>`);
+                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2 info" data-toggle="tooltip"
+                     data-container="#wrapper" data-trigger="hover"
+                     data-title="${M.util.get_string("completiononcompletepass", "mod_interactivevideo")}"></i>`);
                 break;
             case 'completefull':
-                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2" data-toggle="tooltip" data-container="#wrapper"
-            data-trigger="hover" data-title="${M.util.get_string("completiononcompletefull", "mod_interactivevideo")}"></i>`);
+                $completiontoggle.before(`<i class="bi bi-info-circle-fill mr-2 info" data-toggle="tooltip"
+                     data-container="#wrapper" data-trigger="hover"
+                     data-title="${M.util.get_string("completiononcompletefull", "mod_interactivevideo")}"></i>`);
                 break;
         }
         $message.find('[data-toggle="tooltip"]').tooltip();
@@ -65,16 +67,18 @@ export default class H5pUpload extends Base {
      */
     postContentRender(annotation, callback) {
         $(`#message[data-id='${annotation.id}']`).addClass('hasiframe');
-        let interval = setInterval(() => {
-            if ($(`#message[data-id='${annotation.id}'] iframe`).length) {
-                clearInterval(interval);
-                const iframe = document.querySelector(`#message[data-id='${annotation.id}'] iframe`);
+        let checkIframe = () => {
+            const iframe = document.querySelector(`#message[data-id='${annotation.id}'] iframe`);
+            if (iframe) {
                 iframe.style.background = 'none';
                 let contentDocument = iframe.contentDocument;
                 let html = contentDocument.querySelector('html');
                 html.style.height = 'unset';
+            } else {
+                requestAnimationFrame(checkIframe);
             }
-        }, 1000);
+        };
+        requestAnimationFrame(checkIframe);
         if (annotation.hascompletion == 1 && annotation.completiontracking == 'manual'
             && !annotation.completed && annotation.completiontracking != 'view') {
             return callback;
@@ -111,7 +115,8 @@ export default class H5pUpload extends Base {
          */
         const xAPICheck = (annotation) => {
             var H5P;
-            var iframeinterval = setInterval(function() {
+
+            const detectAPI = () => {
                 try { // Try to get the H5P object.
                     H5P = document.querySelector(`#message[data-id='${annoid}'] iframe`).contentWindow.H5P;
                 } catch (e) {
@@ -119,7 +124,6 @@ export default class H5pUpload extends Base {
                 }
 
                 if (typeof H5P !== 'undefined' && H5P !== null) {
-                    clearInterval(iframeinterval);
                     if (self.isEditMode()) {
                         $(`#message[data-id='${annotation.id}'] #title .xapi`).remove();
                         $(`#message[data-id='${annotation.id}'] #title .btns`)
@@ -127,68 +131,79 @@ export default class H5pUpload extends Base {
                             ${M.util.get_string('xapicheck', 'ivplugin_h5pupload')}</div>`);
                     }
                     let statements = [];
-                    H5P.externalDispatcher.on('xAPI', function(event) {
-                        if (event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
-                            || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered') {
-                            statements.push(event.data.statement);
-                        }
-                        if ((event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
-                            || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered')
-                            && event.data.statement.object.id.indexOf('subContentId') < 0) {
-                            if (self.isEditMode()) {
-                                $(`#message[data-id='${annotation.id}'] #title .btns .xapi`).remove();
-                                $(`#message[data-id='${annotation.id}'] #title .btns`)
-                                    .prepend(`<div class="xapi alert-success d-inline px-2 rounded-pill">
-                                    <i class="fa fa-check mr-2"></i>
-                                    ${M.util.get_string('xapieventdetected', 'ivplugin_h5pupload')}
-                                    </div>`);
-                                var audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
-                                audio.play();
-                                return;
+                    try {
+                        H5P.externalDispatcher.on('xAPI', function(event) {
+                            if (event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
+                                || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered') {
+                                statements.push(event.data.statement);
                             }
-                            var complete = false;
-                            let textclass = '';
-                            if (annotation.completiontracking == 'completepass'
-                                && event.data.statement.result && event.data.statement.result.score.scaled >= 0.5) {
-                                complete = true;
-                            } else if (annotation.completiontracking == 'completefull'
-                                && event.data.statement.result && event.data.statement.result.score.scaled == 1) {
-                                complete = true;
-                            } else if (annotation.completiontracking == 'complete') {
-                                complete = true;
+                            if ((event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
+                                || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered')
+                                && event.data.statement.object.id.indexOf('subContentId') < 0) {
+                                if (self.isEditMode()) {
+                                    $(`#message[data-id='${annotation.id}'] #title .btns .xapi`).remove();
+                                    $(`#message[data-id='${annotation.id}'] #title .btns`)
+                                        .prepend(`<div class="xapi alert-success d-inline px-2 rounded-pill">
+                                        <i class="fa fa-check mr-2"></i>
+                                        ${M.util.get_string('xapieventdetected', 'ivplugin_h5pupload')}
+                                        </div>`);
+                                    var audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
+                                    audio.play();
+                                    return;
+                                }
+                                var complete = false;
+                                let textclass = '';
+                                if (annotation.completiontracking == 'completepass'
+                                    && event.data.statement.result && event.data.statement.result.score.scaled >= 0.5) {
+                                    complete = true;
+                                } else if (annotation.completiontracking == 'completefull'
+                                    && event.data.statement.result && event.data.statement.result.score.scaled == 1) {
+                                    complete = true;
+                                } else if (annotation.completiontracking == 'complete') {
+                                    complete = true;
+                                }
+                                if (event.data.statement.result.score.scaled < 0.5) {
+                                    textclass = 'fa fa-check text-danger';
+                                } else if (event.data.statement.result.score.scaled < 1) {
+                                    textclass = 'fa fa-check text-success';
+                                } else {
+                                    textclass = 'bi bi-check2-all text-success';
+                                }
+                                if (complete && !annotation.completed) {
+                                    let details = {};
+                                    const completeTime = new Date();
+                                    details.xp = annotation.xp;
+                                    if (annotation.char1 == '1') { // Partial points.
+                                        details.xp = (event.data.statement.result.score.scaled * annotation.xp).toFixed(2);
+                                    }
+                                    details.duration = completeTime.getTime() - $('#video-wrapper').data('timestamp');
+                                    details.timecompleted = completeTime.getTime();
+                                    const completiontime = completeTime.toLocaleString();
+                                    let duration = self.formatTime(details.duration / 1000);
+                                    details.reportView = `<span data-toggle="tooltip" data-html="true"
+                     data-title='<span class="d-flex flex-column align-items-start"><span><i class="bi bi-calendar mr-2"></i>
+                     ${completiontime}</span><span><i class="bi bi-stopwatch mr-2"></i>${duration}</span>
+                     <span><i class="bi bi-list-check mr-2"></i>
+                     ${event.data.statement.result.score.raw}/${event.data.statement.result.score.max}</span></span>'>
+                     <i class="${textclass}"></i><br><span>${Number(details.xp)}</span></span>`;
+                                    details.details = statements;
+                                    self.toggleCompletion(annoid, 'mark-done', 'automatic', details);
+                                }
                             }
-                            if (event.data.statement.result.score.scaled < 0.5) {
-                                textclass = 'fa fa-check text-danger';
-                            } else if (event.data.statement.result.score.scaled < 1 ) {
-                                textclass = 'fa fa-check text-success';
-                            } else {
-                                textclass = 'bi bi-check2-all text-success';
-                            }
-                            if (complete && !annotation.completed) {
-                                let details = {};
-                                const completeTime = new Date();
-                                details.xp = annotation.xp;
-                                details.duration = completeTime.getTime() - $('#video-wrapper').data('timestamp');
-                                details.timecompleted = completeTime.getTime();
-                                const completiontime = completeTime.toLocaleString();
-                                let duration = self.formatTime(details.duration / 1000);
-                                details.reportView = `<span data-toggle="tooltip" data-html="true"
-                 data-title='<span class="d-flex flex-column align-items-start"><span><i class="bi bi-calendar mr-2"></i>
-                 ${completiontime}</span><span><i class="bi bi-stopwatch mr-2"></i>${duration}</span>
-                 <span><i class="bi bi-list-check mr-2"></i>
-                 ${event.data.statement.result.score.raw}/${event.data.statement.result.score.max}</span></span>'>
-                 <i class="${textclass}"></i><br><span>${annotation.xp}</span></span>`;
-                                details.details = statements;
-                                self.toggleCompletion(annoid, 'mark-done', 'automatic', details);
-                            }
-                        }
-                    });
+                        });
+                    } catch (e) {
+                        requestAnimationFrame(detectAPI);
+                    }
+                } else {
+                    requestAnimationFrame(detectAPI);
                 }
-            }, 100);
+            };
+
+            requestAnimationFrame(detectAPI);
         };
 
         // Apply content
-        const applyContent = async (annotation) => {
+        const applyContent = async(annotation) => {
             const data = await this.render(annotation, 'html');
             $(`#message[data-id='${annotation.id}'] .modal-body`).attr('id', 'content').html(data).fadeIn(300);
             if (annotation.hascompletion == 0) {

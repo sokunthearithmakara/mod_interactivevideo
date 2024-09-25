@@ -25,6 +25,14 @@ import Base from 'mod_interactivevideo/type/base';
 import {dispatchEvent} from 'core/event_dispatcher';
 import Ajax from 'core/ajax';
 export default class SkipSegment extends Base {
+    /**
+     * Initializes the skip segment plugin.
+     * If not in edit mode, sets up an event listener for the 'timeupdate' event.
+     * Filters annotations to find those of type 'skipsegment' and runs the interaction
+     * when the current time falls within the annotation's timestamp range.
+     *
+     * @method init
+     */
     init() {
         if (!this.isEditMode()) {
             var self = this;
@@ -39,6 +47,14 @@ export default class SkipSegment extends Base {
             });
         }
     }
+    /**
+     * Renders the edit item for the skip segment plugin.
+     *
+     * @param {Object} annotations - The annotations object.
+     * @param {jQuery} listItem - The jQuery object representing the list item.
+     * @param {Object} item - The item object containing details of the segment.
+     * @returns {jQuery} The modified list item with the rendered edit item.
+     */
     renderEditItem(annotations, listItem, item) {
         listItem = super.renderEditItem(annotations, listItem, item);
         listItem.find('[data-editable]').removeAttr('data-editable');
@@ -53,6 +69,14 @@ export default class SkipSegment extends Base {
         return listItem;
     }
 
+    /**
+     * Adds an annotation to the interactive video.
+     *
+     * @param {Array} annotations - The list of current annotations.
+     * @param {number} timestamp - The timestamp at which to add the annotation.
+     * @param {number} coursemodule - The course module ID.
+     * @returns {Promise<void>} A promise that resolves when the annotation is added.
+     */
     async addAnnotation(annotations, timestamp, coursemodule) {
         let self = this;
         let data = {
@@ -90,6 +114,14 @@ export default class SkipSegment extends Base {
 
     }
 
+    /**
+     * Handles the event when the edit form is loaded.
+     *
+     * @param {Object} form - The form object that is being edited.
+     * @param {Event} event - The event object associated with the form loading.
+     * @returns {Object} - An object containing the form and event.
+     *
+     */
     onEditFormLoaded(form, event) {
         var self = this;
         var body = super.onEditFormLoaded(form, event);
@@ -128,6 +160,15 @@ export default class SkipSegment extends Base {
         return {form, event};
     }
 
+    /**
+     * Renders an annotation on the video navigation timeline.
+     *
+     * @param {Object} annotation - The annotation object to be rendered.
+     * @param {number} annotation.timestamp - The timestamp of the annotation.
+     * @param {string} annotation.title - The title of the annotation.
+     * @param {string} annotation.type - The type of the annotation.
+     * @param {string} annotation.id - The unique identifier of the annotation.
+     */
     renderItemOnVideoNavigation(annotation) {
         if (annotation.timestamp < this.start || annotation.timestamp > this.end) {
             return;
@@ -150,6 +191,16 @@ export default class SkipSegment extends Base {
                  <i class="bi bi-trash3 text-muted fs-unset"></i></div></div>`);
         }
     }
+    /**
+     * Executes the interaction for skipping a segment in the video.
+     *
+     * This function appends a skip segment icon to the video block, seeks the video player to the specified annotation time,
+     * updates the progress bar, and then plays the video.
+     * The skip segment icon is displayed for a short duration before being removed.
+     *
+     * @param {Object} annotation - The annotation object containing the title which represents the time to seek to.
+     * @returns {Promise<void>} A promise that resolves when the interaction is complete.
+     */
     async runInteraction(annotation) {
         $('.video-block').append(`<div id="skipsegment" class="text-white position-absolute p-3 hide"
          style="bottom: 0;right: 0;text-shadow: 1px 2px 3px gray;line-height: 1rem;">
@@ -157,8 +208,7 @@ export default class SkipSegment extends Base {
         $('#skipsegment').fadeIn(300);
         await this.player.seek(Number(annotation.title));
         var percentage = (Number(annotation.title) - this.start) / this.totaltime * 100;
-        $('#video-nav #progress').replaceWith(`<div id="progress"
-         style="width: ${percentage > 100 ? 100 : percentage}%;"></div>`);
+        $('#video-nav #progress').replaceWith(`<div id="progress" style="width: ${percentage > 100 ? 100 : percentage}%;"></div>`);
         this.player.play();
         setTimeout(() => {
             $('#skipsegment').fadeOut(300);

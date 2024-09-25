@@ -66,63 +66,66 @@ const getcontent = (id, contextid, target) => {
  * - Displays a notification if such events are detected.
  */
 const init = (contextid) => {
-    $(document).on('click', '.contentbank-container .contentbank-item .contentbank-item-details', function(e) {
-        e.preventDefault();
-        $('.contentbank-container .contentbank-item').removeClass('selected');
-        $(this).closest('.contentbank-item').addClass('selected');
-        $('#contentbank-preview').empty();
-        var id = $(this).closest('.contentbank-item').data('contentid');
-        $('[name=contentid]').val(id);
-    });
+    $(document).off('click', '.contentbank-container .contentbank-item .contentbank-item-details')
+        .on('click', '.contentbank-container .contentbank-item .contentbank-item-details', function(e) {
+            e.preventDefault();
+            $('.contentbank-container .contentbank-item').removeClass('selected');
+            $(this).closest('.contentbank-item').addClass('selected');
+            $('#contentbank-preview').empty();
+            var id = $(this).closest('.contentbank-item').data('contentid');
+            $('[name=contentid]').val(id);
+        });
 
-    $(document).on('click', '.contentbank-container .contentbank-item .contentbankview', function(e) {
-        e.preventDefault();
-        $('.contentbank-container .contentbank-item').removeClass('selected');
-        var targetContentbank = $(this).closest('.contentbank-item');
-        targetContentbank.addClass('selected');
-        var id = targetContentbank.data('contentid');
-        $('#contentbank-preview').empty();
-        $('#contentbank-preview').attr('data-contentid', id);
-        $('[name=contentid]').val(id);
-        // Preview selected content
-        getcontent(id, contextid, '#contentbank-preview');
+    $(document).off('click', '.contentbank-container .contentbank-item .contentbankview')
+        .on('click', '.contentbank-container .contentbank-item .contentbankview', function(e) {
+            e.preventDefault();
+            $('.contentbank-container .contentbank-item').removeClass('selected');
+            var targetContentbank = $(this).closest('.contentbank-item');
+            targetContentbank.addClass('selected');
+            var id = targetContentbank.data('contentid');
+            $('#contentbank-preview').empty();
+            $('#contentbank-preview').attr('data-contentid', id);
+            $('[name=contentid]').val(id);
+            // Preview selected content.
+            getcontent(id, contextid, '#contentbank-preview');
 
-        // Handle xAPI event. We want user to be able to check if the content emits xAPI events (completed, answered)
-        // because some content types may not emit these events. Then user can decide
-        // if they want students to mark it complete manually or automatically.
-        var xapicheck = M.util.get_string('xapicheck', 'ivplugin_contentbank');
-        var H5P;
-        var iframeinterval = setInterval(function() {
+            // Handle xAPI event. We want user to be able to check if the content emits xAPI events (completed, answered)
+            // because some content types may not emit these events. Then user can decide
+            // if they want students to mark it complete manually or automatically.
+            var xapicheck = M.util.get_string('xapicheck', 'ivplugin_contentbank');
+            var H5P;
 
-            try { // Try to get the H5P object.
-                H5P = document.querySelector('#contentbank-preview iframe.h5p-player').contentWindow.H5P;
-            } catch (e) {
-                H5P = null;
-            }
+            const checkH5P = () => {
+                try { // Try to get the H5P object.
+                    H5P = document.querySelector('#contentbank-preview iframe.h5p-player').contentWindow.H5P;
+                } catch (e) {
+                    H5P = null;
+                }
 
-            if (typeof H5P !== 'undefined' && H5P !== null) {
-                $("#contentbank-preview .xapi").remove();
-                $(`#contentbank-preview[data-contentid=${id}]`)
-                    .prepend(`<div class="xapi float-right alert-secondary d-inline px-2 text-center rounded-pill mb-2">
+                if (typeof H5P !== 'undefined' && H5P !== null) {
+                    $("#contentbank-preview .xapi").remove();
+                    $(`#contentbank-preview[data-contentid=${id}]`)
+                        .prepend(`<div class="xapi float-right alert-secondary d-inline px-2 text-center rounded-pill mb-2">
                 ${xapicheck}</div>`);
-                H5P.externalDispatcher.on('xAPI', function(event) {
-                    if ((event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
-                        || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered')
-                        && event.data.statement.object.id.indexOf('subContentId') < 0) {
-                        $("#contentbank-preview .xapi").remove();
-                        $("#contentbank-preview")
-                            .prepend(`<div class="xapi float-right alert-success d-inline px-2 text-center rounded-pill mb-2">
+                    H5P.externalDispatcher.on('xAPI', function(event) {
+                        if ((event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed'
+                            || event.data.statement.verb.id == 'http://adlnet.gov/expapi/verbs/answered')
+                            && event.data.statement.object.id.indexOf('subContentId') < 0) {
+                            $("#contentbank-preview .xapi").remove();
+                            $("#contentbank-preview")
+                                .prepend(`<div class="xapi float-right alert-success d-inline px-2 text-center rounded-pill mb-2">
                         <i class="fa fa-check mr-2"></i>${M.util.get_string('xapieventdetected', 'ivplugin_contentbank')}</div>`);
-                        var audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
-                        audio.play();
-                    }
-                });
+                            var audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
+                            audio.play();
+                        }
+                    });
+                } else {
+                    requestAnimationFrame(checkH5P);
+                }
+            };
 
-                clearInterval(iframeinterval);
-            }
-
-        }, 1000);
-    });
+            requestAnimationFrame(checkH5P);
+        });
 };
 
 /**

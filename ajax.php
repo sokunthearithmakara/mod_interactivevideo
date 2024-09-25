@@ -29,6 +29,8 @@ require_once('locallib.php');
 $action = required_param('action', PARAM_TEXT);
 $token = optional_param('token', '', PARAM_TEXT);
 $cmid = optional_param('cmid', 0, PARAM_INT);
+$contextid = required_param('contextid', PARAM_INT);
+$context = context::instance_by_id($contextid);
 
 switch ($action) {
     case 'getallcontenttypes':
@@ -36,7 +38,6 @@ switch ($action) {
         break;
     case 'format_text':
         $text = required_param('text', PARAM_RAW);
-        $contextid = required_param('contextid', PARAM_INT);
         echo interactivevideo_util::format_content($text, 1, $contextid);
         break;
 }
@@ -54,29 +55,29 @@ if ($token) {
 
 switch ($action) {
     case 'get_items':
+        require_capability('mod/interactivevideo:view', $context);
         $id = required_param('id', PARAM_INT);
-        $contextid = required_param('contextid', PARAM_INT);
         $annotations = interactivevideo_util::get_items($id, $contextid);
         $annotations = array_values($annotations);
         echo json_encode($annotations);
         break;
     case 'get_item':
+        require_capability('mod/interactivevideo:view', $context);
         $id = required_param('id', PARAM_INT);
-        $contextid = required_param('contextid', PARAM_INT);
         $item = interactivevideo_util::get_item($id, $contextid);
         echo json_encode($item);
         break;
     case 'copy_item':
+        require_capability('mod/interactivevideo:view', $context);
         $id = required_param('id', PARAM_INT);
-        $contextid = required_param('contextid', PARAM_INT);
         $item = interactivevideo_util::copy_item($id, $contextid);
         echo json_encode($item);
         break;
     case 'get_content':
+        require_capability('mod/interactivevideo:view', $context);
         $content = required_param('content', PARAM_RAW);
         $id = required_param('id', PARAM_INT);
         $format = FORMAT_HTML;
-        $contextid = required_param('contextid', PARAM_INT);
         // Process the content from editor for displaying.
         require_once($CFG->libdir . '/filelib.php');
         $content = file_rewrite_pluginfile_urls($content, 'pluginfile.php', $contextid, 'mod_interactivevideo', 'content', $id);
@@ -84,8 +85,8 @@ switch ($action) {
         echo $content;
         break;
     case 'delete_item':
+        require_capability('mod/interactivevideo:edit', $context);
         $id = required_param('id', PARAM_INT);
-        $contextid = required_param('contextid', PARAM_INT);
         $DB->delete_records('interactivevideo_items', ['id' => $id]);
         $logs = $DB->get_records('interactivevideo_log', ['annotationid' => $id]);
         $fs = get_file_storage();
@@ -104,21 +105,24 @@ switch ($action) {
         echo $id;
         break;
     case 'quickeditfield':
+        require_capability('mod/interactivevideo:edit', $context);
         $id = required_param('id', PARAM_INT);
         $field = required_param('field', PARAM_TEXT);
         $value = required_param('value', PARAM_TEXT);
-        $contextid = required_param('contextid', PARAM_INT);
         $draftitemid = optional_param('draftitemid', 0, PARAM_INT);
         $item = interactivevideo_util::quick_edit_field($id, $field, $value, $contextid, $draftitemid);
         echo json_encode($item);
         break;
     case 'get_progress':
+        require_capability('mod/interactivevideo:view', $context);
         $id = required_param('id', PARAM_INT);
         $userid = required_param('uid', PARAM_INT);
-        $progress = interactivevideo_util::get_progress($id, $userid);
+        $previewmode = required_param('previewmode', PARAM_BOOL);
+        $progress = interactivevideo_util::get_progress($id, $userid, $previewmode);
         echo json_encode($progress);
         break;
     case 'save_progress':
+        require_capability('mod/interactivevideo:view', $context);
         $id = required_param('id', PARAM_INT);
         $userid = required_param('uid', PARAM_INT);
         $c = required_param('c', PARAM_INT);
@@ -148,30 +152,31 @@ switch ($action) {
         echo json_encode($progress);
         break;
     case 'getreportdatabygroup':
+        require_capability('mod/interactivevideo:viewreport', $context);
         $groupid = required_param('groupid', PARAM_INT);
         $cmid = required_param('cmid', PARAM_INT);
-        $cxtid = required_param('cxtid', PARAM_INT);
-        echo json_encode(array_values(interactivevideo_util::get_report_data_by_group($cmid, $groupid, $cxtid)));
+        $ctxid = required_param('ctxid', PARAM_INT);
+        echo json_encode(array_values(interactivevideo_util::get_report_data_by_group($cmid, $groupid, $ctxid)));
         break;
     case 'get_log':
+        require_capability('mod/interactivevideo:view', $context);
         $userid = required_param('userid', PARAM_INT);
         $cmid = required_param('cm', PARAM_INT);
         $annotationid = required_param('annotationid', PARAM_INT);
-        $contextid = required_param('contextid', PARAM_INT);
         $log = interactivevideo_util::get_log($userid, $cmid, $annotationid, $contextid);
         echo json_encode($log);
         break;
     case 'get_logs_by_userids':
+        require_capability('mod/interactivevideo:view', $context);
         $userids = required_param('userids', PARAM_TEXT);
         $userids = explode(',', $userids);
         $annotationid = required_param('annotationid', PARAM_INT);
-        $contextid = required_param('contextid', PARAM_INT);
         $log = interactivevideo_util::get_logs_by_userids($userids, $annotationid, $contextid);
         echo json_encode($log);
         break;
     case 'delete_progress_by_id':
+        require_capability('mod/interactivevideo:viewreport', $context);
         $recordid = required_param('recordid', PARAM_INT);
-        $contextid = required_param('contextid', PARAM_INT);
         // Delete completion record.
         $DB->delete_records('interactivevideo_completion', ['id' => $recordid]);
         // Delete logs.
@@ -188,5 +193,37 @@ switch ($action) {
             $DB->delete_records('interactivevideo_log', ['completionid' => $recordid]);
         }
         echo 'deleted';
+        break;
+    case 'get_taught_courses':
+        require_capability('mod/interactivevideo:edit', $context);
+        $userid = required_param('userid', PARAM_INT);
+        $courses = interactivevideo_util::get_taught_courses($userid);
+        echo json_encode($courses);
+        break;
+    case 'get_cm_by_courseid':
+        require_capability('mod/interactivevideo:edit', $context);
+        $courseid = required_param('courseid', PARAM_INT);
+        $cms = interactivevideo_util::get_cm_by_courseid($courseid);
+        echo json_encode($cms);
+        break;
+    case 'import_annotations':
+        require_capability('mod/interactivevideo:edit', $context);
+        $fromcourse = required_param('fromcourse', PARAM_INT);
+        $tocourse = required_param('tocourse', PARAM_INT);
+        $fromcm = required_param('fromcm', PARAM_INT);
+        $tocm = required_param('tocm', PARAM_INT);
+        $module = required_param('module', PARAM_INT);
+        $annotations = required_param('annotations', PARAM_RAW);
+        $annotations = json_decode($annotations, true);
+        $annotations = interactivevideo_util::import_annotations(
+            $fromcourse,
+            $tocourse,
+            $module,
+            $fromcm,
+            $tocm,
+            $annotations,
+            $contextid
+        );
+        echo json_encode($annotations);
         break;
 }

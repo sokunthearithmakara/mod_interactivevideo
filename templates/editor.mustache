@@ -28,7 +28,7 @@ Example context (json):
                     <div id="annotation-canvas">
                         <div id="video-block"
                              class="position-absolute w-100 h-100"
-                             style="z-index: 2"></div>
+                             style="z-index: 1"></div>
                         {{#html5}}
                         <video id="player" class="w-100">
                         </video>
@@ -52,11 +52,12 @@ Example context (json):
                 <div class="text-truncate">
                     <span class="h4 mb-0 text-truncate font-weight-bold">{{title}}</span>
                 </div>
-                <div class="d-flex">
+                <div class="d-flex align-items-center">
                     <div class="btn border-0" id="xp">
                         <span class="font-weight-bold">0</span>
                         <i class="bi bi-star ml-1"></i>
                     </div>
+                    <span class="mx-2 font-weight-bold" title="{{#str}}gradenoun{{/str}}"> / {{grade}}</span>
                 </div>
             </div>
             {{! content item list }}

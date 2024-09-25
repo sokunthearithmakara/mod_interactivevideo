@@ -327,7 +327,7 @@ export default class Annotation extends Base {
          * @param {Number} activeids array of ids of active elements
          */
         const renderTimelineItems = async (elements, activeids) => {
-            const currentTime = self.roundToTwo(await self.player.getCurrentTime());
+            const currentTime = await self.player.getCurrentTime();
             if (activeids === null) {
                 activeids = [];
             } else {
@@ -355,7 +355,7 @@ export default class Annotation extends Base {
                         'cursor': 'move',
                         'grid': [1, 0],
                         'start': function() {
-                            // Get all the selected elements
+                            // Get all the selected elements.
                             if (!$(this).hasClass('active')) {
                                 $(this).trigger('click');
                             }
@@ -784,7 +784,7 @@ export default class Annotation extends Base {
 
                     wrapper.on('shown.bs.popover', async function() {
                         let $body = $(`.popover.id-${id} .popover-body`);
-                        const html = await self.formatContent(prop.content.text, M.cfg.contextid);
+                        const html = await self.formatContent(prop.content.text, annotation.contextid);
                         $body.html(html);
                         notifyFilter($body);
                         wrapper.popover('update');
@@ -813,10 +813,14 @@ export default class Annotation extends Base {
                 if (actives) {
                     actives.forEach((active) => {
                         $videoWrapper.find(`.annotation-wrapper[data-item="${active}"]`).addClass('active');
+                        setTimeout(function() {
+                            $('#timeline #annotation-timeline').find(`.annotation-timeline-item[data-item="${active}"]`)
+                                .addClass('active');
+                        }, 200);
                     });
                 }
             } else {
-                // Sort element by z-index
+                // Sort element by z-index.
                 elements.sort((a, b) => Number(b.position['z-index']) - Number(a.position['z-index']));
                 elements = elements.filter(item => item.properties.start <= self.end && item.properties.end >= self.start);
                 elements.map(item => {
@@ -834,8 +838,6 @@ export default class Annotation extends Base {
 
                     return item;
                 });
-
-
 
                 let count = 0;
                 elements.forEach(async (item) => {
@@ -884,8 +886,12 @@ export default class Annotation extends Base {
                             if (wrapper.width() / wrapper.height() != aspectRatio && (type == 'image')) {
                                 $(this).height((wrapper.width() / aspectRatio));
                             }
-                            $(this).resizable('option', 'aspectRatio', $(this).find('.annotation-content').outerWidth() /
-                                $(this).find('.annotation-content').outerHeight());
+                            try {
+                                $(this).resizable('option', 'aspectRatio', $(this).find('.annotation-content').outerWidth() /
+                                    $(this).find('.annotation-content').outerHeight());
+                            } catch (e) {
+                                // Do nothing.
+                            }
                         });
                     }
 
@@ -1075,6 +1081,7 @@ export default class Annotation extends Base {
                                 handles: "all",
                                 grid: [1, 1],
                                 minHeight: 1,
+                                minWidth: 1,
                                 resize: function(event) {
                                     let type = $(this).data('type');
                                     if (type == 'file' || type == 'navigation' || type == 'textblock') {
@@ -1116,7 +1123,7 @@ export default class Annotation extends Base {
 
                 // Handle behavior for each item
                 if (!self.isEditMode()) {
-                    $videoWrapper.on('click', `.annotation-wrapper`, function(e) {
+                    $videoWrapper.off('click', `.annotation-wrapper`).on('click', `.annotation-wrapper`, function(e) {
                         e.stopImmediatePropagation();
                         let wrapper = $(this);
                         let type = wrapper.data('type');
@@ -1167,7 +1174,7 @@ export default class Annotation extends Base {
                                     $('#annotation-modal').on('shown.bs.modal', async function() {
                                         $('#annotation-modal .modal-body').fadeIn(300);
                                         let $body = $('#annotation-modal .modal-body');
-                                        const html = await self.formatContent(content, M.cfg.contextid);
+                                        const html = await self.formatContent(content, annotation.contextid);
                                         $body.html(html);
                                         notifyFilter($body);
                                     });
@@ -1178,7 +1185,7 @@ export default class Annotation extends Base {
                         }
                     });
 
-                    $playerWrapper.on('click', `.popover-dismiss`, function(e) {
+                    $playerWrapper.off('click', `.popover-dismiss`).on('click', `.popover-dismiss`, function(e) {
                         e.stopImmediatePropagation();
                         $(this).closest('.popover').remove();
                     });
@@ -1368,7 +1375,7 @@ export default class Annotation extends Base {
             renderItems(items, [newItem.id], false);
         };
 
-        $(document).on('click', '.annotation-timeline-item', function(e) {
+        $(document).off('click', '.annotation-timeline-item').on('click', '.annotation-timeline-item', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $videoWrapper.find('.annotation-wrapper').removeClass('active');
@@ -1414,14 +1421,14 @@ export default class Annotation extends Base {
             }
         });
 
-        $(document).on('dblclick', '.annotation-timeline-item', function(e) {
+        $(document).off('dblclick', '.annotation-timeline-item').on('dblclick', '.annotation-timeline-item', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             self.player.seek($(this).data('start'));
             dispatchEvent('timeupdate', {time: $(this).data('start')});
         });
 
-        $playerWrapper.on('click', `#annotation-btns #save`, function(e) {
+        $playerWrapper.off('click', `#annotation-btns #save`).on('click', `#annotation-btns #save`, function(e) {
             e.stopImmediatePropagation();
             getItems(false);
             // Encode html tags
@@ -1688,16 +1695,18 @@ export default class Annotation extends Base {
 
             // Enable ungroup button if the active items are grouped.
             let grouping = activewrapper.map(function() {
+                if (isNaN($(this).data('group')) || $(this).data('group') == '') {
+                    return '';
+                }
                 return $(this).data('group');
             }).get();
 
             grouping = [...new Set(grouping)];
-
             if (activewrapper.length < 2) {
                 $('#annotation-btns #ungroup, #annotation-btns #group').attr('disabled', 'disabled').addClass('d-none');
             } else {
                 if (grouping.length == 1) {
-                    if (grouping[0] == 'undefined') {
+                    if (isNaN(grouping[0]) || grouping[0] == '') {
                         $('#annotation-btns #ungroup').attr('disabled', 'disabled').addClass('d-none');
                         $('#annotation-btns #group').removeAttr('disabled').removeClass('d-none');
                     } else {
@@ -1711,7 +1720,7 @@ export default class Annotation extends Base {
 
         });
 
-        $videoWrapper.on('dblclick', '.annotation-wrapper', function(e) {
+        $videoWrapper.off('dblclick', '.annotation-wrapper').on('dblclick', '.annotation-wrapper', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $(this).trigger('click');
@@ -1845,7 +1854,7 @@ export default class Annotation extends Base {
                 let targetIndex = items.findIndex(x => x.id == item);
                 let target = JSON.parse(JSON.stringify(items[targetIndex]));
                 delete target.position.group;
-                activeItem.attr('data-group', target.position.group);
+                activeItem.attr('data-group', '');
                 items[targetIndex] = target;
             });
             renderItems(items, active, false);
@@ -1913,7 +1922,7 @@ export default class Annotation extends Base {
         });
 
         // Delete the active items
-        $playerWrapper.on('click', `#annotation-btns #delete`, function(e) {
+        $playerWrapper.off('click', `#annotation-btns #delete`).on('click', `#annotation-btns #delete`, function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             let active = $('#edit-btns').attr('data-active');
@@ -1929,7 +1938,7 @@ export default class Annotation extends Base {
         });
 
         // Duplicate the active items.
-        $playerWrapper.on('click', `#annotation-btns #copy`, async function(e) {
+        $playerWrapper.off('click', `#annotation-btns #copy`).on('click', `#annotation-btns #copy`, async function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
             getItems(false);
@@ -1952,12 +1961,10 @@ export default class Annotation extends Base {
                 newItem.position = recalculatingSize(activeItem);
                 if (item.position.group) {
                     newItem.position.group = Number(item.position.group) + groupIncrement;
-                } else {
-                    delete newItem.position.group;
                 }
-                newItem.id = new Date().getTime();
+                newItem.id = new Date().getTime() + i;
                 newItems.push(newItem.id);
-                newItem.position.zIndex = Number(highestOrder) + i + 1;
+                newItem.position['z-index'] = Number(highestOrder) + i + 1;
                 items.push(newItem);
                 renderItems(items, null, false);
                 if (i == active.length - 1) {
@@ -1968,6 +1975,7 @@ export default class Annotation extends Base {
                         getItems(false);
                         document.querySelector('.annotation-wrapper.active').focus();
                         updatePositionInfo($videoWrapper.find(`.annotation-wrapper[data-item="${newItem.id}"]`));
+                        dispatchEvent('timeupdate', {time: currentTime});
                         saveTracking(newItems);
                     }, 500);
                 }

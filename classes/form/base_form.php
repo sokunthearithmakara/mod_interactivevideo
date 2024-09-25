@@ -84,6 +84,7 @@ class base_form extends \core_form\dynamic_form {
         $data->text1 = $this->optional_param('text1', '', PARAM_RAW);
         $data->text2 = $this->optional_param('text2', '', PARAM_RAW);
         $data->text3 = $this->optional_param('text3', '', PARAM_RAW);
+        $data->requiremintime = $this->optional_param('requiremintime', 0, PARAM_INT);
         $advancedsettings = json_decode($this->optional_param('advanced', null, PARAM_RAW));
         $data->visiblebeforecompleted = $advancedsettings->visiblebeforecompleted;
         $data->visibleaftercompleted = $advancedsettings->visibleaftercompleted;
@@ -235,6 +236,15 @@ class base_form extends \core_form\dynamic_form {
         );
         $mform->setType('completiontracking', PARAM_TEXT);
         $mform->setDefault('completiontracking', $default);
+        $mform->addElement(
+            'text',
+            'requiremintime',
+            '<i class="bi bi-clock mr-2"></i>' . get_string('requiremintime', 'mod_interactivevideo')
+        );
+        $mform->setType('requiremintime', PARAM_INT);
+        $mform->setDefault('requiremintime', 0);
+        $mform->addRule('requiremintime', null, 'numeric', null, 'client');
+        $mform->hideIf('requiremintime', 'completiontracking', 'neq', 'manual');
     }
 
     /**
@@ -406,23 +416,10 @@ class base_form extends \core_form\dynamic_form {
      * @return void
      */
     public function render_dropdown($name, $label, $opts, $attributes = []) {
-        global $CFG;
         $mform = &$this->_form;
-        if ($CFG->version < 2024081000) {
-            $mform->addElement('select', $name, $label, $opts, $attributes);
-        } else {
-            $options = new \core\output\choicelist();
-            foreach ($opts as $key => $value) {
-                $options->add_option($key, $value);
-            }
-            // Add the choicedropdown field to the form.
-            $mform->addElement(
-                'choicedropdown',
-                $name,
-                $label,
-                $options,
-            );
-        }
+        // Originally, we wanted to use the new dropdown in 4.4, but it looks ugly, so we'll stick with the old one.
+        // Keeping it here now in case we want to switch back.
+        $mform->addElement('select', $name, $label, $opts, $attributes);
     }
 
     /**

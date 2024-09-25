@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace ivplugin_contentbank;
+
 use core_contentbank\contentbank;
+
 /**
  * Class main
  *
@@ -98,5 +100,85 @@ class main extends \ivplugin_richtext\main {
         });
 
         return $contents;
+    }
+
+    /**
+     * Copies interactive video data from one course module to another.
+     *
+     * @param int $fromcourse The ID of the source course.
+     * @param int $tocourse The ID of the destination course.
+     * @param int $fromcm The ID of the source course module.
+     * @param int $tocm The ID of the destination course module.
+     * @param mixed $annotation Additional annotation or metadata for the copy process.
+     * @param int $oldcontextid The ID of the old context.
+     * @return mixed
+     */
+    public function copy($fromcourse, $tocourse, $fromcm, $tocm, $annotation, $oldcontextid) {
+        global $DB;
+        $newcoursecontext = \context_course::instance($tocourse);
+        $annotation = parent::copy($fromcourse, $tocourse, $fromcm, $tocm, $annotation, $oldcontextid);
+        if ($fromcourse == $tocourse) {
+            return $annotation;
+        }
+        // Copy content bank item to the destination course using contentid from annotation.
+        try {
+            $record = $DB->get_record('contentbank_content', ['id' => $annotation->contentid], '*', MUST_EXIST);
+            $cb = new contentbank();
+            $content = $cb->get_content_from_id($record->id);
+            $contenttype = $content->get_content_type_instance();
+            $context = \context::instance_by_id($record->contextid, MUST_EXIST);
+            // Check capability.
+            if ($contenttype->can_copy($content)) {
+
+                // This content can be copied.
+                $crecord = $content->get_content();
+                unset($crecord->id);
+                $crecord->contextid = $newcoursecontext->id; // Change the context to the destination course.
+
+                if ($content = $contenttype->create_content($crecord)) {
+                    $handler = \core_contentbank\customfield\content_handler::create();
+                    $handler->instance_form_before_set_data($record);
+                    $record->id = $content->get_id();
+                    $handler->instance_form_save($record);
+
+                    $fs = get_file_storage();
+                    $files = $fs->get_area_files($context->id, 'contentbank', 'public', $annotation->contentid, 'itemid, filepath,
+                        filename', false);
+                    if (!empty($files)) {
+                        $file = reset($files);
+                        $content->import_file($file);
+                    }
+                    $id = $content->get_id();
+                    $annotation->contentid = $id;
+
+                    // Update the annotation with the new contentid.
+                    $DB->update_record('interactivevideo_items', $annotation);
+
+                    // Change the context of the content.
+                    $content->set_contextid($newcoursecontext->id);
+                } else {
+                    $warnings[] = [
+                        'item' => $annotation->contentid,
+                        'warningcode' => 'contentnotcopied',
+                        'message' => get_string('contentnotcopied', 'core_contentbank'),
+                    ];
+                }
+            } else {
+                // The user has no permission to manage this content.
+                $warnings[] = [
+                    'item' => $annotation->contentid,
+                    'warningcode' => 'nopermissiontomanage',
+                    'message' => get_string('nopermissiontocopy', 'core_contentbank'),
+                ];
+            }
+        } catch (\moodle_exception $e) {
+            // The content or the context don't exist.
+            $warnings[] = [
+                'item' => $annotation->contentid,
+                'warningcode' => 'exception',
+                'message' => $e->getMessage(),
+            ];
+        }
+        return $annotation;
     }
 }

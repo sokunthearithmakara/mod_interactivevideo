@@ -23,7 +23,7 @@ namespace ivplugin_htmlviewer;
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class form extends \ivplugin_pdfviewer\form {
+class form extends \mod_interactivevideo\form\base_form {
     /**
      * Sets data for dynamic submission
      * @return void
@@ -57,6 +57,26 @@ class form extends \ivplugin_pdfviewer\form {
             $data->hascompletion = 1;
         }
         return $data;
+    }
+
+    /**
+     * Process dynamic submission
+     *
+     * @return void
+     */
+    public function process_dynamic_submission() {
+        $fromform = parent::process_dynamic_submission();
+
+        $draftitemid = $fromform->content;
+        file_save_draft_area_files(
+            $draftitemid,
+            $fromform->contextid,
+            'mod_interactivevideo',
+            'content',
+            $fromform->id,
+        );
+
+        return $fromform;
     }
 
     /**

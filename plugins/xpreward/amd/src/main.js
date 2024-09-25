@@ -46,13 +46,13 @@ export default class XpReward extends Base {
 
     postContentRender(annotation) {
         var self = this;
-        $(document).on('click', `#message[data-id='${annotation.id}'] #xpreward`, function(e) {
-            e.preventDefault();
-            $(this).find('button').prop('disabled', true);
-            $(this).find('button').text(M.util.get_string('claimedxp', 'ivplugin_xpreward', annotation.xp));
-
-            self.toggleCompletion(annotation.id, 'mark-done', 'automatic');
-        });
+        $(document).off('click', `#message[data-id='${annotation.id}'] #xpreward`)
+            .on('click', `#message[data-id='${annotation.id}'] #xpreward`, function(e) {
+                e.preventDefault();
+                $(this).find('button').prop('disabled', true);
+                $(this).find('button').text(M.util.get_string('claimedxp', 'ivplugin_xpreward', annotation.xp));
+                self.toggleCompletion(annotation.id, 'mark-done', 'automatic');
+            });
     }
 
     /**

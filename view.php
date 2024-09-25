@@ -33,6 +33,8 @@ $moment = optional_param('t', 0, PARAM_INT);
 // Activity instance id.
 $i = optional_param('i', 0, PARAM_INT);
 $iframe = optional_param('iframe', 0, PARAM_INT);
+$embed = optional_param('embed', 0, PARAM_INT);
+$preview = optional_param('preview', 0, PARAM_INT);
 if ($id) {
     $cm = get_coursemodule_from_id('interactivevideo', $id, 0, false, MUST_EXIST);
     $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
@@ -60,8 +62,23 @@ if ($moduleinstance->displayoptions) {
     $moduleinstance->displayoptions = [];
 }
 
+if (!isset($moduleinstance->displayoptions['distractionfreemode'])) {
+    $moduleinstance->displayoptions['distractionfreemode'] = 1;
+}
+
 if ($iframe) {
     $moduleinstance->displayoptions['darkmode'] = 0;
+    $moduleinstance->displayoptions['distractionfreemode'] = 1;
+    $PAGE->add_body_class($class = 'iframe mobiletheme');
+}
+
+if ($embed) {
+    $PAGE->add_body_class($class = 'embed-mode');
+    $moduleinstance->displayoptions['distractionfreemode'] = 1;
+}
+
+if ($preview) {
+    $PAGE->add_body_class($class = 'preview-mode');
 }
 
 // Prepare strings for js files using string manager.
@@ -102,10 +119,6 @@ if ($moduleinstance->displayoptions['darkmode']) {
     $PAGE->add_body_class('darkmode bg-dark');
 }
 
-if ($iframe) {
-    $PAGE->add_body_class($class = 'iframe mobiletheme');
-}
-
 if (isset($moduleinstance->displayoptions['theme']) && $moduleinstance->displayoptions['theme'] != '') {
     $PAGE->force_theme($moduleinstance->displayoptions['theme']);
 }
@@ -122,8 +135,13 @@ if ($CFG->version < 2024081000) {
         $completion = $OUTPUT->render_from_template('core_course/activity_info', $activitycompletiondata);
     }
 }
+if ($moduleinstance->displayoptions['distractionfreemode']) {
+    $PAGE->activityheader->disable();
+    $PAGE->set_pagelayout('embedded');
+} else {
+    $PAGE->add_body_class('default-mode');
+}
 
-$PAGE->activityheader->disable();
 $PAGE->set_url('/mod/interactivevideo/view.php', [
     'id' => $cm->id,
     't' => $moment,
@@ -135,7 +153,6 @@ $PAGE->set_url('/mod/interactivevideo/view.php', [
 $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($moduleinstance->name));
 $PAGE->set_context($modulecontext);
-$PAGE->set_pagelayout('embedded');
 
 $endcontent = file_rewrite_pluginfile_urls(
     $moduleinstance->endscreentext,
@@ -204,7 +221,14 @@ $renderer = $PAGE->get_renderer('core');
 $primarymenu = $primary->export_for_template($renderer);
 
 // Display page navigation.
-if (!$iframe) {
+$rendernav = true;
+if (!$moduleinstance->displayoptions['distractionfreemode']) {
+    $rendernav = false;
+}
+if ($iframe || $embed) {
+    $rendernav = false;
+}
+if ($rendernav) {
     $datafortemplate = [
         "darkmode" => $moduleinstance->displayoptions['darkmode'] == '1',
         "returnurl" => new moodle_url('/course/view.php', ['id' => $course->id]),
@@ -245,6 +269,7 @@ $datafortemplate = [
     "html5" => $moduleinstance->type == 'html5video' ? true : false,
     "title" => format_string($moduleinstance->name),
     "displayoptions" => $moduleinstance->displayoptions,
+    "posterimage" => $moduleinstance->posterimage,
 ];
 
 echo $OUTPUT->render_from_template('mod_interactivevideo/player', $datafortemplate);
@@ -254,7 +279,7 @@ $PAGE->requires->js_call_amd('mod_interactivevideo/viewannotation', 'init', [
     $cm->id, // Course module id from coursemodule table.
     $cm->instance, // Activity id from interactivevideo table.
     $course->id,
-    $USER->id,
+    $preview ? 1 : $USER->id, // User id.
     $moduleinstance->start,
     $moduleinstance->end,
     $moduleinstance->completionpercentage, // Completion condition percentage.

@@ -19,7 +19,8 @@ Example context (json):
 }
 }}
 <div id="interactivevideo-container"
-     class="container-fluid {{#darkmode}}p-sm-3{{/darkmode}} {{^darkmode}}p-sm-3{{/darkmode}} alternative position-absolute">
+     class="container-fluid {{#darkmode}}p-sm-3{{/darkmode}} {{^darkmode}}p-sm-3{{/darkmode}} alternative
+      {{#displayoptions.distractionfreemode}}position-absolute{{/displayoptions.distractionfreemode}}">
     <div class="row justify-content-center mx-0">
         <div class="col-12 px-0">
             <div id="wrapper" class="position-relative mx-auto" style="width: calc((-125px - 2.5rem + 100dvh)* 1.78);">
@@ -79,17 +80,17 @@ Example context (json):
 {{/displayasstartscreen}}
 {{^displayasstartscreen}}
 <div id="start-screen"
-     class="w-100 position-absolute h-100 {{^html5}}bg-transparent{{/html5}} bottom-0">
+     class="w-100 position-absolute h-100 {{^html5}}bg-transparent{{/html5}} bottom-0" {{#posterimage}}style="background: url({{{posterimage}}}) center center / cover no-repeat;"{{/posterimage}}>
     <div class="intro-content d-flex align-items-center justify-content-center position-absolute w-100">
-        <div id="spinner" class="spinner-grow text-secondary" role="status">
-            <span class="sr-only">Loading...</span>
-        </div>
     </div>
     <div id="video-info"
-         class="p-3 text-white w-100 h-100 position-absolute align-items-start flex-column justify-content-between d-none">
+         class="p-3 text-white w-100 h-100 position-absolute align-items-start flex-column justify-content-between">
         <div class="mb-2 d-flex flex-column">
             <div class="metadata d-block d-md-none"></div>
             <span class="h1 text-white font-weight-bold line-height-100">{{title}}</span>
+        </div>
+        <div id="spinner" class="spinner-grow text-secondary position-absolute" role="status" style="left: calc(50% - 20px); top: calc(50% - 20px);">
+            <span class="sr-only">Loading...</span>
         </div>
         <button class="btn bg-white rounded-circle d-none position-absolute pulse"
                 id="play">

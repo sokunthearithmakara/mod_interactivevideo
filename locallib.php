@@ -72,6 +72,8 @@ class interactivevideo_util {
         $record = $DB->get_record('interactivevideo_items', ['id' => $id]);
         $record->timestamp = $record->timestamp + 0.01;
         $record->title = $record->title . ' (' . get_string('copynoun', 'mod_interactivevideo') . ')';
+        $record->timestamp = $record->timestamp + 0.01;
+        $record->title = $record->title . ' (' . get_string('copynoun', 'mod_interactivevideo') . ')';
         $record->id = $DB->insert_record('interactivevideo_items', $record);
         // Handle related files "content" field.
         require_once($CFG->libdir . '/filelib.php');
@@ -104,11 +106,12 @@ class interactivevideo_util {
      *
      * @param int $interactivevideo
      * @param int $userid
+     * @param bool $preview
      * @return stdClass
      */
-    public static function get_progress($interactivevideo, $userid) {
+    public static function get_progress($interactivevideo, $userid, $preview = false) {
         global $DB;
-        if ($userid == 1) {
+        if ($userid == 1 || $preview) {
             global $SESSION;
             $progress = $SESSION->ivprogress;
             if (!isset($progress)) {
@@ -121,6 +124,10 @@ class interactivevideo_util {
                     'cmid' => $interactivevideo,
                     'completeditems' => '',
                     'xp' => 0,
+                    'completionid' => 0,
+                    'completionpercentage' => 0,
+                    'userid' => $userid,
+                    'completiondetails' => '',
                 ];
             }
             return $SESSION->ivprogress[$interactivevideo];
@@ -140,18 +147,23 @@ class interactivevideo_util {
         return $record;
     }
 
+
     /**
-     * Save progress data.
+     * Save the progress of an interactive video for a user.
      *
-     * @param int $interactivevideo
-     * @param int $userid
-     * @param mixed $completeditems
-     * @param int $completed
-     * @param int $percentage
-     * @param int $grade
-     * @param int $gradeiteminstance
-     * @param int $xp
-     * @return mixed
+     * @param int $interactivevideo The ID of the interactive video.
+     * @param int $userid The ID of the user.
+     * @param int $completeditems The number of completed items.
+     * @param string $completiondetails JSON encoded string of completion details.
+     * @param bool $markdone Whether to mark the item as done.
+     * @param string $type The type of the interactive video.
+     * @param string $details Additional details (optional).
+     * @param int $completed Whether the interactive video is completed (optional, default is 0).
+     * @param float $percentage The completion percentage (optional, default is 0).
+     * @param float $grade The grade achieved (optional, default is 0).
+     * @param int $gradeiteminstance The grade item instance (optional, default is 0).
+     * @param int $xp The experience points earned (optional, default is 0).
+     * @return stdClass The updated progress record.
      */
     public static function save_progress(
         $interactivevideo,
@@ -170,19 +182,38 @@ class interactivevideo_util {
         global $DB, $CFG, $SESSION;
         // If guess user, save progress in the session; otherwise in the database.
         if ($userid == 1) {
-            $SESSION->ivprogress[$interactivevideo] = [
+            // First get the progress from the session.
+            $progress = [
                 'cmid' => $interactivevideo,
                 'completeditems' => $completeditems,
                 'completed' => $completed,
-                'percentage' => $percentage,
+                'completionpercentage' => $percentage,
                 'xp' => $xp,
-                'completiondetails' => $completiondetails,
+                'userid' => $userid,
+                'completionid' => 0,
             ];
+            $currentprogress = $SESSION->ivprogress[$interactivevideo];
+            if ($currentprogress) {
+                $completion = json_decode($completiondetails);
+                $cdetails = $currentprogress['completiondetails'];
+                $cdetails = json_decode($cdetails);
+                if ($markdone) {
+                    $cdetails[] = $completiondetails;
+                } else {
+                    // Remove the detail item with the same id.
+                    $cdetails = array_filter($cdetails, function ($item) use ($completion) {
+                        $item = json_decode($item);
+                        return $item->id != $completion->id;
+                    });
+                }
+                $progress['completiondetails'] = json_encode($cdetails);
+            }
+            $SESSION->ivprogress[$interactivevideo] = $progress;
             return $SESSION->ivprogress[$interactivevideo];
         }
         $record = $DB->get_record('interactivevideo_completion', ['cmid' => $interactivevideo, 'userid' => $userid]);
         $record->completeditems = $completeditems;
-        $record->timecompleted = $completed;
+        $record->timecompleted = $completed ? time() : 0;
         $record->completionpercentage = $percentage;
         $record->xp = $xp;
         $completion = json_decode($completiondetails);
@@ -197,7 +228,39 @@ class interactivevideo_util {
             });
         }
         $record->completiondetails = json_encode($cdetails);
+        $completion = json_decode($completiondetails);
+        $cdetails = json_decode($record->completiondetails);
+        if ($markdone) {
+            $cdetails[] = $completiondetails;
+        } else {
+            // Remove the detail item with the same id.
+            $cdetails = array_filter($cdetails, function ($item) use ($completion) {
+                $item = json_decode($item);
+                return $item->id != $completion->id;
+            });
+        }
+        $record->completiondetails = json_encode($cdetails);
         $DB->update_record('interactivevideo_completion', $record);
+
+        // Add/delete details to interactivevideo_log table.
+        if (!$markdone) {
+            $DB->delete_records_select('interactivevideo_log', "annotationid = :annotationid AND userid = :userid", [
+                'annotationid' => $completion->id,
+                'userid' => $userid,
+            ]);
+        } else {
+            if ($completion->hasDetails) {
+                $log = new stdClass();
+                $log->userid = $userid;
+                $log->cmid = $interactivevideo;
+                $log->char1 = $type;
+                $log->annotationid = $completion->id;
+                $log->timecreated = time();
+                $log->text1 = $details;
+                $log->timemodified = time();
+                $DB->insert_record('interactivevideo_log', $log);
+            }
+        }
 
         // Add/delete details to interactivevideo_log table.
         if (!$markdone) {
@@ -265,6 +328,7 @@ class interactivevideo_util {
             // Get all enrolled users (student only).
             $sql = "SELECT " . $fields . ", ac.timecompleted, ac.timecreated,
              ac.completionpercentage, ac.completeditems, ac.xp, ac.completiondetails, ac.id as completionid
+             ac.completionpercentage, ac.completeditems, ac.xp, ac.completiondetails, ac.id as completionid
                     FROM {user} u
                     LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
                     WHERE u.id IN (SELECT userid FROM {role_assignments} WHERE contextid = :contextid AND roleid = 5)
@@ -273,6 +337,7 @@ class interactivevideo_util {
         } else {
             // Get users in group (student only).
             $sql = "SELECT " . $fields . ", ac.timecompleted, ac.timecreated,
+             ac.completionpercentage, ac.completeditems, ac.xp, ac.completiondetails, ac.id as completionid
              ac.completionpercentage, ac.completeditems, ac.xp, ac.completiondetails, ac.id as completionid
                     FROM {user} u
                     LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
@@ -356,7 +421,7 @@ class interactivevideo_util {
      */
     public static function quick_edit_field($id, $field, $value, $contextid, $olddraftitemid = 0) {
         global $DB, $PAGE, $CFG;
-        $context = context::instance_by_id($contextid);
+        $context = \context::instance_by_id($contextid);
         $PAGE->set_context($context);
         if ($field == 'content') { // Inline annnotation contenttype.
             require_once($CFG->libdir . '/filelib.php');
@@ -401,7 +466,6 @@ class interactivevideo_util {
      */
     public static function file_remove_editor_orphaned_files($draftid, $text) {
         global $CFG, $USER;
-
         // Find those draft files included in the text, and generate their hashes.
         $context = context_user::instance($USER->id);
         $baseurl = $CFG->wwwroot . '/draftfile.php/' . $context->id . '/user/draft/' . $draftid . '/';
@@ -542,5 +606,104 @@ class interactivevideo_util {
             );
         }
         return array_values($records);
+    }
+
+    /**
+     * Get taught courses
+     * @param int $userid
+     */
+    public static function get_taught_courses($userid) {
+        global $DB, $PAGE;
+        $PAGE->set_context(context_system::instance());
+        // Get all courses where the user is a teacher.
+        $sql = "SELECT c.id, c.fullname, c.shortname FROM {course} c
+                JOIN {context} ctx ON c.id = ctx.instanceid AND ctx.contextlevel = 50
+                JOIN {role_assignments} ra ON ra.contextid = ctx.id
+                JOIN {role} r ON ra.roleid = r.id
+                WHERE ra.userid = :userid AND r.shortname = 'editingteacher'";
+        if (is_siteadmin($userid)) {
+            $sql = "SELECT c.id, c.fullname, c.shortname FROM {course} c WHERE c.id > 1 ORDER BY c.fullname ASC";
+        }
+        $courses = $DB->get_records_sql($sql, ['userid' => $userid]);
+        if (!$courses) {
+            return [];
+        }
+        // Format string on fullname.
+        $courses = array_map(function ($course) {
+            $course->fullname = format_string($course->fullname);
+            return $course;
+        }, $courses);
+
+        return array_values($courses);
+    }
+
+    /**
+     * Retrieves the course module by course ID.
+     *
+     * @param int $courseid The ID of the course.
+     * @return object|null The course module object if found, null otherwise.
+     */
+    public static function get_cm_by_courseid($courseid) {
+        global $DB, $PAGE;
+        $PAGE->set_context(context_system::instance());
+        $cms = $DB->get_records('interactivevideo', ['course' => $courseid], 'name DESC', 'id, name');
+        if (!$cms) {
+            return [];
+        }
+        $cms = array_map(function ($cm) {
+            $cm->name = format_string($cm->name);
+            return $cm;
+        }, $cms);
+        return array_values($cms);
+    }
+
+    /**
+     * Get annotations by course
+     * @param int $courseid
+     */
+    public static function get_annotations_by_course($courseid) {
+        global $DB;
+        $sql = "SELECT * FROM {interactivevideo_items} WHERE courseid = :courseid";
+        return $DB->get_records_sql($sql, ['courseid' => $courseid]);
+    }
+
+    /**
+     * Import annotations
+     * @param int $fromcourse
+     * @param int $tocourse
+     * @param int $module
+     * @param int $fromcm
+     * @param int $tocm
+     * @param array $annotations
+     * @param int $contextid
+     */
+    public static function import_annotations($fromcourse, $tocourse, $module, $fromcm, $tocm, $annotations, $contextid) {
+        global $DB, $PAGE;
+        // Get the old context from cmid field.
+        $annotation = (object) $annotations[0];
+        $oldcontextid = $annotation->contextid;
+        $PAGE->set_context(context::instance_by_id($contextid));
+        $copied = [];
+        foreach ($annotations as $annotation) {
+            $annotation = (object) $annotation;
+            $annotation->courseid = $tocourse;
+            $annotation->annotationid = $tocm;
+            $annotation->cmid = $module;
+            $annotation->oldid = $annotation->id;
+            $annotation->id = null;
+            $annotation->timecreated = time();
+            $annotation->timemodified = time();
+            $annotation->contextid = $contextid;
+            $annotation->id = $DB->insert_record('interactivevideo_items', $annotation);
+            $prop = json_decode($annotation->prop);
+            $class = $prop->class;
+            if (class_exists($class)) {
+                $contenttype = new $class($annotation);
+                $annotation = $contenttype->copy($fromcourse, $tocourse, $fromcm, $tocm, $annotation, $oldcontextid);
+            }
+            $annotation->formattedtitle = format_string($annotation->title);
+            $copied[] = $annotation;
+        }
+        return $copied;
     }
 }

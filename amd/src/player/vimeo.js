@@ -118,6 +118,10 @@ class Vimeo {
             player.on('bufferend', function() {
                 dispatchEvent('iv:playerPlaying');
             });
+
+            player.on('ended', function() {
+                dispatchEvent('iv:playerEnded');
+            });
         };
         if (!VimeoPlayer) {
             require(['https://player.vimeo.com/api/player.js'], function(Player) {

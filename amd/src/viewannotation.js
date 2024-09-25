@@ -78,7 +78,7 @@ define([
         const completedAnnos = completableAnno
             .filter(x => x.completed);
 
-        const xpEarned = completedAnnos.map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
+        const xpEarned = completedAnnos.map(x => Number(x.earned)).reduce((a, b) => a + b, 0);
 
         $(".metadata").empty();
         $(".metadata").append(`<span class="d-inline-block mr-3">
@@ -139,7 +139,7 @@ define([
          * Initialize the view annotation on page loads.
          * @param {string} url - The video url.
          * @param {number} cmid - The course module id.
-         * @param {number} interaction - The interaction id.
+         * @param {number} interaction - Interactive video instance.
          * @param {number} course - The course id.
          * @param {number} userid - The user id.
          * @param {number} start - The start time of the video.
@@ -234,7 +234,9 @@ define([
                         id: interaction,
                         uid: userid,
                         token: token,
-                        cmid: cmid
+                        cmid: cmid,
+                        contextid: M.cfg.contextid,
+                        previewmode: $('body').hasClass('preview-mode') ? 1 : 0
                     }
                 });
 
@@ -247,7 +249,8 @@ define([
                         action: 'getallcontenttypes',
                         sesskey: M.cfg.sesskey,
                         token: token,
-                        cmid: cmid
+                        cmid: cmid,
+                        contextid: M.cfg.contextid
                     }
                 });
 
@@ -256,9 +259,9 @@ define([
                     progress = JSON.parse(progress[0]);
                     contentTypes = JSON.parse(ct[0]);
                     completionid = progress.id;
-
+                    let completiondetails = JSON.parse(progress.completiondetails || '[]');
                     annotations = filterAnnotations(annotations, contentTypes, start, end);
-                    annotations = processAnnotations(annotations, contentTypes, progress, start, end);
+                    annotations = processAnnotations(annotations, contentTypes, progress, start, end, completiondetails);
                     annotations.sort((a, b) => a.timestamp - b.timestamp);
 
                     releventAnnotations = getRelevantAnnotations(annotations, start, end, contentTypes);
@@ -315,14 +318,21 @@ define([
                  * @param {Object} progress - The progress object containing completed items.
                  * @param {number} start - The start time of the segment.
                  * @param {number} end - The end time of the segment.
+                 * @param {Object} completiondetails - The completion details object.
                  * @returns {Array} - The processed list of annotations.
                  */
-                function processAnnotations(annotations, contentTypes, progress, start, end) {
+                function processAnnotations(annotations, contentTypes, progress, start, end, completiondetails) {
                     const completedItems = progress.completeditems == '' ? [] : JSON.parse(progress.completeditems);
                     const contentTypeMap = new Map(contentTypes.map(ct => [ct.name, ct]));
                     return annotations.map(annotation => {
                         annotation.timestamp = Number(annotation.timestamp);
                         annotation.xp = Number(annotation.xp);
+                        const completionitem = completiondetails.find(x => JSON.parse(x).id == annotation.id);
+                        if (completionitem) {
+                            annotation.earned = Number(JSON.parse(completionitem).xp);
+                        } else {
+                            annotation.earned = 0;
+                        }
                         if (annotation.type == 'skipsegment') {
                             annotation.title = Number(annotation.title);
                             if (annotation.timestamp < start && annotation.title > start) {
@@ -544,11 +554,6 @@ define([
                     $('#changequality').removeClass('d-none');
                 }
 
-                if (player.posterImage) {
-                    $('#video-wrapper #start-screen').css({
-                        'background': `url(${player.posterImage}) no-repeat center center / cover`,
-                    });
-                }
                 $(".video-block").css('background', 'transparent');
                 const duration = await player.getDuration();
                 end = !end ? duration : Math.min(end, duration);
@@ -564,12 +569,24 @@ define([
                 }
                 $("#video-wrapper").css('padding-bottom', (1 / ratio) * 100 + '%');
                 let gap = '125px';
-                if (displayoptions.hidemainvideocontrols == 1) {
-                    gap = '70px';
+                if ($("body").hasClass('embed-mode')) {
+                    if (displayoptions.hidemainvideocontrols == 1) {
+                        $("#wrapper").css({
+                            'width': 'calc(100dvh * ' + ratio + ')'
+                        });
+                    } else {
+                        $("#wrapper").css({
+                            'width': 'calc((100dvh - 55px) * ' + ratio + ')'
+                        });
+                    }
+                } else {
+                    if (displayoptions.hidemainvideocontrols == 1) {
+                        gap = '55px';
+                    }
+                    $("#wrapper").css({
+                        'width': 'calc((100dvh - ' + gap + ' - 3rem) * ' + ratio + ')'
+                    });
                 }
-                $("#wrapper").css({
-                    'width': 'calc((100dvh - ' + gap + ' - 2.5rem) * ' + ratio + ')'
-                });
                 $('#start-screen #start').focus();
 
                 $('#seekhead').draggable({
@@ -705,6 +722,7 @@ define([
             };
 
             let interval;
+            let visualized = false;
             /**
              * Handles the 'playing' event of the video player.
              * This function is triggered when the video is playing and performs various actions such as:
@@ -718,10 +736,14 @@ define([
              * @function onPlaying
              * @returns {Promise<void>} A promise that resolves when the function completes.
              */
-            const onPlaying = () => { // Use with player timeupdate event.
+            const onPlaying = () => {
                 // Reset the annotation content.
                 if (!playerReady) {
                     return;
+                }
+                if (player.audio && !visualized) {
+                    player.visualizer();
+                    visualized = true;
                 }
                 if ($('body').hasClass('mobiletheme') && !$('#wrapper').hasClass('fullscreen')) {
                     $("#fullscreen").trigger('click');
@@ -752,6 +774,7 @@ define([
                         return;
                     }
 
+                    // Make sure wistia is not muted.
                     if ($('#mute i').hasClass('bi-volume-up') && player.type == 'wistia') {
                         player.unMute();
                     }
@@ -771,14 +794,13 @@ define([
                     if (theAnnotation) {
                         $('#interactions-nav .annotation[data-id="' + theAnnotation.id + '"] .item').trigger('mouseover')
                             .addClass('active');
-
                         setTimeout(function() {
                             $('#interactions-nav .annotation[data-id="' + theAnnotation.id + '"] .item')
                                 .trigger('mouseout').removeClass('active');
                         }, 2000);
                         if (!theAnnotation.completed || theAnnotation.rerunnable) {
                             player.pause();
-                            await player.seek(theAnnotation.timestamp); // Pause after the timestamp.
+                            await player.seek(theAnnotation.timestamp);
                             player.pause();
                             $('#video-nav #progress')
                                 .css('width', (theAnnotation.timestamp - start) / totaltime * 100 + '%');
@@ -845,7 +867,7 @@ define([
                 e.stopImmediatePropagation();
                 const id = $(this).data('id');
                 const annotation = releventAnnotations.find(x => x.id == id);
-                $(this).closest('#message').find("#content").empty();
+                $(this).closest('#message').remove();
                 runInteraction(annotation, true);
             });
 
@@ -902,11 +924,13 @@ define([
             });
 
             // Pause video when the tab is not visible.
-            $(document).on('visibilitychange', function() {
-                if (document.visibilityState == 'hidden') {
-                    player.pause();
-                }
-            });
+            if (displayoptions.pauseonblur && displayoptions.pauseonblur == 1) {
+                $(document).on('visibilitychange', function() {
+                    if (document.visibilityState == 'hidden') {
+                        player.pause();
+                    }
+                });
+            }
 
             // Handle player size change event.
             $(document).on('click', '#controller #expand', function(e) {
@@ -1159,6 +1183,8 @@ define([
             });
 
             $(document).on('iv:playerPaused', function() {
+                // Remove the tooltip.
+                $('.tooltip').remove();
                 onPaused();
             });
 
@@ -1208,6 +1234,15 @@ define([
                     $videoNav.addClass('no-click');
                 }
             });
+
+            if ($("body").hasClass('mobiletheme')) {
+                $('[data-toggle="tooltip"]').on('click', function() {
+                    var $this = $(this);
+                    setTimeout(function() {
+                        $this.tooltip('hide');
+                    }, 2000); // Hide after 3 seconds
+                });
+            }
 
             if ($("body").hasClass('mobiletheme')) {
                 $('[data-toggle="tooltip"]').on('click', function() {

@@ -82,6 +82,7 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
         $data->courseid = $this->get_courseid();
         $data->cmid = $this->task->get_moduleid();
         $data->annotationid = $this->get_new_parentid('interactivevideo');
+        $data->contextid = $this->task->get_contextid();
         // Let's deal with content bank content. If contentid is not null or not yet added to the mapping, we need to add it.
         if ($data->contentid) {
             $filecontenthash = $data->cbfilecontenthash;
@@ -152,7 +153,7 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
                 $newcompletionitems[] = strval($newitemid);
                 // Get completion details for this item and assign a new id using array filter.
                 $cdetails = array_filter($oldcompletiondetails, function ($cdetails) use ($olditemid) {
-                    // cdetails is a string, so we need to convert it to an object.
+                    // The cdetails var is a string, so we need to convert it to an object.
                     $cdetails = json_decode($cdetails);
                     return $cdetails->id == $olditemid;
                 });

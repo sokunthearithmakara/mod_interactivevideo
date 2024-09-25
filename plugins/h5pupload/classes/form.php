@@ -23,7 +23,7 @@ namespace ivplugin_h5pupload;
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class form extends \ivplugin_pdfviewer\form {
+class form extends \mod_interactivevideo\form\base_form {
     /**
      * Sets data for dynamic submission
      * @return void
@@ -58,7 +58,10 @@ class form extends \ivplugin_pdfviewer\form {
         } else {
             $data->hascompletion = 1;
         };
-
+        // If the completion tracking is set to none, manual, or view, then the partial points should be 0.
+        if (in_array($data->completiontracking, ['none', 'manual', 'view'])) {
+            $data->char1 = 0;
+        }
         return $data;
     }
 
@@ -103,8 +106,37 @@ class form extends \ivplugin_pdfviewer\form {
         ]);
         $this->xp_form_field();
         $mform->hideIf('xp', 'completiontracking', 'eq', 'none');
+        $mform->addElement(
+            'advcheckbox',
+            'char1',
+            '',
+            get_string('awardpartialpoints', 'mod_interactivevideo'),
+            ['group' => 1],
+            [0, 1]
+        );
+        $mform->hideIf('char1', 'completiontracking', 'in', ['none', 'manual', 'view']);
+        $mform->disabledIf('char1', 'xp', 'eq', 0);
         $this->display_options_field();
         $this->advanced_form_fields(true, true, true, true);
         $this->close_form();
+    }
+
+    /**
+     * Process dynamic submission
+     *
+     * @return void
+     */
+    public function process_dynamic_submission() {
+        $fromform = parent::process_dynamic_submission();
+        $draftitemid = $fromform->content;
+        file_save_draft_area_files(
+            $draftitemid,
+            $fromform->contextid,
+            'mod_interactivevideo',
+            'content',
+            $fromform->id,
+        );
+
+        return $fromform;
     }
 }

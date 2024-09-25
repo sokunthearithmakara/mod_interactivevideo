@@ -123,7 +123,7 @@ class video_upload_form extends \core_form\dynamic_form {
             'maxbytes'       => $PAGE->course->maxbytes,
             'subdirs'        => 0,
             'maxfiles'       => 1,
-            'accepted_types' => ['html_video'],
+            'accepted_types' => ['html_video', 'html_audio'],
         ];
         return $filemanageroptions;
     }

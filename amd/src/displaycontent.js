@@ -33,13 +33,13 @@ import {dispatchEvent} from 'core/event_dispatcher';
 const renderContent = async function(annotation, format = 'html') {
     const annotationArgs = {
         ...annotation,
-        contextid: M.cfg.contextid
+        contextid: annotation.contextid
     };
     let fragment;
     try {
-        fragment = await Fragment.loadFragment('mod_interactivevideo', 'getcontent', M.cfg.contextid, annotationArgs);
+        fragment = await Fragment.loadFragment('mod_interactivevideo', 'getcontent', annotation.contextid, annotationArgs);
     } catch (error) {
-        throw new Error('Failed to load fragment content');
+        throw new Error(JSON.stringify(error));
     }
     if (format === 'html') {
         return fragment;
@@ -98,23 +98,32 @@ const formatText = async function(text, shorttext = false) {
  */
 const defaultDisplayContent = async function(annotation, player) {
     const isDarkMode = $('body').hasClass('darkmode');
+
     // Play pop sound
     const audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
     audio.play();
+
     let displayoptions = annotation.displayoptions;
-    if ($('body').hasClass('mobiletheme')) {
+
+    // If the theme is mobile, display the message as a popup.
+    if ($('body').hasClass('mobiletheme') || $('body').hasClass('embed-mode')) {
         displayoptions = 'popup';
     }
+
     // If the wrapper is in fullscreen mode, display the message inline (on top of the video).
     if ($('#wrapper').hasClass('fullscreen')) {
         displayoptions = 'inline';
     }
 
+    // Add completion button if the annotation has completion criteria.
     let completionbutton = "";
+    // Display the xp badge conditionally.
     if (annotation.hascompletion == 1 && annotation.xp > 0) {
-        completionbutton += `<span class="badge
-         ${annotation.completed ? 'alert-success' : 'badge-secondary'} mr-2">${annotation.xp} XP</span>`;
+        const earned = annotation.earned == annotation.xp ? annotation.earned : annotation.earned + '/' + annotation.xp;
+        completionbutton += `<span class="badge ${annotation.completed ? 'alert-success' : 'badge-secondary'} mr-2">
+        ${annotation.completed ? earned : Number(annotation.xp)} XP</span>`;
     }
+    // Display the completion button conditionally.
     if (annotation.hascompletion == 1) {
         if (annotation.completed) {
             completionbutton += `<button id="completiontoggle" class="btn mark-undone btn-success btn-sm"
@@ -129,7 +138,7 @@ const defaultDisplayContent = async function(annotation, player) {
         }
     }
 
-    // Append refresh button after the completion button
+    // Append refresh button after the completion button.
     if (!$('body').hasClass('page-interactions')) {
         completionbutton += `<button class="btn btn-secondary btn-sm ml-2 rotatez-360" data-id="${annotation.id}" id="refresh">
         <i class="bi bi-arrow-repeat"></i></button>`;
@@ -137,6 +146,7 @@ const defaultDisplayContent = async function(annotation, player) {
         completionbutton = ``;
     }
 
+    // Message title.
     let messageTitle = `<h5 class="modal-title text-truncate mb-0">
     <i class="${JSON.parse(annotation.prop).icon} mr-2 d-none d-md-inline"></i>${annotation.formattedtitle}</h5>
                             <div class="btns d-flex align-items-center">
@@ -146,10 +156,11 @@ const defaultDisplayContent = async function(annotation, player) {
                             </button>
                             </div>`;
 
+    // Hide existing modal if it shows.
     $('#annotation-modal').modal('hide');
 
-    // Handle annotation close event:: when user click on the close button of the annotation
-    $(document).off('click', `#close-${annotation.id}`).on('click', `#close-${annotation.id}`, async function(e) {
+    // Handle annotation close event:: when user click on the close button of the annotation.
+    $(document).off('click', `#close-${annotation.id}`).on('click', `#close-${annotation.id}`, function(e) {
         e.preventDefault();
         $(this).closest("#annotation-modal").modal('hide');
         const targetMessage = $(this).closest("#message");
@@ -160,7 +171,8 @@ const defaultDisplayContent = async function(annotation, player) {
                 annotation: annotation,
             });
         }, 100);
-        if (!$('body').hasClass('page-interactions')) {
+
+        if (!$('body').hasClass('page-interactions')) { // Do not auto resume if on interactions page.
             player.play();
         }
     });
@@ -171,16 +183,17 @@ const defaultDisplayContent = async function(annotation, player) {
          aria-hidden="true" data-backdrop="static" data-keyboard="false">
          <div id="message" data-id="${annotation.id}" data-placement="popup"
           class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
-                                    <div class="modal-content rounded-lg">
-                                        <div class="modal-header d-flex align-items-center shadow-sm pr-0" id="title">
-                                            ${messageTitle}
-                                        </div>
-                                        <div class="modal-body" id="content"></div>
-                                        </div>
-                                    </div>
-                                    </div>`;
+                <div class="modal-content rounded-lg">
+                    <div class="modal-header d-flex align-items-center shadow-sm pr-0" id="title">
+                        ${messageTitle}
+                    </div>
+                    <div class="modal-body" id="content"></div>
+                    </div>
+                </div>
+        </div>`;
         $('#wrapper').append(modal);
         $('#annotation-modal').modal('show');
+
         $('#annotation-modal').on('hide.bs.modal', function() {
             $('#annotation-modal').remove();
         });
@@ -227,7 +240,6 @@ const defaultDisplayContent = async function(annotation, player) {
             handleBottomDisplay(annotation, messageTitle, isDarkMode);
             break;
     }
-
 };
 
 export {renderContent, defaultDisplayContent, formatText};

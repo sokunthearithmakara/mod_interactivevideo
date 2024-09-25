@@ -91,6 +91,34 @@ class main {
     }
 
     /**
+     * Copies interactive video data from one course module to another.
+     *
+     * @param int $fromcourse The ID of the source course.
+     * @param int $tocourse The ID of the destination course.
+     * @param int $fromcm The ID of the source course module.
+     * @param int $tocm The ID of the destination course module.
+     * @param mixed $annotation Additional annotation or metadata for the copy process.
+     * @param int $oldcontextid The ID of the old context.
+     * @return mixed
+     */
+    public function copy($fromcourse, $tocourse, $fromcm, $tocm, $annotation, $oldcontextid) {
+        global $CFG;
+        $annotation = (object) $annotation;
+        // Handle related files "content" field.
+        require_once($CFG->libdir . '/filelib.php');
+        $fs = get_file_storage();
+        $files = $fs->get_area_files($oldcontextid, 'mod_interactivevideo', 'content', (int)$annotation->oldid, 'id ASC', false);
+        foreach ($files as $file) {
+            $filerecord = [
+                'itemid' => $annotation->id,
+                'contextid' => $annotation->contextid,
+            ];
+            $fs->create_file_from_storedfile($filerecord, $file);
+        }
+        return $annotation;
+    }
+
+    /**
      * Get the content type.
      * @return string The content type.
      */
