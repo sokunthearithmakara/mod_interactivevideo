@@ -290,9 +290,6 @@ function interactivevideo_delete_instance($id) {
     // Delete all the logs.
     $DB->delete_records('interactivevideo_log', ['cmid' => $id]);
 
-    // Delete all the logs.
-    $DB->delete_records('interactivevideo_log', ['cmid' => $id]);
-
     return true;
 }
 

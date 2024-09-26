@@ -178,7 +178,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     return;
                 }
 
-                // WISTIA:: Check if the video is from wistia e.g. https://sokunthearithmakara.wistia.com/medias/88s059vu6s.
+                // WISTIA:: Check if the video is from wistia e.g. https://sokunthearithmakara.wistia.com/medias/kojs3bi9bf.
                 const regexWistia = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^/]+)/g;
                 match = regexWistia.exec(url);
                 const mediaId = match ? match[1] : null;

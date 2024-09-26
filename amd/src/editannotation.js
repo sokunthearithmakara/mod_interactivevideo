@@ -359,6 +359,7 @@ define(['jquery',
                 if (player.type != 'vimeo' && player.type != 'html5video') { // Vimeo/HTML5 does not pause/play on click.
                     $('#video-block').addClass('no-pointer');
                 }
+
                 if (player.support.playbackrate == false) {
                     $('#changerate').remove();
                 } else {

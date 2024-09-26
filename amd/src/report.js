@@ -319,7 +319,6 @@ const init = (cmid, groupid) => {
         });
 
         tabledata = $('#completiontable').DataTable(datatableOptions);
-        window.console.log(tabledata.data().toArray());
     });
 
     $(document).on('click', '[data-item] a', function() {

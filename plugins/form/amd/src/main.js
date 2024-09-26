@@ -1344,7 +1344,6 @@ export default class Form extends Base {
 
         if (!f) {
             getFormJson().then((fields) => {
-                window.console.log(fields);
                 return render(fields);
             }).catch(() => {
                 // Do nothing.

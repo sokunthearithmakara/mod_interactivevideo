@@ -254,16 +254,6 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         );
         $mform->hideIf('userfixedratio', 'distractionfreemode', 'eq', 0);
 
-        // Fix aspect ratio.
-        $mform->addElement(
-            'advcheckbox',
-            'usefixedratio',
-            '',
-            get_string('usefixedratio', 'mod_interactivevideo'),
-            ['group' => 1],
-            [0, 1]
-        );
-
         // Disable chapter navigation.
         $mform->addElement(
             'advcheckbox',

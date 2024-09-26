@@ -148,7 +148,6 @@ export default class ContentBank extends Base {
                     H5P = null;
                 }
                 if (typeof H5P !== 'undefined' && H5P !== null) {
-                    requestAnimationFrame(detectH5P);
                     if (self.isEditMode()) {
                         $message.find(`#title .btns .xapi`).remove();
                         $message.find(`#title .btns`)
