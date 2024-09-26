@@ -176,6 +176,7 @@ $PAGE->requires->js_call_amd(
         $coursecontext->id,
         $moduleinstance->type,
         $moduleinstance->displayoptions,
+        $USER->id,
     ]
 );
 

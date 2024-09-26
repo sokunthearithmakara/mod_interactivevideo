@@ -232,5 +232,5 @@ $string['xppoint'] = 'Experience points';
 $string['yes'] = 'Yes';
 $string['youcannotviewthisannotationyet'] = 'You cannot view this content yet.';
 $string['youmustcompletethepreviousactivity'] = 'You must complete the previous activity before you can see the rest of the video.';
-$string['youmustspendatleastminutesbeforemarkingcomplete'] = 'You must spend at least {$a} minutes before marking this as complete.';
+$string['youmustspendatleastminutesbeforemarkingcomplete'] = 'You must spend at least <b>{$a->timerequire} minutes</b> before marking this as complete.<br><br><b>Time you spent: {$a->timespent} minutes.</b>';
 

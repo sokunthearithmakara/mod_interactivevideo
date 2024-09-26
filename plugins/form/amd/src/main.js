@@ -946,33 +946,53 @@ export default class Form extends Base {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     let currentFormFields = JSON.parse($message.find(`#formjson`).text());
-                    const $this = $(this);
-                    Notification.deleteCancel(
-                        M.util.get_string('deletefield', 'ivplugin_form'),
-                        M.util.get_string('deletefieldconfirm', 'ivplugin_form'),
-                        M.util.get_string('delete', 'mod_interactivevideo'),
-                        function() {
-                            let li = $this.closest('li');
-                            let id = li.attr('data-id');
-                            li.remove();
+                    let $this = $(this);
+
+                    const deleteField = () => {
+                        let li = $this.closest('li');
+                        let id = li.attr('data-id');
+                        li.remove();
+                        $(`#form-preview #fitem_field-${id},
+                        #form-preview fieldset[id^=id_field-${id}],
+                        #form-preview div#field-${id}, #form-preview [data-groupname=field-${id}],
+                        #form-preview [id^=fitem_id_field-${id}]`).addClass('field-highlight');
+                        let isHeader = $('.field-highlight').hasClass(`collapsible`);
+                        let ff = currentFormFields.filter((item) => item.id != id);
+                        renderList(ff);
+                        if (isHeader) {
+                            previewForm(ff, id, true);
+                        } else {
                             $(`#form-preview #fitem_field-${id},
-                            #form-preview fieldset[id^=id_field-${id}],
-                            #form-preview div#field-${id}, #form-preview [data-groupname=field-${id}],
-                            #form-preview [id^=fitem_id_field-${id}]`).addClass('field-highlight');
-                            let isHeader = $('.field-highlight').hasClass(`collapsible`);
-                            let ff = currentFormFields.filter((item) => item.id != id);
-                            renderList(ff);
-                            if (isHeader) {
-                                previewForm(ff, id, true);
-                            } else {
-                                $('.field-highlight').fadeOut(300, 'linear', function() {
-                                    $(this).remove();
-                                });
-                                saveTracking(ff, id);
-                            }
-                        },
-                        null
-                    );
+                                #form-preview fieldset[id^=id_field-${id}],
+                                #form-preview div#field-${id}, #form-preview [data-groupname=field-${id}],
+                                #form-preview [id^=fitem_id_field-${id}]`).fadeOut(300, 'linear', function() {
+                                $(this).remove();
+                            });
+                            saveTracking(ff, id);
+                        }
+                    };
+
+                    try {
+                        Notification.deleteCancel(
+                            M.util.get_string('deletefield', 'ivplugin_form'),
+                            M.util.get_string('deletefieldconfirm', 'ivplugin_form'),
+                            M.util.get_string('delete', 'mod_interactivevideo'),
+                            function() {
+                                deleteField();
+                            },
+                            null
+                        );
+                    } catch {
+                        Notification.deleteCancelPromise(
+                            M.util.get_string('deletefield', 'ivplugin_form'),
+                            M.util.get_string('deletefieldconfirm', 'ivplugin_form'),
+                            M.util.get_string('delete', 'mod_interactivevideo')
+                        ).then(() => {
+                            return deleteField();
+                        }).catch(() => {
+                            return;
+                        });
+                    }
                 });
 
             // Save the form fields
@@ -1021,7 +1041,7 @@ export default class Form extends Base {
                 });
             });
 
-            // Scroll to the form field on label click
+            // Scroll to the form field on label click.
             $message.off('click', `#form-field-list li .field-label`).on('click', `#form-field-list li .field-label`, function() {
                 let id = $(this).closest('li').attr('data-id');
                 let type = $(this).closest('li').attr('data-type');
@@ -1072,28 +1092,31 @@ export default class Form extends Base {
             });
 
             // Edit the form field from the preview.
-            $message.off('click', `#form-preview i.edit`).on('click', `#form-preview i.edit`, function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                let id = $(this).data('id');
-                $(`#form-field-list li[data-id=${id}] button.editfield`).trigger('click');
-            });
+            $message.off('click', `#form-preview .field-actions .edit`).on('click', `#form-preview .field-actions .edit`,
+                function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    let id = $(this).data('id');
+                    $(`#form-field-list li[data-id=${id}] button.editfield`).trigger('click');
+                });
 
             // Delete the form field from the preview.
-            $message.off('click', `#form-preview i.delete`).on('click', `#form-preview i.delete`, function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                let id = $(this).data('id');
-                $(`#form-field-list li[data-id=${id}] button.deletefield`).trigger('click');
-            });
+            $message.off('click', `#form-preview .field-actions .delete`).on('click', `#form-preview .field-actions .delete`,
+                function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    let id = $(this).data('id');
+                    $(`#form-field-list li[data-id=${id}] button.deletefield`).trigger('click');
+                });
 
             // Copy the form field from the preview.
-            $message.off('click', `#form-preview i.copy`).on('click', `#form-preview i.copy`, function(e) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                let id = $(this).data('id');
-                $(`#form-field-list li[data-id=${id}] button.copyfield`).trigger('click');
-            });
+            $message.off('click', `#form-preview .field-actions .copy`).on('click', `#form-preview .field-actions .copy`,
+                function(e) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    let id = $(this).data('id');
+                    $(`#form-field-list li[data-id=${id}] button.copyfield`).trigger('click');
+                });
 
             // Undo the form field changes.
             $message.off('click', `#save-close #undo`).on('click', `#save-close #undo`, async function(e) {

@@ -88,7 +88,7 @@ const init = (cmid, groupid) => {
          * @property {Array} buttons - Configuration for the export buttons.
          * @property {Function} initComplete - Function to execute when the table initialization is complete.
          */
-        var datatableOptions = {
+        let datatableOptions = {
             "data": data,
             "deferRender": true,
             "rowId": "id",
@@ -132,7 +132,7 @@ const init = (cmid, groupid) => {
                                 return 0;
                             }
                         } else {
-                            var date = new Date(data * 1000);
+                            const date = new Date(data * 1000);
                             if (type === 'display') {
                                 return date.toLocaleString();
                             } else if (type === 'filter' || type === 'sort') {
@@ -157,7 +157,7 @@ const init = (cmid, groupid) => {
                                 }
                             }
                         } else {
-                            var date = new Date(data * 1000);
+                            const date = new Date(data * 1000);
                             if (type === 'display') {
                                 return date.toLocaleString();
                             } else if (type === 'filter' || type === 'sort') {
@@ -323,15 +323,15 @@ const init = (cmid, groupid) => {
 
     $(document).on('click', '[data-item] a', function() {
         const convertSecondsToHMS = (seconds) => {
-            var h = Math.floor(seconds / 3600);
-            var m = Math.floor(seconds % 3600 / 60);
-            var s = Math.floor(seconds % 3600 % 60);
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor(seconds % 3600 / 60);
+            const s = Math.floor(seconds % 3600 % 60);
             return (h > 0 ? h + ':' : '') + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
         };
         let annotationid = $(this).closest('th').data('item');
         let theAnnotation = itemsdata.find(x => x.id == annotationid);
         let tabledatajson = tabledata.rows().data().toArray();
-        var modal = `<div class="modal fade" id="annotation-modal" role="dialog"
+        const modal = `<div class="modal fade" id="annotation-modal" role="dialog"
             aria-labelledby="annotation-modal"
          aria-hidden="true" data-backdrop="static" data-keyboard="false">
          <div id="message" data-id="${theAnnotation.id}" data-placement="popup"
@@ -374,6 +374,7 @@ const init = (cmid, groupid) => {
         e.preventDefault();
         const recordid = $(this).data('record');
         let $this = $(this);
+        try {
         Notification.deleteCancel(
             M.util.get_string('deletecompletion', 'mod_interactivevideo'),
             M.util.get_string('areyousureyouwanttoresetthecompletiondata', 'mod_interactivevideo'),
@@ -414,6 +415,48 @@ const init = (cmid, groupid) => {
             },
             null
         );
+    } catch {
+        Notification.deleteCancelPromise(
+            M.util.get_string('deletecompletion', 'mod_interactivevideo'),
+            M.util.get_string('areyousureyouwanttoresetthecompletiondata', 'mod_interactivevideo'),
+            M.util.get_string('delete', 'mod_interactivevideo')
+        ).then(() => {
+            return $.ajax({
+                url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                method: 'POST',
+                dataType: "text",
+                data: {
+                    action: 'delete_progress_by_id',
+                    recordid,
+                    contextid: M.cfg.contextid,
+                    sesskey: M.cfg.sesskey,
+                },
+                success: function(response) {
+                    if (response == 'deleted') {
+                        let targetdata = tabledata.row($this.closest('tr')).data();
+                        targetdata.completionpercentage = 0;
+                        targetdata.timecompleted = 0;
+                        targetdata.xp = 0;
+                        targetdata.timecreated = 0;
+                        targetdata.completeditems = null;
+                        targetdata.completiondetails = null;
+                        targetdata.completionid = null;
+                        tabledata.row($this.closest('tr')).data(targetdata).draw();
+                        addToast(M.util.get_string('completionresetsuccess', 'mod_interactivevideo'), {
+                            type: 'success'
+                        });
+                    }
+                },
+                error: function() {
+                    addToast(M.util.get_string('completionreseterror', 'mod_interactivevideo'), {
+                        type: 'error'
+                    });
+                }
+            });
+        }).catch(() => {
+            return;
+        });
+    }
     });
 
     $(document).on('click', 'td .completion-detail', function() {

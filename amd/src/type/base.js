@@ -363,10 +363,10 @@ class Base {
             }
 
             // Make sure the timestamp is between the start and end time.
-            var parts = $(this).val().split(':');
-            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            const parts = $(this).val().split(':');
+            const timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
             if (!self.isBetweenStartAndEnd(timestamp)) {
-                var message = M.util.get_string('timemustbebetweenstartandendtime', 'mod_interactivevideo', {
+                const message = M.util.get_string('timemustbebetweenstartandendtime', 'mod_interactivevideo', {
                     "start": self.convertSecondsToHMS(self.start),
                     "end": self.convertSecondsToHMS(self.end),
                 });
@@ -405,10 +405,10 @@ class Base {
      * @returns {void}
      */
     addAnnotation(annotations, timestamp, coursemodule) {
-        var self = this;
+        let self = this;
         this.annotations = annotations;
         if (!this.isBetweenStartAndEnd(timestamp)) {
-            var message = M.util.get_string('interactioncanonlybeaddedbetweenstartandendtime', 'mod_interactivevideo', {
+            const message = M.util.get_string('interactioncanonlybeaddedbetweenstartandendtime', 'mod_interactivevideo', {
                 "start": self.convertSecondsToHMS(self.start),
                 "end": self.convertSecondsToHMS(self.end),
             });
@@ -445,7 +445,7 @@ class Base {
             hascompletion: self.prop.hascompletion ? 1 : 0,
         };
 
-        var form = new ModalForm({
+        const form = new ModalForm({
             formClass: self.prop.form,
             args: data,
             modalConfig: {
@@ -491,7 +491,7 @@ class Base {
                     cmid: self.cm,
                 },
                 success: function(data) {
-                    var newAnnotation = JSON.parse(data);
+                    const newAnnotation = JSON.parse(data);
                     dispatchEvent('annotationupdated', {
                         annotation: newAnnotation,
                         action: 'add'
@@ -504,9 +504,10 @@ class Base {
     /**
      * Copy an annotation
      * @param {number} id The annotation id
+     * @param {number} timestamp The timestamp
      * @returns {void}
      */
-    cloneAnnotation(id) {
+    cloneAnnotation(id, timestamp) {
         $.ajax({
             url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
             method: "POST",
@@ -518,9 +519,10 @@ class Base {
                 contextid: M.cfg.contextid,
                 token: this.token,
                 cmid: this.cm,
+                timestamp: timestamp
             },
             success: function(data) {
-                var newAnnotation = JSON.parse(data);
+                const newAnnotation = JSON.parse(data);
                 dispatchEvent('annotationupdated', {
                     annotation: newAnnotation,
                     action: 'clone'
@@ -594,7 +596,7 @@ class Base {
                     cmid: self.cm,
                 },
             }).done(function(data) {
-                var updated = JSON.parse(data);
+                const updated = JSON.parse(data);
                 dispatchEvent('annotationupdated', {
                     annotation: updated,
                     action: 'edit'
@@ -996,7 +998,7 @@ class Base {
      * @returns {void}
      */
     enableManualCompletion(annotation) {
-        var self = this;
+        let self = this;
         const $message = $(`#message[data-id='${annotation.id}']`);
         $message.off('click', 'button#completiontoggle').on('click', 'button#completiontoggle', function(e) {
             e.preventDefault();
@@ -1009,7 +1011,10 @@ class Base {
                 if (duration < annotation.requiremintime) {
                     self.addNotification(
                         M.util.get_string('youmustspendatleastminutesbeforemarkingcomplete', 'mod_interactivevideo',
-                            annotation.requiremintime), 'danger');
+                            {
+                                timerequire: annotation.requiremintime,
+                                timespent: duration.toFixed(2)
+                            }), 'danger');
                     return;
                 }
 
@@ -1018,7 +1023,7 @@ class Base {
             $(this).find('i').removeClass('bi-check2 bi-circle').addClass('fa-spin bi-arrow-repeat');
             $(this).find('span').hide();
             // Get the completed items
-            var annoid = $(this).data('id');
+            const annoid = $(this).data('id');
             self.toggleCompletion(annoid, $(this).hasClass('mark-done') ? 'mark-done' : 'mark-undone', 'manual');
         });
     }
@@ -1122,8 +1127,6 @@ class Base {
             });
         });
     }
-
-
 }
 
 export default Base;

@@ -35,10 +35,10 @@ export default class SkipSegment extends Base {
      */
     init() {
         if (!this.isEditMode()) {
-            var self = this;
-            var skipsegment = this.annotations.filter((annotation) => annotation.type == 'skipsegment');
+            let self = this;
+            const skipsegment = this.annotations.filter((annotation) => annotation.type == 'skipsegment');
             $(document).on('timeupdate', function(e) {
-                var t = e.originalEvent.detail.time;
+                const t = e.originalEvent.detail.time;
                 skipsegment.forEach((annotation) => {
                     if (annotation.timestamp < t && annotation.title > t) {
                         self.runInteraction(annotation);
@@ -123,23 +123,23 @@ export default class SkipSegment extends Base {
      *
      */
     onEditFormLoaded(form, event) {
-        var self = this;
-        var body = super.onEditFormLoaded(form, event);
+        let self = this;
+        const body = super.onEditFormLoaded(form, event);
         body.on('change', '[name=titleassist]', function(e) {
             e.preventDefault();
             const originalValue = $(this).data('initial-value');
-            // Make sure the timestamp format is hh:mm:ss
+            // Make sure the timestamp format is hh:mm:ss.
             if (!self.validateTimestampFormat($(this).val())) {
                 self.addNotification(M.util.get_string('invalidtimestampformat', 'ivplugin_skipsegment'));
                 $(this).val(originalValue);
                 return;
             }
 
-            // Convert the timestamp to seconds
-            var parts = $(this).val().split(':');
-            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            // Convert the timestamp to seconds.
+            const parts = $(this).val().split(':');
+            const timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
             if (!self.isBetweenStartAndEnd(timestamp)) {
-                var message = M.util.get_string('interactioncanonlybeaddedbetweenstartandendtime', 'mod_interactivevideo', {
+                const message = M.util.get_string('interactioncanonlybeaddedbetweenstartandendtime', 'mod_interactivevideo', {
                     "start": self.convertSecondsToHMS(self.start),
                     "end": self.convertSecondsToHMS(self.end),
                 });
@@ -173,8 +173,8 @@ export default class SkipSegment extends Base {
         if (annotation.timestamp < this.start || annotation.timestamp > this.end) {
             return;
         }
-        var percentage = ((Number(annotation.timestamp) - this.start) / this.totaltime) * 100;
-        var length = (Number(annotation.title) - Number(annotation.timestamp)) / this.totaltime * 100;
+        const percentage = ((Number(annotation.timestamp) - this.start) / this.totaltime) * 100;
+        const length = (Number(annotation.title) - Number(annotation.timestamp)) / this.totaltime * 100;
         if (this.isVisible(annotation) && !this.isEditMode()) {
             $("#video-nav ul").append(`<li class="annotation ${annotation.type}
              ${this.isClickable(annotation) ? '' : 'no-pointer-events'} position-absolute bg-dark progress-bar-striped progress-bar"
@@ -202,13 +202,10 @@ export default class SkipSegment extends Base {
      * @returns {Promise<void>} A promise that resolves when the interaction is complete.
      */
     async runInteraction(annotation) {
-        $('.video-block').append(`<div id="skipsegment" class="text-white position-absolute p-3 hide"
-         style="bottom: 0;right: 0;text-shadow: 1px 2px 3px gray;line-height: 1rem;">
-         <i class="${this.prop.icon}" style="font-size: xxx-large;"></i></div>`);
+        $('.video-block').append(`<div id="skipsegment" class="text-white position-absolute p-3 hide">
+         <i class="${this.prop.icon}"></i></div>`);
         $('#skipsegment').fadeIn(300);
         await this.player.seek(Number(annotation.title));
-        var percentage = (Number(annotation.title) - this.start) / this.totaltime * 100;
-        $('#video-nav #progress').replaceWith(`<div id="progress" style="width: ${percentage > 100 ? 100 : percentage}%;"></div>`);
         this.player.play();
         setTimeout(() => {
             $('#skipsegment').fadeOut(300);

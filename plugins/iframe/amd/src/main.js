@@ -56,17 +56,17 @@ export default class Iframe extends Base {
                     contextid: M.cfg.contextid,
                 },
                 success: function(data) {
-                    var providers = data;
-                    var url = $('[name="iframeurl"]').val();
+                    const providers = data;
+                    let url = $('[name="iframeurl"]').val();
                     // Format the url to match the provider_url
-                    var providerUrl = url.split('/')[2];
-                    var domain = providerUrl.split('.');
+                    let providerUrl = url.split('/')[2];
+                    const domain = providerUrl.split('.');
                     if (domain.length > 2) {
                         providerUrl = domain[1] + '.' + domain[2];
                     } else {
                         providerUrl = domain[0] + '.' + domain[1];
                     }
-                    var provider = providers.find(function(provider) {
+                    const provider = providers.find(function(provider) {
                         return provider.provider_url.includes(providerUrl);
                     });
                     if (!provider) {
@@ -74,8 +74,8 @@ export default class Iframe extends Base {
                         return;
                     }
                     if (provider) {
-                        // Reformat the url to match the endpoints scheme
-                        var urlendpoint = provider.endpoints[0].url.replace('{format}', 'json');
+                        // Reformat the url to match the endpoints scheme.
+                        let urlendpoint = provider.endpoints[0].url.replace('{format}', 'json');
                         if (urlendpoint.includes('?')) {
                             urlendpoint = urlendpoint + '&url=' + url;
                         } else {
@@ -95,7 +95,7 @@ export default class Iframe extends Base {
                             method: "POST",
                             dataType: "text",
                             success: function(res) {
-                                var data;
+                                let data;
                                 try {
                                     data = JSON.parse(res);
                                 } catch (e) {
@@ -108,7 +108,7 @@ export default class Iframe extends Base {
                                     return;
                                 }
 
-                                var ratio = '56.25%';
+                                let ratio = '56.25%';
 
                                 if (!data.width || data.width == 0 || data.width == '100%') {
                                     if (data.height && data.height !== 0) {
@@ -121,7 +121,7 @@ export default class Iframe extends Base {
                                 $('[name="char1"]').val(ratio);
                                 // Remove any script tags from the html to avoid errors with requirejs from data.html using regex
                                 data.html = data.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-                                var embed = $(data.html);
+                                let embed = $(data.html);
                                 $('[name="content"]').val(data.html);
                                 preview(embed, ratio);
                             },

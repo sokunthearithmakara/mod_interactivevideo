@@ -45,7 +45,7 @@ export default class XpReward extends Base {
     }
 
     postContentRender(annotation) {
-        var self = this;
+        let self = this;
         $(document).off('click', `#message[data-id='${annotation.id}'] #xpreward`)
             .on('click', `#message[data-id='${annotation.id}'] #xpreward`, function(e) {
                 e.preventDefault();

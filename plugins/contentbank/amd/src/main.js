@@ -40,7 +40,7 @@ export default class ContentBank extends Base {
         body.off('click', '#refreshcontentbank').on('click', '#refreshcontentbank', function(e) {
             e.preventDefault();
             $(this).find('i').addClass('fa-spin');
-            var currentid = $('[name=contentid]').val();
+            const currentid = $('[name=contentid]').val();
             $('.contentbank-container').html(`<div class="d-flex justify-content-center align-items-center"
             style="height: 150px;"><div class="spinner-grow text-secondary" role="status">
             <span class="sr-only">Loading...</span></div></div>`);
@@ -52,7 +52,7 @@ export default class ContentBank extends Base {
         // Upload a new content.
         body.off('click', '#uploadcontentbank').on('click', '#uploadcontentbank', function(e) {
             e.preventDefault();
-            var uploadForm = new ModalForm({
+            const uploadForm = new ModalForm({
                 formClass: "core_contentbank\\form\\upload_files",
                 args: {
                     contextid: M.cfg.courseContextId,
@@ -64,8 +64,8 @@ export default class ContentBank extends Base {
 
             uploadForm.addEventListener(uploadForm.events.FORM_SUBMITTED, (e) => {
                 self.addNotification(M.util.get_string('contentuploaded', 'ivplugin_contentbank'), 'success');
-                var returnurl = e.detail.returnurl;
-                var contentid = returnurl.match(/id=(\d+)/)[1];
+                const returnurl = e.detail.returnurl;
+                const contentid = returnurl.match(/id=(\d+)/)[1];
                 $('[name=contentid]').val(contentid);
                 setTimeout(function() {
                     $('#refreshcontentbank').trigger('click');
@@ -135,13 +135,13 @@ export default class ContentBank extends Base {
      */
     async runInteraction(annotation) {
         this.player.pause();
-        var annoid = annotation.id;
-        var self = this;
+        const annoid = annotation.id;
+        let self = this;
         let $message;
 
         const xAPICheck = (annotation) => {
             const detectH5P = () => {
-                var H5P;
+                let H5P;
                 try { // Try to get the H5P object.
                     H5P = document.querySelector(`#message[data-id='${annoid}'] iframe`).contentWindow.H5P;
                 } catch (e) {
@@ -171,11 +171,11 @@ export default class ContentBank extends Base {
                                         <i class="fa fa-check mr-2"></i>
                                         ${M.util.get_string('xapieventdetected', 'ivplugin_h5pupload')}
                                         </div>`);
-                                    var audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
+                                    const audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
                                     audio.play();
                                     return;
                                 }
-                                var complete = false;
+                                let complete = false;
                                 let textclass = '';
                                 if (annotation.completiontracking == 'completepass'
                                     && event.data.statement.result && event.data.statement.result.score.scaled >= 0.5) {

@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * TODO describe module main
+ * PDF viewer
  *
  * @module     ivplugin_pdfviewer/main
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
@@ -59,8 +59,8 @@ export default class PdfViewer extends Iframe {
          */
         const pdfCheck = (annotation) => {
             const checkIframe = () => {
-                var iframe = document.querySelector(`#message[data-id='${annotation.id}'] iframe`);
-                var pdf;
+                const iframe = document.querySelector(`#message[data-id='${annotation.id}'] iframe`);
+                let pdf;
                 try {
                     pdf = iframe.contentWindow.PDFViewerApplication.pdfViewer;
                 } catch (e) {

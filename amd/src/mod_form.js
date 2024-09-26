@@ -50,11 +50,11 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
              * @returns
              */
             const convertSecondsToHMS = (s) => {
-                var hours = Math.floor(s / 3600);
-                var minutes = Math.floor((s - (hours * 3600)) / 60);
-                var seconds = s - (hours * 3600) - (minutes * 60);
+                let hours = Math.floor(s / 3600);
+                let minutes = Math.floor((s - (hours * 3600)) / 60);
+                let seconds = s - (hours * 3600) - (minutes * 60);
                 seconds = seconds.toFixed(2);
-                var result = (hours < 10 ? "0" + hours : hours);
+                let result = (hours < 10 ? "0" + hours : hours);
                 result += ":" + (minutes < 10 ? "0" + minutes : minutes);
                 result += ":" + (seconds < 10 ? "0" + seconds : seconds);
                 return result;
@@ -111,7 +111,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 if (document.querySelector('video')) {
                     document.querySelector('video').remove();
                 }
-                var video = document.createElement('video');
+                let video = document.createElement('video');
                 video.src = url;
                 video.addEventListener('canplay', function() {
                     resolve(true);
@@ -129,7 +129,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 if (player) {
                     player.destroy();
                 }
-                var url = $(this).val().trim();
+                let url = $(this).val().trim();
                 if (url == '') {
                     videowrapper.hide();
                     return;
@@ -137,7 +137,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
                 // YOUTUBE:: Check if the video is a youtube video.
                 let regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube.com|youtu.be)(?:\/embed\/|\/watch\?v=|\/)([^/]+)/g;
-                var match = regex.exec(url);
+                let match = regex.exec(url);
                 if (match) {
                     videowrapper.show();
                     // Show loader while the video is loading.
@@ -152,7 +152,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 // VIMEO:: Extract id from the URL.
                 regex = /(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com)\/(?:channels\/[A-Za-z0-9]+\/|)([^\/]+)/g;
                 match = regex.exec(url);
-                var vid = match ? match[1] : null;
+                let vid = match ? match[1] : null;
                 if (vid) {
                     url = 'https://vimeo.com/' + vid;
                     videourlinput.val(url);
@@ -217,13 +217,13 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 if (startassistinput.val() == '') {
                     return;
                 }
-                var strings = await str.get_strings([
+                let strings = await str.get_strings([
                     {key: 'starttimelesstotaltime', component: 'mod_interactivevideo'},
                     {key: 'starttimelessthanendtime', component: 'mod_interactivevideo'},
                     {key: 'invalidtimestampformat', component: 'mod_interactivevideo'},
                 ]);
-                var parts = startassistinput.val().split(':');
-                var time = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+                const parts = startassistinput.val().split(':');
+                let time = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
                 startinput.val(time);
                 if (Number(startinput.val()) > totaltime) {
                     startassistinput.addClass('is-invalid');
@@ -249,13 +249,13 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 if (endassistinput.val() == '') {
                     return;
                 }
-                var strings = await str.get_strings([
+                const strings = await str.get_strings([
                     {key: 'endtimelesstotaltime', component: 'mod_interactivevideo'},
                     {key: 'endtimegreaterstarttime', component: 'mod_interactivevideo'},
                     {key: 'invalidtimestampformat', component: 'mod_interactivevideo'},
                 ]);
-                var parts = endassistinput.val().split(':');
-                var time = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+                const parts = endassistinput.val().split(':');
+                const time = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
                 endinput.val(time);
                 if (Number(endinput.val()) > totaltime) {
                     endassistinput.addClass('is-invalid');
@@ -276,14 +276,14 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
             // Upload video to get draft item id.
             $(document).on('click', '#id_upload', async function() {
-                var data = {
+                const data = {
                     contextid: M.cfg.contextid,
                     id: id,
                     usercontextid: usercontextid,
                 };
 
                 let string = await str.get_string('uploadvideo', 'mod_interactivevideo');
-                var form = new ModalForm({
+                const form = new ModalForm({
                     modalConfig: {
                         title: string,
                     },
@@ -294,7 +294,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 form.show();
 
                 form.addEventListener(form.events.FORM_SUBMITTED, async (e) => {
-                    var url = e.detail.url;
+                    const url = e.detail.url;
                     videowrapper.html('<video id="player" class="w-100"></video>');
                     require(['mod_interactivevideo/player/html5video'], function(VP) {
                         player = new VP(url, 0, null, true);
@@ -321,25 +321,42 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
             });
 
             $(document).on('click', '#id_delete', async function() {
-                var strings = await str.get_strings([
+                const strings = await str.get_strings([
                     {key: 'deletevideo', component: 'mod_interactivevideo'},
                     {key: 'deletevideoconfirm', component: 'mod_interactivevideo'},
                     {key: 'delete', component: 'mod_interactivevideo'},
                 ]);
-                notification.deleteCancel(
-                    strings[0],
-                    strings[1],
-                    strings[2],
-                    function() {
+                try {
+                    notification.deleteCancel(
+                        strings[0],
+                        strings[1],
+                        strings[2],
+                        function() {
+                            videoinput.val('');
+                            videofile.val('');
+                            videowrapper.empty().hide();
+                            uploadfield.show();
+                            deletefield.hide();
+                        });
+                } catch {
+                    notification.deleteCancelPromise(
+                        strings[0],
+                        strings[1],
+                        strings[2],
+                    ).then(() => {
                         videoinput.val('');
                         videofile.val('');
                         videowrapper.empty().hide();
                         uploadfield.show();
                         deletefield.hide();
+                        return;
+                    }).catch(() => {
+                        return;
                     });
+                }
             });
 
-            // DOM ready
+            // DOM ready.
             $(function() {
                 uploadfield.hide();
                 deletefield.hide();
@@ -350,7 +367,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     if (videoinput.val() != '' && videoinput.val() != '0') {
                         uploadfield.hide();
                         deletefield.show();
-                        var url = videofile.val();
+                        const url = videofile.val();
                         videowrapper.html('<video id="player" class="w-100"></video>');
                         require(['mod_interactivevideo/player/html5video'], function(VP) {
                             player = new VP(url, 0, null, true);

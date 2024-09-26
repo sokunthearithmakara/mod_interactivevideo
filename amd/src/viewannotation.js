@@ -601,9 +601,9 @@ define([
                         let $position = $('#position');
                         const relX = ui.position.left;
                         $position.css('left', (relX) + 'px');
-                        var percentage = relX / $(this).width();
-                        var time = percentage * totaltime;
-                        var formattedTime = convertSecondsToHMS(time);
+                        const percentage = relX / $(this).width();
+                        const time = percentage * totaltime;
+                        const formattedTime = convertSecondsToHMS(time);
                         $position.find('#timelabel').text(formattedTime);
                     },
                     'drag': async function(event, ui) {
@@ -715,7 +715,7 @@ define([
                 if (t > start && t < end) {
                     $('#end-screen, #start-screen').addClass('d-none');
                 }
-                var percentage = (t - start) / (totaltime) * 100;
+                const percentage = (t - start) / (totaltime) * 100;
                 $('#currenttime').text(convertSecondsToHMS(t - start));
                 replaceProgressBars(percentage);
                 dispatchEvent('timeupdate', {'time': t});
@@ -972,9 +972,9 @@ define([
                 const relX = e.pageX - parentOffset.left;
 
                 $position.css('left', (relX) + 'px');
-                var percentage = relX / $(this).width();
-                var time = percentage * totaltime;
-                var formattedTime = convertSecondsToHMS(time);
+                const percentage = relX / $(this).width();
+                const time = percentage * totaltime;
+                const formattedTime = convertSecondsToHMS(time);
                 $position.find('#timelabel').text(formattedTime);
             });
 
@@ -984,9 +984,9 @@ define([
                 }
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
-                var percentage = relX / $(this).width();
-                var time = percentage * totaltime;
-                var formattedTime = convertSecondsToHMS(time);
+                const percentage = relX / $(this).width();
+                const time = percentage * totaltime;
+                const formattedTime = convertSecondsToHMS(time);
                 $('#position').css('left', (relX) + 'px');
                 $('#position #timelabel').text(formattedTime);
             });
@@ -1045,7 +1045,7 @@ define([
                 $('#end-screen').fadeOut(300);
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
-                var percentage = relX / $(this).width();
+                const percentage = relX / $(this).width();
                 replaceProgressBars(percentage * 100);
                 // Gotta check if this affects anything.
                 if (player.type == 'yt') {
@@ -1237,7 +1237,7 @@ define([
 
             if ($("body").hasClass('mobiletheme')) {
                 $('[data-toggle="tooltip"]').on('click', function() {
-                    var $this = $(this);
+                    const $this = $(this);
                     setTimeout(function() {
                         $this.tooltip('hide');
                     }, 2000); // Hide after 3 seconds
@@ -1246,7 +1246,7 @@ define([
 
             if ($("body").hasClass('mobiletheme')) {
                 $('[data-toggle="tooltip"]').on('click', function() {
-                    var $this = $(this);
+                    const $this = $(this);
                     setTimeout(function() {
                         $this.tooltip('hide');
                     }, 2000); // Hide after 3 seconds

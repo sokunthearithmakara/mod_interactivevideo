@@ -65,12 +65,17 @@ class interactivevideo_util {
      *
      * @param int $id
      * @param int $contextid
+     * @param float $timestamp
      * @return stdClass
      */
-    public static function copy_item($id, $contextid) {
+    public static function copy_item($id, $contextid, $timestamp) {
         global $DB, $CFG;
         $record = $DB->get_record('interactivevideo_items', ['id' => $id]);
-        $record->timestamp = $record->timestamp + 0.01;
+        if ($timestamp == $record->timestamp) {
+            $record->timestamp = $record->timestamp + 0.01; // Make sure the timestamp isn't the same.
+        } else {
+            $record->timestamp = $timestamp; // Put the new item at the current timestamp.
+        }
         $record->title = $record->title . ' (' . get_string('copynoun', 'mod_interactivevideo') . ')';
         $record->id = $DB->insert_record('interactivevideo_items', $record);
         // Handle related files "content" field.
@@ -577,7 +582,10 @@ class interactivevideo_util {
      * @param int $userid
      */
     public static function get_taught_courses($userid) {
-        global $DB, $PAGE;
+        global $DB, $PAGE, $USER;
+        if (!$userid) {
+            $userid = $USER->id;
+        }
         $PAGE->set_context(context_system::instance());
         // Get all courses where the user is a teacher.
         $sql = "SELECT c.id, c.fullname, c.shortname FROM {course} c

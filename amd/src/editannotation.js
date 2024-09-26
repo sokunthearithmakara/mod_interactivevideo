@@ -26,11 +26,11 @@ define(['jquery',
     'core/event_dispatcher',
     'mod_interactivevideo/libraries/jquery-ui',
 ], function($, addToast, Notification, {dispatchEvent}) {
-    var ctRenderer = {};
-    var player;
-    var totaltime;
-    var currentTime;
-    var playerReady = false;
+    let ctRenderer = {};
+    let player;
+    let totaltime;
+    let currentTime;
+    let playerReady = false;
     /**
      * Replace the progress bar on the video navigation.
      * @param {Number} percentage - Percentage to replace the progress bar.
@@ -57,15 +57,14 @@ define(['jquery',
         $("#video-nav ul").empty();
         $("#video-timeline-wrapper .skipsegment").remove();
         annos.forEach(async (x) => {
-            var render = ctRenderer[x.type];
+            const render = ctRenderer[x.type];
             await render.renderItemOnVideoNavigation(x);
         });
 
         const time = await player.getCurrentTime();
         // Replace progress bar.
-        var percentage = (time - start) / totaltime * 100;
+        const percentage = (time - start) / totaltime * 100;
         replaceProgressBars(percentage);
-
         dispatchEvent('annotationitemsrendered', {'annotations': annos});
     };
 
@@ -81,8 +80,9 @@ define(['jquery',
          * @param {Number} coursecontextid course context id
          * @param {String} type video type
          * @param {Object} displayoptions display options
+         * @param {Number} userid user id
          */
-        init: function(url, coursemodule, interaction, course, start, end, coursecontextid, type = 'yt', displayoptions) {
+        init: function(url, coursemodule, interaction, course, start, end, coursecontextid, type = 'yt', displayoptions, userid) {
 
             /**
              * Util function to display notification
@@ -105,8 +105,8 @@ define(['jquery',
                 end = null;
             }
 
-            var annotations = []; // Annotations
-            var contentTypes; // Content types
+            let annotations = []; // Annotations.
+            let contentTypes; // Content types.
 
             /**
              * Convert seconds to HH:MM:SS format
@@ -151,7 +151,7 @@ define(['jquery',
                 return (hours < 10 ? '0' + hours : hours) + ':' + minutes + ':' + seconds;
             };
 
-            var activeid = null; // Current active annotation id. Mainly used when editing to relaunch the interaction afte editing.
+            let activeid = null; // Current active annotation id. Mainly used when editing to relaunch the interaction afte editing.
 
             /**
              * Handle rendering of annotation items on the list
@@ -172,15 +172,15 @@ define(['jquery',
                 });
 
                 annotations.forEach(function(item) {
-                    var listItem = $('#annotation-template').clone();
+                    let listItem = $('#annotation-template').clone();
                     ctRenderer[item.type].renderEditItem(annotations, listItem, item);
                 });
 
-                var xp = annotations.filter(x => x.xp).map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
+                let xp = annotations.filter(x => x.xp).map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
                 $("#xp span").text(xp);
 
                 if (activeid) {
-                    var activeAnno = annotations.find(x => x.id == activeid);
+                    const activeAnno = annotations.find(x => x.id == activeid);
                     if (activeAnno) {
                         ctRenderer[activeAnno.type].postEditCallback(activeAnno);
                     }
@@ -220,10 +220,10 @@ define(['jquery',
                 $.when(getItems, getContentTypes).done(function(items, contenttypes) {
                     annotations = JSON.parse(items[0]);
                     contentTypes = JSON.parse(contenttypes[0]);
-                    // Remove all annotations that are not in the content types.
+                    // Remove all annotations that are not in the enabled content types.
                     annotations = annotations.filter(x => contentTypes.find(y => y.name === x.type));
                     const getRenderers = new Promise((resolve) => {
-                        var count = 0;
+                        let count = 0;
                         contentTypes.forEach(x => {
                             require(['' + x.amdmodule], function(Type) {
                                 ctRenderer[x.name] = new Type(player, annotations, interaction,
@@ -257,7 +257,7 @@ define(['jquery',
              * @returns
              */
             const validateTimestampFormat = (timestamp, fld, existing) => {
-                var regex = /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])(\.\d{2})?$/;
+                const regex = /^([0-9]{2}):([0-5][0-9]):([0-5][0-9])(\.\d{2})?$/;
                 if (!regex.test(timestamp)) {
                     addNotification(M.util.get_string('invalidtimestampformat', 'mod_interactivevideo'), 'danger');
                     if (existing) {
@@ -284,12 +284,12 @@ define(['jquery',
             const validateTimeStartEnd = (timestamp, fld, existing, seconds, checkduration,
                 checkexisting, checkskipsegment) => {
                 // Convert the timestamp to seconds.
-                var parts = timestamp.split(':');
+                const parts = timestamp.split(':');
                 timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
                 // Make sure the timestamp is between start and end.
                 if (checkduration) {
                     if (timestamp > end || timestamp < start) {
-                        var message = M.util.get_string('timemustbebetweenstartandendtime', 'mod_interactivevideo', {
+                        const message = M.util.get_string('timemustbebetweenstartandendtime', 'mod_interactivevideo', {
                             "start": convertSecondsToHMS(start, true, false),
                             "end": convertSecondsToHMS(end, true, false)
                         });
@@ -319,7 +319,7 @@ define(['jquery',
                 // Make sure timestamp is not in a skip segment.
                 if (checkskipsegment) {
                     const skipsegments = annotations.filter((annotation) => annotation.type == 'skipsegment');
-                    var skip = skipsegments.find(x => Number(x.timestamp) < Number(timestamp)
+                    const skip = skipsegments.find(x => Number(x.timestamp) < Number(timestamp)
                         && Number(x.title) > Number(timestamp));
                     if (skip) {
                         addNotification(M.util.get_string('interactionisbetweentheskipsegment', 'mod_interactivevideo', {
@@ -348,7 +348,7 @@ define(['jquery',
                 $('#message').not('[data-placement=bottom]').remove();
                 $('#end-screen').remove();
                 player.pause();
-                var activityType = ctRenderer[annotation.type];
+                const activityType = ctRenderer[annotation.type];
                 activityType.runInteraction(annotation);
             };
 
@@ -377,7 +377,7 @@ define(['jquery',
                 }
 
                 totaltime = end - start;
-                // Recalculate the ratio of the video
+                // Recalculate the ratio of the video.
                 let ratio = 16 / 9;
                 if (!displayoptions.usefixedratio || displayoptions.usefixedratio == 0) {
                     ratio = player.aspectratio;
@@ -386,7 +386,7 @@ define(['jquery',
 
                 playerReady = true;
 
-                // Handle timeline block
+                // Handle timeline block.
                 $("#timeline-wrapper #video-timeline").css({
                     'background-image': 'url(' + player.posterImage + ')',
                     'background-size': 'contain',
@@ -394,7 +394,7 @@ define(['jquery',
                 });
                 $("#timeline-wrapper #duration").text(convertSecondsToHMS(end, true));
                 $("#timeline-wrapper #currenttime").text(convertSecondsToHMS(start, true));
-                // Render minute markers
+                // Render minute markers.
                 const minutes = Math.floor(totaltime / 60);
                 $('#timeline-items-wrapper').css('width', (minutes * 300) + 'px');
                 const relWidth = $('#timeline-items').width();
@@ -444,7 +444,7 @@ define(['jquery',
                 $('#message #restart').focus();
 
                 // If the current time matches the timestamp of an annotation, highlight the annotation.
-                var currentAnnotation = annotations.find((annotation) => annotation.timestamp == end);
+                const currentAnnotation = annotations.find((annotation) => annotation.timestamp == end);
                 if (currentAnnotation) {
                     $('#annotation-list tr').removeClass('active');
                     $(`tr[data-id="${currentAnnotation.id}"]`).addClass('active');
@@ -473,14 +473,14 @@ define(['jquery',
                 if (t > start && t < end) {
                     $('#end-screen').remove();
                 }
-                var percentage = (t - start) / (totaltime) * 100;
+                const percentage = (t - start) / (totaltime) * 100;
                 $('#scrollbar, #scrollhead-top').css('left', percentage + '%');
                 $('#timeline-wrapper #currenttime').text(convertSecondsToHMS(t, true));
                 dispatchEvent('timeupdate', {'time': t});
             };
 
-            var onPlayingInterval;
-            var visualized = false;
+            let onPlayingInterval;
+            let visualized = false;
             /**
              * Excute when video plays (i.e. start or resume)
              */
@@ -491,8 +491,8 @@ define(['jquery',
                     player.visualizer();
                     visualized = true;
                 }
-                var intervalFunction = async function() {
-                    var thisTime = await player.getCurrentTime();
+                const intervalFunction = async function() {
+                    let thisTime = await player.getCurrentTime();
                     const isPlaying = await player.isPlaying();
                     const isEnded = await player.isEnded();
                     if (!isPlaying || isEnded) {
@@ -601,14 +601,14 @@ define(['jquery',
 
             // Post annotation update (add, edit, clone).
             $(document).on('annotationupdated', function(e) {
-                var action = e.originalEvent.detail.action;
+                const action = e.originalEvent.detail.action;
                 if (action == 'import') {
                     annotations = e.originalEvent.detail.annotations;
                     renderAnnotationItems(annotations);
                     addNotification(M.util.get_string('interactionimported', 'mod_interactivevideo'), 'success');
                     return;
                 }
-                var updated = e.originalEvent.detail.annotation;
+                let updated = e.originalEvent.detail.annotation;
                 if (action == 'edit' || action == 'draft' || action == 'savedraft') {
                     annotations = annotations.filter(function(item) {
                         return item.id != updated.id;
@@ -644,7 +644,7 @@ define(['jquery',
 
             // Re-render annotation list and timeline after an annotation is deleted.
             $(document).on('annotationdeleted', function(e) {
-                var annotation = e.originalEvent.detail.annotation;
+                const annotation = e.originalEvent.detail.annotation;
                 activeid = null;
                 $(`tr[data-id="${annotation.id}"]`).addClass('deleted');
                 setTimeout(function() {
@@ -663,11 +663,11 @@ define(['jquery',
                 }
                 e.preventDefault();
                 $('#addcontentdropdown .dropdown-item').removeClass('active');
-                let ctype = $(this).data('type');
+                const ctype = $(this).data('type');
                 player.pause();
-                var timestamp = currentTime || await player.getCurrentTime();
+                let timestamp = currentTime || await player.getCurrentTime();
                 timestamp = Number(timestamp.toFixed(2));
-                var contenttype = contentTypes.find(x => x.name == ctype);
+                const contenttype = contentTypes.find(x => x.name == ctype);
                 if (contenttype.hastimestamp) {
                     if (annotations.find(x => x.timestamp == timestamp)) {
                         addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
@@ -693,53 +693,66 @@ define(['jquery',
             // Implement edit annotation
             $(document).on('click', 'tr.annotation .edit', async function(e) {
                 e.preventDefault();
-                var timestamp = $(this).closest('.annotation').data('timestamp');
+                const timestamp = $(this).closest('.annotation').data('timestamp');
                 if (timestamp) {
                     await player.seek(timestamp, true);
                 }
                 player.pause();
-                var id = $(this).closest('.annotation').data('id');
-                var contenttype = $(this).closest('.annotation').data('type');
+                const id = $(this).closest('.annotation').data('id');
+                const contenttype = $(this).closest('.annotation').data('type');
                 ctRenderer[contenttype].editAnnotation(annotations, id, coursemodule);
             });
 
             // Implement copy annotation
-            $(document).on('click', 'tr.annotation .copy', function(e) {
+            $(document).on('click', 'tr.annotation .copy', async function(e) {
                 e.preventDefault();
-                var id = $(this).closest('.annotation').data('id');
-                var contenttype = $(this).closest('.annotation').data('type');
-                ctRenderer[contenttype].cloneAnnotation(id);
+                const id = $(this).closest('.annotation').data('id');
+                const contenttype = $(this).closest('.annotation').data('type');
+                const time = await player.getCurrentTime();
+                ctRenderer[contenttype].cloneAnnotation(id, time);
             });
 
             // Implement delete annotation.
             $(document).on('click', 'tr.annotation .delete', function(e) {
                 e.preventDefault();
                 player.pause();
-                var id = $(this).closest('.annotation').data('id');
-                var annotation = annotations.find(annotation => annotation.id == id);
-                Notification.deleteCancel(
-                    M.util.get_string('deleteinteraction', 'mod_interactivevideo'),
-                    M.util.get_string('deleteinteractionconfirm', 'mod_interactivevideo'),
-                    M.util.get_string('delete', 'mod_interactivevideo'),
-                    function() {
-                        ctRenderer[annotation.type].deleteAnnotation(annotations, id);
-                    },
-                    null
-                );
+                const id = $(this).closest('.annotation').data('id');
+                const annotation = annotations.find(annotation => annotation.id == id);
+                try {
+                    Notification.deleteCancel(
+                        M.util.get_string('deleteinteraction', 'mod_interactivevideo'),
+                        M.util.get_string('deleteinteractionconfirm', 'mod_interactivevideo'),
+                        M.util.get_string('delete', 'mod_interactivevideo'),
+                        function() {
+                            ctRenderer[annotation.type].deleteAnnotation(annotations, id);
+                        },
+                        null
+                    );
+                } catch {
+                    Notification.deleteCancelPromise(
+                        M.util.get_string('deleteinteraction', 'mod_interactivevideo'),
+                        M.util.get_string('deleteinteractionconfirm', 'mod_interactivevideo'),
+                    ).then(() => {
+                        return ctRenderer[annotation.type].deleteAnnotation(annotations, id);
+                    }).catch(() => {
+                        return;
+                    });
+                }
+
 
             });
 
             // Implement view annotation.
-            $(document).on('click', 'tr.annotation  .title', async function(e) {
+            $(document).on('click', 'tr.annotation .title', async function(e) {
                 e.preventDefault();
-                var timestamp = $(this).closest('.annotation').data('timestamp');
+                const timestamp = $(this).closest('.annotation').data('timestamp');
                 // Update the progress bar.
-                var percentage = (timestamp - start) / totaltime * 100;
+                const percentage = (timestamp - start) / totaltime * 100;
                 replaceProgressBars(percentage);
                 await player.seek(timestamp, true);
                 player.pause();
-                var id = $(this).closest('.annotation').data('id');
-                var theAnnotation = annotations.find(annotation => annotation.id == id);
+                const id = $(this).closest('.annotation').data('id');
+                const theAnnotation = annotations.find(annotation => annotation.id == id);
                 setTimeout(() => {
                     runInteraction(theAnnotation);
                 }, 500);
@@ -748,7 +761,7 @@ define(['jquery',
             // Implement go to timestamp.
             $(document).on('click', 'tr.annotation .timestamp', async function(e) {
                 e.preventDefault();
-                var timestamp = $(this).data('timestamp');
+                const timestamp = $(this).data('timestamp');
                 await player.seek(timestamp);
                 player.play();
             });
@@ -760,7 +773,7 @@ define(['jquery',
                 }
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                var percentage = e.offsetX / $(this).width();
+                const percentage = e.offsetX / $(this).width();
                 replaceProgressBars(percentage * 100);
                 currentTime = (percentage * totaltime) + start;
                 await player.seek(currentTime);
@@ -811,7 +824,7 @@ define(['jquery',
             $(document).on('contextmenu', '#video-nav .annotation', function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                var id = $(this).data('id');
+                const id = $(this).data('id');
                 // Trigger click on the edit button.
                 $(`tr.annotation[data-id="${id}"] .edit`).trigger('click');
             });
@@ -823,16 +836,16 @@ define(['jquery',
                 if ($('[data-field].editing').length > 0) {
                     return;
                 }
-                var fld = $(this).data('editable');
+                const fld = $(this).data('editable');
                 $(this).hide();
                 $(this).siblings('[data-field="' + fld + '"]').removeClass('d-none').focus().addClass('editing');
             });
 
             $(document).on('keyup', '[data-field].editing', function(e) {
                 $(this).removeClass('is-invalid');
-                var initialValue = $(this).data('initial-value');
-                var val = $(this).val();
-                var fld = $(this).data('field');
+                const initialValue = $(this).data('initial-value');
+                const val = $(this).val();
+                const fld = $(this).data('field');
                 if (val == '') {
                     $(this).addClass('is-invalid');
                 }
@@ -847,15 +860,15 @@ define(['jquery',
                 }
                 // If enter key is pressed, save the value.
                 if (e.key == 'Enter') {
-                    var seconds;
+                    let seconds;
                     if (fld == 'timestamp') {
-                        var parts = initialValue.split(':');
+                        const parts = initialValue.split(':');
                         seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
                         if (!validateTimestampFormat(val, '[data-field].editing', initialValue)) {
                             $(this).addClass('is-invalid');
                             return;
                         }
-                        var timestamp = validateTimeStartEnd(val, '[data-field].editing', initialValue, seconds,
+                        const timestamp = validateTimeStartEnd(val, '[data-field].editing', initialValue, seconds,
                             true, true, true);
                         if (timestamp == -1) {
                             $(this).addClass('is-invalid');
@@ -873,7 +886,7 @@ define(['jquery',
                         $(this).siblings('[data-editable]').show();
                         return;
                     }
-                    var id = $(this).data('id');
+                    const id = $(this).data('id');
                     $.ajax({
                         url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
                         method: "POST",
@@ -887,7 +900,7 @@ define(['jquery',
                             value: fld == 'timestamp' ? seconds : val,
                         },
                         success: function(data) {
-                            var updated = JSON.parse(data);
+                            const updated = JSON.parse(data);
                             dispatchEvent('annotationupdated', {
                                 annotation: updated,
                                 action: 'edit'
@@ -899,7 +912,7 @@ define(['jquery',
             });
 
             $(document).on('blur', '[data-field].editing', function() {
-                var initialValue = $(this).data('initial-value');
+                const initialValue = $(this).data('initial-value');
                 $(this).val(initialValue);
                 $(this).removeClass('editing');
                 $(this).addClass('d-none');
@@ -916,40 +929,40 @@ define(['jquery',
 
             // Display tooltip on anntation indicator when annotation on the list is hovered.
             $(document).on('mouseover', 'tr.annotation', function() {
-                var id = $(this).data('id');
+                const id = $(this).data('id');
                 $(`#video-nav ul li[data-id="${id}"] .item`).trigger('mouseover');
             });
 
             // Remove tooltip when annotation on the list is not hovered.
             $(document).on('mouseout', 'tr.annotation', function() {
-                var id = $(this).data('id');
+                const id = $(this).data('id');
                 $(`#video-nav ul li[data-id="${id}"] .item`).trigger('mouseout');
                 $('.tooltip').remove();
             });
 
             // Highlight annotation on the list when annotation indicator is hovered.
             $(document).on('mouseover', '#video-nav ul li', function() {
-                var id = $(this).data('id');
+                const id = $(this).data('id');
                 $(`tr.annotation[data-id="${id}"]`).addClass('active');
             });
 
             // Remove highlight when annotation indicator is not hovered.
             $(document).on('mouseout', '#video-nav ul li', function() {
-                var id = $(this).data('id');
+                const id = $(this).data('id');
                 $(`tr.annotation[data-id="${id}"]`).removeClass('active');
             });
 
             // Validate timestamp when the timestamp field is changed.
             $(document).on('change', '.timestamp-input, .timestamp-field input', function() {
                 $(this).removeClass('is-invalid');
-                var parts = $(this).val().split(':');
-                var seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+                const parts = $(this).val().split(':');
+                const seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
                 if (!validateTimestampFormat($(this).val(), this)) {
                     $(this).addClass('is-invalid');
                     return;
                 }
 
-                var timestamp = validateTimeStartEnd($(this).val(), this, "00:00:00", seconds, true, false, true);
+                const timestamp = validateTimeStartEnd($(this).val(), this, "00:00:00", seconds, true, false, true);
 
                 if (timestamp == -1) {
                     $(this).addClass('is-invalid');
@@ -1333,7 +1346,7 @@ define(['jquery',
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 // First clone the #scrollbar and place it where the cursor is.
-                var $scrollbar = $('#scrollbar').clone();
+                let $scrollbar = $('#scrollbar').clone();
                 $scrollbar.attr('id', 'cursorbar');
 
                 const parentOffset = $(this).offset();
@@ -1341,9 +1354,9 @@ define(['jquery',
 
                 $scrollbar.css('left', (relX + 5) + 'px');
                 $scrollbar.find('#scrollhead').remove();
-                var percentage = relX / $(this).width();
-                var time = percentage * (totaltime) + start;
-                var formattedTime = convertSecondsToHMS(time, true, false);
+                const percentage = relX / $(this).width();
+                const time = percentage * (totaltime) + start;
+                const formattedTime = convertSecondsToHMS(time, true, false);
                 $('#vseek #bar').append(`<div id="position-marker">
                     <div id="position" class="py-0 px-1" style="top:-25px;">${formattedTime}</div></div>`);
                 $('#vseek #position-marker').css('left', relX + 'px');
@@ -1359,12 +1372,12 @@ define(['jquery',
                 e.stopImmediatePropagation();
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
-                var percentage = relX / $(this).width();
-                var time = percentage * (totaltime) + start;
+                const percentage = relX / $(this).width();
+                let time = percentage * (totaltime) + start;
                 if (time < start) {
                     time = start;
                 }
-                var formattedTime = convertSecondsToHMS(time, true, false);
+                const formattedTime = convertSecondsToHMS(time, true, false);
                 // Move the cursorbar
                 $('#cursorbar').css('left', (relX + 5) + 'px');
                 $('#vseek #position').text(formattedTime);
@@ -1375,8 +1388,8 @@ define(['jquery',
             $(document).on('click', '#video-nav .annotation', async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                var id = $(this).data('id');
-                var annotation = annotations.find(x => x.id == id);
+                const id = $(this).data('id');
+                const annotation = annotations.find(x => x.id == id);
                 await player.seek(annotation.timestamp);
                 runInteraction(annotation);
             });
@@ -1385,7 +1398,7 @@ define(['jquery',
             $(document).on('click', '#vseek #bar, #video-timeline', async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                var percentage = e.offsetX / $(this).width();
+                const percentage = e.offsetX / $(this).width();
                 replaceProgressBars(percentage * 100);
                 await player.seek((percentage * totaltime) + start);
                 player.pause();
@@ -1394,8 +1407,8 @@ define(['jquery',
 
             // Implement timeline zoom out.
             $('#zoomout').on('click', function() {
-                let currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
-                let newLevel = parseInt(currentLevel) - 300;
+                const currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
+                const newLevel = parseInt(currentLevel) - 300;
                 $('#timeline-items-wrapper').css('width', newLevel + 'px');
                 const relWidth = $('#timeline-items').width();
                 $('#minute-markers, #minute-markers-bg, #vseek').css('width', relWidth + 'px');
@@ -1408,8 +1421,8 @@ define(['jquery',
 
             // Implement timeline zoom in.
             $('#zoomin').on('click', function() {
-                let currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
-                let newLevel = parseInt(currentLevel) + 300;
+                const currentLevel = $('#timeline-items-wrapper').css('width'); // In px.
+                const newLevel = parseInt(currentLevel) + 300;
                 $('#timeline-items-wrapper').css('width', newLevel + 'px');
                 const relWidth = $('#timeline-items').width();
                 $('#minute-markers, #minute-markers-bg, #vseek').css('width', relWidth + 'px');
@@ -1431,7 +1444,6 @@ define(['jquery',
 
             document.getElementById('timeline').addEventListener('scroll', function() {
                 document.getElementById('minute-markers-wrapper').scrollLeft = this.scrollLeft;
-                // Set left position of the vseek to - scrollleft;
                 document.getElementById('vseek').style.left = -this.scrollLeft + 'px';
                 document.getElementById('minute-markers-bg-wrapper').style.left = -this.scrollLeft + 'px';
                 document.getElementById('scrollbar').scrollHeight = this.scrollHeight;
@@ -1456,7 +1468,7 @@ define(['jquery',
                             value: a.timestamp,
                         },
                         success: function(data) {
-                            var updated = JSON.parse(data);
+                            const updated = JSON.parse(data);
                             dispatchEvent('annotationupdated', {
                                 annotation: updated,
                                 action: 'savedraft'
@@ -1477,7 +1489,7 @@ define(['jquery',
                                 value: a.title,
                             },
                             success: function(data) {
-                                var updated = JSON.parse(data);
+                                const updated = JSON.parse(data);
                                 dispatchEvent('annotationupdated', {
                                     annotation: updated,
                                     action: 'savedraft'
@@ -1591,7 +1603,7 @@ define(['jquery',
                             action: 'get_taught_courses',
                             sesskey: M.cfg.sesskey,
                             contextid: M.cfg.contextid,
-                            userid: M.cfg.userId
+                            userid: userid
                         },
                         success: function(data) {
                             let courses = JSON.parse(data);
@@ -1742,7 +1754,7 @@ define(['jquery',
                             if (Number(timestamp) < 0) {
                                 timestamp = Number(timestamp);
                             } else {
-                                var parts = timestamp.split(':');
+                                const parts = timestamp.split(':');
                                 timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
                                 if (annotations.find(x => x.timestamp == timestamp)) {
                                     return;

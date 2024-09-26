@@ -1289,7 +1289,7 @@ html:has(.path-mod-interactivevideo) {
     display: none;
 }
 
-.path-mod-interactivevideo:not(.iframe.mobiletheme) #interactivevideo-container {
+.path-mod-interactivevideo #interactivevideo-container {
     top: 70px;
 }
 

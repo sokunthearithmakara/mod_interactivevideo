@@ -227,13 +227,14 @@ class submitform_form extends \core_form\dynamic_form {
 
         foreach ($fields as $field) {
             $field->fieldid = "field-{$field->id}";
-            $fieldactions = "<div class=\"px-2 py-1 field-actions \">
-            <i class=\"bi bi-pencil-square cursor-pointer mr-3 edit\" data-id=\"{$field->id}\" title=\""
-                . get_string('edit', 'mod_interactivevideo') . "\"></i>
-            <i class=\"bi bi-copy cursor-pointer mr-3 copy\" data-id=\"{$field->id}\" title=\""
-                . get_string('clone', 'mod_interactivevideo') . "\"></i>
-            <i class=\"bi bi-trash3 cursor-pointer text-danger delete\" data-id=\"{$field->id}\" title=\""
-                . get_string('delete', 'mod_interactivevideo') . "\"></i></div>";
+            $fieldactions = "<div class=\"field-actions\">
+            <button class=\"btn btn-sm edit\" data-id=\"{$field->id}\" title=\""
+                . get_string('edit', 'mod_interactivevideo') . "\"><i class=\"bi bi-pencil-square\"></i></button>
+            <button class=\"btn btn-sm copy\" data-id=\"{$field->id}\" title=\""
+                . get_string('clone', 'mod_interactivevideo') . "\"><i class=\"bi bi-copy\"></i></button>
+            <button class=\"btn btn-sm delete\" data-id=\"{$field->id}\" title=\""
+                . get_string('delete', 'mod_interactivevideo') . "\"><i class=\"bi bi-trash3 text-danger\"></i></button>
+            </div>";
             $label = '<div class="d-flex flex-column">';
             if ($isedit) {
                 $label .= $fieldactions;

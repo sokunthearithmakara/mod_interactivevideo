@@ -100,8 +100,8 @@ export default class H5pUpload extends Base {
     async runInteraction(annotation) {
         this.player.pause();
 
-        var annoid = annotation.id;
-        var self = this;
+        const annoid = annotation.id;
+        let self = this;
 
         /**
          * Monitors an annotation for xAPI events and updates the UI accordingly.
@@ -114,7 +114,7 @@ export default class H5pUpload extends Base {
          * @returns {void}
          */
         const xAPICheck = (annotation) => {
-            var H5P;
+            let H5P;
 
             const detectAPI = () => {
                 try { // Try to get the H5P object.
@@ -147,11 +147,11 @@ export default class H5pUpload extends Base {
                                         <i class="fa fa-check mr-2"></i>
                                         ${M.util.get_string('xapieventdetected', 'ivplugin_h5pupload')}
                                         </div>`);
-                                    var audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
+                                    const audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
                                     audio.play();
                                     return;
                                 }
-                                var complete = false;
+                                let complete = false;
                                 let textclass = '';
                                 if (annotation.completiontracking == 'completepass'
                                     && event.data.statement.result && event.data.statement.result.score.scaled >= 0.5) {

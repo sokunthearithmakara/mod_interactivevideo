@@ -119,8 +119,8 @@ export default class InlineAnnotation extends Base {
      */
     postContentRender(annotation, data) {
         let self = this;
-        var $videoWrapper = $('#video-wrapper');
-        var $playerWrapper = $('#wrapper');
+        let $videoWrapper = $('#video-wrapper');
+        let $playerWrapper = $('#wrapper');
         let draftStatus = null;
 
         /**
@@ -210,8 +210,8 @@ export default class InlineAnnotation extends Base {
         };
 
         const renderImage = (wrapper, item, prop, id, position) => {
-            var parts = prop.timestamp.split(':');
-            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            const parts = prop.timestamp.split(':');
+            const timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
             if (prop.gotourl != '') {
                 wrapper.append(`<a href="${prop.gotourl}" target="_blank"><img src="${prop.url}" id="${id}"
                              class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
@@ -242,7 +242,7 @@ export default class InlineAnnotation extends Base {
                   ${$('body').hasClass('mobiletheme') ? 'preload="auto"' : ''}
                  src="${prop.url}" style="border-radius: ${prop.rounded == 1 ? '1em' : '0'}" disablePictureInPicture/></video>
              <i class="playpause bi bi-play-fill position-absolute" style="font-size: 2em; line-height:: 2em;"></i>`);
-            var video = wrapper.find('video')[0];
+            let video = wrapper.find('video')[0];
             video.autoplay = prop.autoplay == '1';
             video.playsInline = true;
             if (self.isEditMode()) {
@@ -264,7 +264,7 @@ export default class InlineAnnotation extends Base {
 
         const renderFile = (wrapper, item, prop, id, position) => {
             const type = item.type;
-            var wrapperhtml = ``;
+            let wrapperhtml = ``;
             if (type == 'audio') {
                 wrapperhtml = `<span id="${id}" tabindex="0"
                              class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
@@ -332,8 +332,8 @@ export default class InlineAnnotation extends Base {
         };
 
         const renderNavigation = (wrapper, item, prop, id, position) => {
-            var parts = prop.timestamp.split(':');
-            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            const parts = prop.timestamp.split(':');
+            const timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
 
             wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0" class="btn ${prop.style} ${prop.rounded == '1' ?
                 'btn-rounded' : 'rounded-0'} annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''}"
@@ -347,7 +347,7 @@ export default class InlineAnnotation extends Base {
         };
 
         const renderStopwatch = (wrapper, item, prop, id, position) => {
-            var duration = Number(prop.duration) * 60;
+            const duration = Number(prop.duration) * 60;
             wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0"
                              class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
                               annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatey-180"
@@ -355,11 +355,11 @@ export default class InlineAnnotation extends Base {
                                <i class="bi bi bi-stopwatch fs-unset" style="margin-right:0.25em;"></i>
                                <span>${convertSecondsToMMSS(duration)}</span></span></div>`);
 
-            var timer, alarm;
+            let timer, alarm;
             if (timer) {
                 clearInterval(timer);
             }
-            var intervalfunction = function() {
+            const intervalfunction = function() {
                 timer = setInterval(() => {
                     $(`.annotation-content#${id}`).addClass('running');
                     let time = $(`.annotation-content#${id}`).data('duration');
@@ -424,8 +424,8 @@ export default class InlineAnnotation extends Base {
         };
 
         const renderTextblock = (wrapper, item, prop, id, position) => {
-            var textparts = prop.formattedlabel.split('\r\n');
-            var textblock = '<div class="d-flex flex-column">';
+            const textparts = prop.formattedlabel.split('\r\n');
+            let textblock = '<div class="d-flex flex-column">';
             textparts.forEach((part) => {
                 if (part.trim() == '') {
                     return;
@@ -446,7 +446,7 @@ export default class InlineAnnotation extends Base {
             }
             wrapper.position.width = 0;
             wrapper.css(position);
-            var style = {
+            const style = {
                 'font-size': item.position.fontSize,
                 'line-height': item.position.lineHeight,
                 'font-weight': prop.bold == '1' ? 'bold' : 'normal',
@@ -465,8 +465,8 @@ export default class InlineAnnotation extends Base {
         };
 
         const renderShape = (wrapper, item, prop, id, position) => {
-            var parts = prop.timestamp.split(':');
-            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            const parts = prop.timestamp.split(':');
+            const timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
             if (prop.gotourl != '') {
                 wrapper.append(`<a href="${prop.gotourl}" target="_blank"><div id="${id}"
                              class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}"
@@ -486,7 +486,7 @@ export default class InlineAnnotation extends Base {
                              style="width: 100%; height: 100%;"></div>`);
             }
             wrapper.css(position);
-            var style = {
+            const style = {
                 'background': prop.bgcolor,
                 'border-width': prop.borderwidth,
                 'border-color': prop.bordercolor,
@@ -506,7 +506,7 @@ export default class InlineAnnotation extends Base {
             wrapper.append(`<div id="${id}" class="annotation-content shadow-sm pulse" role="button"></div>`);
             position['aspect-ratio'] = '1';
             wrapper.css(position);
-            var style = {
+            const style = {
                 'background-color': prop.color,
                 'opacity': prop.opacity / 100,
                 'border-radius': '50%',
@@ -630,10 +630,10 @@ export default class InlineAnnotation extends Base {
                                 });
                             },
                             drag: function(event, ui) {
-                                var $selected = $videoWrapper.find('#canvas .annotation-wrapper.active');
-                                var left = ui.originalPosition.left - ui.position.left;
-                                var top = ui.originalPosition.top - ui.position.top;
-                                var positions = $selected.map(function() {
+                                let $selected = $videoWrapper.find('#canvas .annotation-wrapper.active');
+                                let left = ui.originalPosition.left - ui.position.left;
+                                let top = ui.originalPosition.top - ui.position.top;
+                                let positions = $selected.map(function() {
                                     return {
                                         id: $(this).data('item'),
                                         left: $(this).position().left,
@@ -689,8 +689,8 @@ export default class InlineAnnotation extends Base {
                                 }
 
                                 $selected.not(this).each(function() {
-                                    var $this = $(this);
-                                    var position = $this.data('startPosition');
+                                    let $this = $(this);
+                                    const position = $this.data('startPosition');
                                     $this.css({
                                         left: (position.left - left) + 'px',
                                         top: (position.top - top) + 'px',
@@ -701,7 +701,7 @@ export default class InlineAnnotation extends Base {
                             stop: function() {
                                 if (self.isEditMode()) {
                                     let $selected = $videoWrapper.find('#canvas .annotation-wrapper.active');
-                                    var positions = $selected.map(function() {
+                                    let positions = $selected.map(function() {
                                         return {
                                             id: $(this).data('item'),
                                             left: $(this).position().left,
@@ -1453,7 +1453,7 @@ export default class InlineAnnotation extends Base {
 
             recalculatingSize($(this));
 
-            var activewrapper = $videoWrapper.find('#canvas .annotation-wrapper.active');
+            let activewrapper = $videoWrapper.find('#canvas .annotation-wrapper.active');
             if (activewrapper.length == 0) {
                 $('#edit-btns').attr('data-active', '').addClass('d-none').removeClass('d-flex');
                 $('#inlineannotation-btns #edit').attr('disabled', 'disabled');

@@ -70,7 +70,8 @@ switch ($action) {
     case 'copy_item':
         require_capability('mod/interactivevideo:view', $context);
         $id = required_param('id', PARAM_INT);
-        $item = interactivevideo_util::copy_item($id, $contextid);
+        $timestamp = required_param('timestamp', PARAM_FLOAT);
+        $item = interactivevideo_util::copy_item($id, $contextid, $timestamp);
         echo json_encode($item);
         break;
     case 'get_content':

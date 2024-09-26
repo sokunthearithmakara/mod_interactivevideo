@@ -41,15 +41,17 @@ export default class HtmlViewer extends Base {
      * @return {void}
      */
     postContentRender(annotation) {
-        var interval = setInterval(() => {
+        const checkIframe = () => {
             if ($(`#message[data-id='${annotation.id}'] iframe`).length > 0) {
-                clearInterval(interval);
-                // Remove the loading background because some iframe has transparent content
-                setTimeout(() => {
-                    $(`#message[data-id='${annotation.id}'] iframe`).css('background', 'none');
-                }, 1000);
+            // Remove the loading background because some iframe has transparent content
+            setTimeout(() => {
+                $(`#message[data-id='${annotation.id}'] iframe`).css('background', 'none');
+            }, 1000);
+            } else {
+            requestAnimationFrame(checkIframe);
             }
-        }, 1000);
+        };
+        requestAnimationFrame(checkIframe);
     }
 
     /**

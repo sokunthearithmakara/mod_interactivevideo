@@ -48,7 +48,7 @@ export default class Decision extends Base {
             if (notSkip.length == 0) {
                 return;
             }
-            var self = this;
+            let self = this;
             $(document).on('timeupdate', function(e) {
                 const cantSkip = decisions.filter((d) => d.char1 != 1 && !d.viewed);
                 cantSkip.sort((a, b) => a.timestamp - b.timestamp);
@@ -73,10 +73,10 @@ export default class Decision extends Base {
      */
     addAnnotation(annotations, timestamp, coursemodule) {
         $('#addcontent, #interaction-timeline').addClass('no-pointer-events');
-        var self = this;
+        let self = this;
         this.annotations = annotations;
         if (!this.isBetweenStartAndEnd(timestamp)) {
-            var message = M.util.get_string('interactioncanonlybeaddedbetweenstartandendtime', 'mod_interactivevideo', {
+            const message = M.util.get_string('interactioncanonlybeaddedbetweenstartandendtime', 'mod_interactivevideo', {
                 "start": self.convertSecondsToHMS(self.start),
                 "end": self.convertSecondsToHMS(self.end),
             });
@@ -157,7 +157,7 @@ export default class Decision extends Base {
                     cmid: self.cm,
                 },
                 success: function(data) {
-                    var newAnnotation = JSON.parse(data);
+                    const newAnnotation = JSON.parse(data);
                     dispatchEvent('annotationupdated', {
                         annotation: newAnnotation,
                         action: 'add'
@@ -233,7 +233,7 @@ export default class Decision extends Base {
                     cmid: self.cm,
                 },
             }).done(function(data) {
-                var updated = JSON.parse(data);
+                const updated = JSON.parse(data);
                 dispatchEvent('annotationupdated', {
                     annotation: updated,
                     action: 'edit'
@@ -258,7 +258,7 @@ export default class Decision extends Base {
 
         const checkContentField = () => {
             if ($('[name=content]').length > 0) {
-                var dest = $('[name=content]').val();
+                let dest = $('[name=content]').val();
                 if (dest == '' || JSON.parse(dest).length == 0) {
                     $('#destination-list').append(`<div class="input-group mb-1 d-none">
                 <div class="input-group-prepend">
@@ -339,14 +339,14 @@ export default class Decision extends Base {
         });
 
         body.on('input', '.input-group [type="text"]', function() {
-            var dest = [];
+            let dest = [];
             $('#destination-list .input-group').each(function() {
-                var title = $(this).find('input[type="text"]');
-                var timestamp = $(this).find('.timestamp-input');
+                const title = $(this).find('input[type="text"]');
+                const timestamp = $(this).find('.timestamp-input');
                 if (title.val() != '' && timestamp.val() != ''
                     && !title.hasClass('is-invalid') && !timestamp.hasClass('is-invalid')) {
-                    var parts = timestamp.val().split(':');
-                    var seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+                    const parts = timestamp.val().split(':');
+                    const seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
                     dest.push({
                         title: title.val(),
                         timestamp: seconds
@@ -369,7 +369,7 @@ export default class Decision extends Base {
         $('.tooltip').remove();
         this.player.pause();
         let self = this;
-        var dest = JSON.parse(annotation.content);
+        let dest = JSON.parse(annotation.content);
         dest = dest.filter((d) => {
             return !self.isSkipped(d.timestamp);
         });
@@ -428,7 +428,7 @@ export default class Decision extends Base {
             .on('click', `#message[data-id='${annotation.id}'] .decision-option`, function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                var time = Number($(this).data('timestamp'));
+                let time = Number($(this).data('timestamp'));
                 if (time < this.start) {
                     time = this.start;
                 } else if (time > this.end) {

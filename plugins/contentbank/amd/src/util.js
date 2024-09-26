@@ -72,7 +72,7 @@ const init = (contextid) => {
             $('.contentbank-container .contentbank-item').removeClass('selected');
             $(this).closest('.contentbank-item').addClass('selected');
             $('#contentbank-preview').empty();
-            var id = $(this).closest('.contentbank-item').data('contentid');
+            const id = $(this).closest('.contentbank-item').data('contentid');
             $('[name=contentid]').val(id);
         });
 
@@ -80,9 +80,9 @@ const init = (contextid) => {
         .on('click', '.contentbank-container .contentbank-item .contentbankview', function(e) {
             e.preventDefault();
             $('.contentbank-container .contentbank-item').removeClass('selected');
-            var targetContentbank = $(this).closest('.contentbank-item');
+            let targetContentbank = $(this).closest('.contentbank-item');
             targetContentbank.addClass('selected');
-            var id = targetContentbank.data('contentid');
+            const id = targetContentbank.data('contentid');
             $('#contentbank-preview').empty();
             $('#contentbank-preview').attr('data-contentid', id);
             $('[name=contentid]').val(id);
@@ -92,8 +92,8 @@ const init = (contextid) => {
             // Handle xAPI event. We want user to be able to check if the content emits xAPI events (completed, answered)
             // because some content types may not emit these events. Then user can decide
             // if they want students to mark it complete manually or automatically.
-            var xapicheck = M.util.get_string('xapicheck', 'ivplugin_contentbank');
-            var H5P;
+            const xapicheck = M.util.get_string('xapicheck', 'ivplugin_contentbank');
+            let H5P;
 
             const checkH5P = () => {
                 try { // Try to get the H5P object.
@@ -115,7 +115,7 @@ const init = (contextid) => {
                             $("#contentbank-preview")
                                 .prepend(`<div class="xapi float-right alert-success d-inline px-2 text-center rounded-pill mb-2">
                         <i class="fa fa-check mr-2"></i>${M.util.get_string('xapieventdetected', 'ivplugin_contentbank')}</div>`);
-                            var audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
+                            const audio = new Audio(M.cfg.wwwroot + '/mod/interactivevideo/sounds/pop.mp3');
                             audio.play();
                         }
                     });
@@ -147,13 +147,13 @@ const refreshContentBank = async (id, coursecontextid, edit = true, callback) =>
         methodname: 'ivplugin_contentbank_getitems',
     }])[0];
 
-    var contents = JSON.parse(contentbankitems.contents);
-    var contentbank = $('.modal-body form .contentbank-container');
+    let contents = JSON.parse(contentbankitems.contents);
+    let contentbank = $('.modal-body form .contentbank-container');
     contentbank.empty();
     contents.forEach(function(content) {
-        var editurl = M.cfg.wwwroot + '/contentbank/edit.php?contextid='
+        const editurl = M.cfg.wwwroot + '/contentbank/edit.php?contextid='
             + coursecontextid + '&id=' + content.id + '&plugin=' + content.type;
-        var html = '<div class="contentbank-item d-flex align-items-center p-1 '
+        let html = '<div class="contentbank-item d-flex align-items-center p-1 '
             + (content.id == id ? "selected" : "") + ' " data-contentid="' + content.id
             + '"><div class="contentbank-item-details d-flex align-items-center">';
         if (content.icon) {

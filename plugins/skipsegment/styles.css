@@ -44,3 +44,14 @@
 .path-mod-interactivevideo .skipsegment:hover .delete-skipsegment {
     display: block;
 }
+
+.path-mod-interactivevideo #skipsegment {
+    bottom: 0;
+    right: 0;
+    text-shadow: 1px 2px 3px gray;
+    line-height: 1rem;
+
+    i {
+        font-size: xxx-large;
+    }
+}

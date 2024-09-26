@@ -202,13 +202,13 @@ export default class Annotation extends Base {
      */
     postContentRender(annotation, data) {
         let self = this;
-        var $videoWrapper = $('#annotation-canvas');
+        let $videoWrapper = $('#annotation-canvas');
 
         // Put a background so that when an annotation is selected, user is prevented from clicking on the video.
         if (self.isEditMode()) {
             $videoWrapper.append(`<div id="background" class="position-absolute w-100 h-100 bg-transparent d-none"></div>`);
         }
-        var $playerWrapper = $('#wrapper');
+        let $playerWrapper = $('#wrapper');
         let draftStatus = null;
 
         /**
@@ -387,11 +387,11 @@ export default class Annotation extends Base {
                             $('#position-marker').css('left', `${left}%`);
                             $('#vseek #bar #position').text(convertSecondsToMMSS(timestamp));
 
-                            var $selected = $('.annotation-timeline-item.active');
-                            var distance = ui.originalPosition.left - ui.position.left;
+                            let $selected = $('.annotation-timeline-item.active');
+                            const distance = ui.originalPosition.left - ui.position.left;
                             $selected.not(this).each(function() {
-                                var $this = $(this);
-                                var position = $this.data('startPosition');
+                                let $this = $(this);
+                                const position = $this.data('startPosition');
                                 $this.css({
                                     left: ((position.left - distance) / $('#annotation-timeline').width()) * 100 + '%',
                                 });
@@ -476,9 +476,9 @@ export default class Annotation extends Base {
                             $('#position-marker').css('left', `${left}%`);
                             $('#vseek #bar #position').text(convertSecondsToMMSS(timestamp));
 
-                            var newStart = ((ui.position.left) / $('#annotation-timeline').width()) * self.totaltime
+                            const newStart = ((ui.position.left) / $('#annotation-timeline').width()) * self.totaltime
                                 + self.start;
-                            var newEnd = ((ui.position.left + ui.size.width) / $('#annotation-timeline').width())
+                            const newEnd = ((ui.position.left + ui.size.width) / $('#annotation-timeline').width())
                                 * self.totaltime + self.start;
                             $('#s-position').text(convertSecondsToMMSS(newStart));
                             $('#e-position').text(convertSecondsToMMSS(newEnd));
@@ -495,7 +495,7 @@ export default class Annotation extends Base {
                             // Handle other selected elements: same position and width
                             let leftPercentage = ui.position.left / $('#annotation-timeline').width() * 100;
                             let newWidth = ui.size.width / $('#annotation-timeline').width() * 100;
-                            var $selected = $('.annotation-timeline-item.active').not(this);
+                            let $selected = $('.annotation-timeline-item.active').not(this);
                             $selected.each(function() {
                                 let $this = $(this);
                                 $this.css({
@@ -518,9 +518,9 @@ export default class Annotation extends Base {
                                 $('#cursorbar, #position-marker').remove();
                                 $('#timeline-items').removeClass('no-pointer-events');
                             }, 200);
-                            var newStart = ((ui.position.left) / $('#annotation-timeline').width()) * self.totaltime
+                            const newStart = ((ui.position.left) / $('#annotation-timeline').width()) * self.totaltime
                                 + self.start;
-                            var newEnd = ((ui.position.left + ui.size.width) / $('#annotation-timeline').width())
+                            const newEnd = ((ui.position.left + ui.size.width) / $('#annotation-timeline').width())
                                 * self.totaltime + self.start;
                             let $selected = $('.annotation-timeline-item.active');
                             $selected.each(function() {
@@ -559,8 +559,8 @@ export default class Annotation extends Base {
          * @returns void
          */
         const timestampScrollbar = (seconds) => {
-            var formattedTime = convertSecondsToMMSS(seconds);
-            var $scrollbar = $('#scrollbar').clone();
+            const formattedTime = convertSecondsToMMSS(seconds);
+            let $scrollbar = $('#scrollbar').clone();
             $scrollbar.attr('id', 'cursorbar');
             $scrollbar.find('#scrollhead').remove();
             $('#timeline-items').append($scrollbar);
@@ -570,8 +570,8 @@ export default class Annotation extends Base {
         };
 
         const renderImage = (wrapper, item, prop, id, position) => {
-            var parts = prop.timestamp.split(':');
-            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            const parts = prop.timestamp.split(':');
+            const timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
             if (prop.gotourl != '') {
                 wrapper.append(`<a href="${prop.gotourl}" target="_blank"><img src="${prop.url}" id="${id}"
                          class="annotation-content w-100 ${prop.shadow == '1' ? 'shadow' : ''}"
@@ -597,8 +597,7 @@ export default class Annotation extends Base {
         };
 
         const renderFile = (wrapper, item, prop, id, position) => {
-            var wrapperhtml = ``;
-            wrapperhtml = `<a id="${id}"
+            let wrapperhtml = `<a id="${id}"
                     class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
                     annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''} rotatey-180" href="${prop.url}"
                      target="_blank"><i class="bi bi-paperclip fs-unset"></i>${prop.formattedlabel != "" ?
@@ -611,16 +610,13 @@ export default class Annotation extends Base {
         };
 
         const renderNavigation = (wrapper, item, prop, id, position) => {
-            var parts = prop.timestamp.split(':');
-            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-
+            const parts = prop.timestamp.split(':');
+            const timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
             wrapper.append(`<div class="d-flex h-100"><span id="${id}" tabindex="0"
                          class="btn ${prop.style} ${prop.rounded == '1' ? 'btn-rounded' : 'rounded-0'}
                           annotation-content text-nowrap ${prop.shadow == '1' ? 'shadow' : ''}"
                            data-timestamp="${timestamp}">${prop.formattedlabel}</span></div>`);
-
             position.width = 0;
-
             wrapper.css(position);
             $videoWrapper.append(wrapper);
             recalculatingTextSize(wrapper, true);
@@ -641,7 +637,7 @@ export default class Annotation extends Base {
             }
             wrapper.position.width = 0;
             wrapper.css(position);
-            var style = {
+            const style = {
                 'font-weight': prop.bold == '1' ? 'bold' : 'normal',
                 'font-style': prop.italic == '1' ? 'italic' : 'normal',
                 'text-decoration': prop.underline == '1' ? 'underline' : 'none',
@@ -658,8 +654,8 @@ export default class Annotation extends Base {
         };
 
         const renderTextBlock = (wrapper, item, prop, id, position) => {
-            var textparts = prop.formattedlabel.split('\r\n');
-            var textblock = '<div class="d-flex flex-column">';
+            let textparts = prop.formattedlabel.split('\r\n');
+            let textblock = '<div class="d-flex flex-column">';
             textparts.forEach((part) => {
                 if (part.trim() == '') {
                     return;
@@ -683,7 +679,7 @@ export default class Annotation extends Base {
             }
             wrapper.position.width = 0;
             wrapper.css(position);
-            var style = {
+            const style = {
                 'font-size': item.position.fontSize,
                 'line-height': item.position.lineHeight,
                 'font-weight': prop.bold == '1' ? 'bold' : 'normal',
@@ -702,8 +698,8 @@ export default class Annotation extends Base {
         };
 
         const renderShape = (wrapper, item, prop, id, position) => {
-            var parts = prop.timestamp.split(':');
-            var timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            const parts = prop.timestamp.split(':');
+            const timestamp = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
             if (prop.gotourl != '') {
                 wrapper.append(`<a href="${prop.gotourl}" target="_blank"><div id="${id}"
                          class="annotation-content ${prop.shadow == '1' ? 'shadow' : ''}"
@@ -723,7 +719,7 @@ export default class Annotation extends Base {
                          style="width: 100%; height: 100%;"></div>`);
             }
             wrapper.css(position);
-            var style = {
+            const style = {
                 'background': prop.bgcolor,
                 'border-width': prop.borderwidth,
                 'border-color': prop.bordercolor,
@@ -743,7 +739,7 @@ export default class Annotation extends Base {
             wrapper.append(`<div id="${id}" class="annotation-content shadow-sm pulse" role="button"></div>`);
             position['aspect-ratio'] = '1';
             wrapper.css(position);
-            var style = {
+            const style = {
                 'background-color': prop.color,
                 'opacity': prop.opacity / 100,
                 'border-radius': '50%',
@@ -924,10 +920,10 @@ export default class Annotation extends Base {
                                     });
                                 },
                                 drag: function(event, ui) {
-                                    var $selected = $videoWrapper.find('.annotation-wrapper.active');
-                                    var left = ui.originalPosition.left - ui.position.left;
-                                    var top = ui.originalPosition.top - ui.position.top;
-                                    var positions = $selected.map(function() {
+                                    let $selected = $videoWrapper.find('.annotation-wrapper.active');
+                                    let left = ui.originalPosition.left - ui.position.left;
+                                    let top = ui.originalPosition.top - ui.position.top;
+                                    let positions = $selected.map(function() {
                                         return {
                                             id: $(this).data('item'),
                                             left: $(this).position().left,
@@ -983,8 +979,8 @@ export default class Annotation extends Base {
                                     }
 
                                     $selected.not(this).each(function() {
-                                        var $this = $(this);
-                                        var position = $this.data('startPosition');
+                                        let $this = $(this);
+                                        let position = $this.data('startPosition');
                                         $this.css({
                                             left: (position.left - left) + 'px',
                                             top: (position.top - top) + 'px',
@@ -994,7 +990,7 @@ export default class Annotation extends Base {
                                 },
                                 stop: function() {
                                     let $selected = $videoWrapper.find('.annotation-wrapper.active');
-                                    var positions = $selected.map(function() {
+                                    let positions = $selected.map(function() {
                                         return {
                                             id: $(this).data('item'),
                                             left: $(this).position().left,
@@ -1391,7 +1387,7 @@ export default class Annotation extends Base {
                 }
             }
 
-            var activeitems = $(`.annotation-timeline-item.active`);
+            let activeitems = $(`.annotation-timeline-item.active`);
             if (activeitems.length == 0) {
                 $('#annotation-canvas #background').addClass('d-none').css('z-index', 0);
                 $('#edit-btns').attr('data-active', '').addClass('d-none').removeClass('d-flex');
@@ -1667,7 +1663,7 @@ export default class Annotation extends Base {
             recalculatingSize($(this));
 
             $(`#timeline #annotation-timeline .annotation-timeline-item`).removeClass('active');
-            var activewrapper = $videoWrapper.find('.annotation-wrapper.active');
+            let activewrapper = $videoWrapper.find('.annotation-wrapper.active');
             if (activewrapper.length == 0) {
                 $('#annotation-canvas #background').addClass('d-none').css('z-index', 0);
                 $('#edit-btns').attr('data-active', '').addClass('d-none').removeClass('d-flex');
