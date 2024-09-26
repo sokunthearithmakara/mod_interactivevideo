@@ -772,7 +772,9 @@ class Base {
      * Callback to excute after the content is rendered.
      * @returns {void}
      */
-    postContentRender() { }
+    postContentRender() {
+        // To be overridden by the child class.
+    }
 
     /**
      * Set draggable

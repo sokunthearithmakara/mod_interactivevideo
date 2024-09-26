@@ -57,7 +57,7 @@ define([
         return string;
     };
 
-    const renderAnnotationItems = async (annos, start, totaltime) => {
+    const renderAnnotationItems = async(annos, start, totaltime) => {
         releventAnnotations = annos;
         let actualduration = totaltime;
 
@@ -270,8 +270,7 @@ define([
                         prependDummyChapter(releventAnnotations, start, contentTypes);
                     }
 
-                    await initializeContentTypeRenderers(
-                        contentTypes, releventAnnotations, player, interaction, course, userid,
+                    await initializeContentTypeRenderers(contentTypes, releventAnnotations, player, interaction, course, userid,
                         completionpercentage, gradeiteminstance, grademax, vtype, preventskip,
                         totaltime, start, end, cmid, token, completionid);
 
@@ -424,7 +423,6 @@ define([
                  * @param {number} cmid - The course module ID.
                  * @param {string} token - The authentication token.
                  * @param {number} completionid - Completion record id.
-                 * @returns {Promise<Object>} A promise that resolves to an object containing the initialized contenttype renderers.
                  */
                 async function initializeContentTypeRenderers(contentTypes, releventAnnotations,
                     player, interaction, course, userid, completionpercentage, gradeiteminstance,
@@ -440,7 +438,7 @@ define([
                     if (!contentTypes.find(x => x.name == 'chapter')) {
                         contentTypes.push(chapterContentType);
                     }
-                    return Promise.all(contentTypes.map(contentType => {
+                    await Promise.all(contentTypes.map(contentType => {
                         return new Promise((resolve) => {
                             require([contentType.amdmodule], function(Type) {
                                 ctRenderer[contentType.name] = new Type(player, releventAnnotations, interaction, course, userid,
@@ -451,10 +449,10 @@ define([
                                 } catch (error) {
                                     // Do nothing.
                                 }
-                                resolve(ctRenderer[contentType.name]);
+                                resolve();
                             });
                         });
-                    })).then(() => ctRenderer);
+                    }));
                 }
             };
 
@@ -463,7 +461,7 @@ define([
              * @param {object} annotation annotation object
              * @returns {void}
              */
-            const runInteraction = async (annotation) => {
+            const runInteraction = async(annotation) => {
                 $('#video-wrapper').data('timestamp', new Date().getTime());
                 viewedAnno.push(Number(annotation.id));
                 viewedAnno = [...new Set(viewedAnno)];
@@ -500,7 +498,7 @@ define([
              * @function shareMoment
              * @returns {Promise<void>} A promise that resolves when the video has been successfully sought and played.
              */
-            const shareMoment = async () => {
+            const shareMoment = async() => {
                 if (!moment) {
                     return;
                 }
@@ -541,7 +539,7 @@ define([
              * @function onReady
              * @returns {Promise<void>} A promise that resolves when the player is fully initialized and ready.
              */
-            const onReady = async () => {
+            const onReady = async() => {
                 if (player.support.playbackrate == false) {
                     $('#changerate').remove();
                 } else {
@@ -703,7 +701,7 @@ define([
              * @param {number} t - The time to seek to. If not provided, the current time of the player will be used.
              * @returns {Promise<void>} - A promise that resolves when the seek operation is complete.
              */
-            const onSeek = async (t) => {
+            const onSeek = async(t) => {
                 if (!playerReady) {
                     return;
                 }

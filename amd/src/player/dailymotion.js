@@ -54,7 +54,7 @@ class DailyMotion {
                 return;
             })
             .catch(() => {
-                // Do nothing.
+                return;
             });
         var ready = false;
         var dmOptions = {

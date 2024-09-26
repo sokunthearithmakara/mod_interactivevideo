@@ -56,6 +56,9 @@ class Wistia {
         $.get('https://fast.wistia.com/oembed.json?url=' + url)
             .then(function(data) {
                 self.posterImage = data.thumbnail_url;
+                return self.posterImage;
+            }).catch(() => {
+                return;
             });
         let ready = false;
         const wistiaOptions = {

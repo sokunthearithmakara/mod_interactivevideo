@@ -53,6 +53,9 @@ class Vimeo {
                 // Change the dimensions of the poster image to 16:9.
                 poster = poster.replace(/_\d+x\d+/, '_720x405');
                 this.posterImage = poster;
+                return poster;
+            }).catch(() => {
+                return;
             });
         let self = this;
         const option = {
