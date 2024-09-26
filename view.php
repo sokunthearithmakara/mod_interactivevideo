@@ -192,7 +192,7 @@ if ($moduleinstance->source == 'url') {
         'mod_interactivevideo',
         'video',
         0,
-        'id',
+        'filesize DESC',
     );
     $file = reset($files);
     if (!$file) {

@@ -58,7 +58,7 @@ export default class Iframe extends Base {
                 success: function(data) {
                     const providers = data;
                     let url = $('[name="iframeurl"]').val();
-                    // Format the url to match the provider_url
+                    // Format the url to match the provider_url.
                     let providerUrl = url.split('/')[2];
                     const domain = providerUrl.split('.');
                     if (domain.length > 2) {
@@ -119,7 +119,7 @@ export default class Iframe extends Base {
                                 }
 
                                 $('[name="char1"]').val(ratio);
-                                // Remove any script tags from the html to avoid errors with requirejs from data.html using regex
+                                // Remove any script tags from the html to avoid errors with requirejs from data.html using regex.
                                 data.html = data.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
                                 let embed = $(data.html);
                                 $('[name="content"]').val(data.html);

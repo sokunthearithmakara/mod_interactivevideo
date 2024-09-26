@@ -45,7 +45,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                 'mod_interactivevideo',
                 'video',
                 0,
-                'id',
+                'filesize DESC',
             );
             $file = reset($files);
             if ($file) {

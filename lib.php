@@ -24,8 +24,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use core\plugininfo\mod;
-
 /**
  * Return if the plugin supports $feature.
  *
@@ -140,16 +138,18 @@ function interactivevideo_add_instance($moduleinstance, $mform = null) {
 
     // Handle the file upload for video.
     if ($moduleinstance->source == 'url') {
-        // Delete the draft area files.
-        $fs = get_file_storage();
-        $fs->delete_area_files($context->id, 'mod_interactivevideo', 'video', 0);
+        // Make sure the video field is empty.
+        $DB->set_field('interactivevideo', 'video', '', ['id' => $moduleinstance->id]);
+
+        // Delete the draft area files. This is normally done by the cron job, but we might as well do it now.
         if (!empty($moduleinstance->video)) {
+            $fs = get_file_storage();
             $usercontext = context_user::instance($USER->id);
             $fs->delete_area_files($usercontext->id, 'user', 'draft', $moduleinstance->video);
         }
-        $DB->set_field('interactivevideo', 'video', '', ['id' => $moduleinstance->id]);
     } else {
         $draftitemid = $moduleinstance->video;
+        // Move the file from draft area to the correct area.
         file_save_draft_area_files(
             $draftitemid,
             $context->id,
@@ -157,10 +157,14 @@ function interactivevideo_add_instance($moduleinstance, $mform = null) {
             'video',
             0,
         );
+
+        // Clear the videourl field.
+        $DB->set_field('interactivevideo', 'videourl', '', ['id' => $moduleinstance->id]);
+
+        // Delete the draft area files. This is normally done by the cron job, but we might as well do it now.
         $usercontext = context_user::instance($USER->id);
         $fs = get_file_storage();
         $fs->delete_area_files($usercontext->id, 'user', 'draft', $draftitemid);
-        $DB->set_field('interactivevideo', 'videourl', '', ['id' => $moduleinstance->id]);
     }
 
     interactivevideo_grade_item_update($moduleinstance);
@@ -181,6 +185,7 @@ function interactivevideo_add_instance($moduleinstance, $mform = null) {
 function interactivevideo_update_instance($moduleinstance, $mform = null) {
     global $DB, $USER;
     $moduleinstance->id = $moduleinstance->instance;
+    // Before we do anything, we need to check if the module instance has any video file, so we can delete it later.
     $oldvideo = $DB->get_field('interactivevideo', 'video', ['id' => $moduleinstance->id]);
     $moduleinstance->timemodified = time();
     $cmid = $moduleinstance->coursemodule;
@@ -189,8 +194,11 @@ function interactivevideo_update_instance($moduleinstance, $mform = null) {
 
     $moduleinstance->timemodified = time();
 
+    // Put the endscreentext stdClass into a single field.
     $moduleinstance->endscreentext = json_encode($moduleinstance->endscreentext);
+    // Put all the display options into a single field.
     $moduleinstance->displayoptions = json_encode(interactivevideo_display_options($moduleinstance));
+
     $completiontimeexpected = !empty($moduleinstance->completionexpected) ? $moduleinstance->completionexpected : null;
     \core_completion\api::update_completion_date_event(
         $moduleinstance->coursemodule,
@@ -198,8 +206,6 @@ function interactivevideo_update_instance($moduleinstance, $mform = null) {
         $moduleinstance->id,
         $completiontimeexpected
     );
-
-    $DB->update_record('interactivevideo', $moduleinstance);
 
     $context = context_module::instance($cmid);
     if ($draftitemid) {
@@ -212,11 +218,10 @@ function interactivevideo_update_instance($moduleinstance, $mform = null) {
             ['subdirs' => 0],
             $text
         );
-        $DB->update_record('interactivevideo', $moduleinstance);
     }
 
-    // Handle the file upload for video.
     if ($moduleinstance->source == 'url') {
+        // Delete video file if any.
         if ($oldvideo) {
             // Delete the draft area files.
             $fs = get_file_storage();
@@ -225,14 +230,11 @@ function interactivevideo_update_instance($moduleinstance, $mform = null) {
                 $usercontext = context_user::instance($USER->id);
                 $fs->delete_area_files($usercontext->id, 'user', 'draft', $moduleinstance->video);
             }
-            $DB->set_field('interactivevideo', 'video', '', ['id' => $moduleinstance->id]);
+            $moduleinstance->video = '';
         }
     } else {
         if ($oldvideo != $moduleinstance->video) {
-            // Delete the draft area files.
-            $fs = get_file_storage();
-            $fs->delete_area_files($context->id, 'mod_interactivevideo', 'video', 0);
-
+            // Move the file from draft area to the correct area. This process will delete the old file, if any.
             $draftitemid = $moduleinstance->video;
             file_save_draft_area_files(
                 $draftitemid,
@@ -241,6 +243,7 @@ function interactivevideo_update_instance($moduleinstance, $mform = null) {
                 'video',
                 0,
             );
+            // Delete the draft area files. This is normally done by the cron job, but we might as well do it now.
             $usercontext = context_user::instance($USER->id);
             $fs = get_file_storage();
             $fs->delete_area_files(
@@ -251,9 +254,14 @@ function interactivevideo_update_instance($moduleinstance, $mform = null) {
             );
         }
 
-        $DB->set_field('interactivevideo', 'videourl', '', ['id' => $moduleinstance->id]);
+        // Make sure the videourl field is empty.
+        $moduleinstance->videourl = '';
     }
 
+    // Finally update the record.
+    $DB->update_record('interactivevideo', $moduleinstance);
+
+    // Let's update the grade item.
     interactivevideo_grade_item_update($moduleinstance);
     interactivevideo_update_grades($moduleinstance);
 
@@ -311,6 +319,10 @@ function interactivevideo_get_file_areas($course, $cm, $context) {
     return [
         'content',
         'endscreentext',
+        'attachments',
+        'text1',
+        'text2',
+        'text3',
     ];
 }
 
@@ -350,6 +362,7 @@ function interactivevideo_get_file_info($browser, $areas, $course, $cm, $context
  * @param array $options Additional options affecting the file serving.
  */
 function interactivevideo_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = []) {
+
     require_login($course, true, $cm);
 
     $itemid = array_shift($args);
@@ -381,6 +394,8 @@ function interactivevideo_pluginfile($course, $cm, $context, $filearea, $args, $
  */
 function interactivevideo_extend_settings_navigation($settingsnav, $interactivevideonode = null) {
     $page = $settingsnav->get_page();
+
+    // Interaction tab.
     if (has_capability('mod/interactivevideo:edit', $page->context)) {
         $interactivevideonode->add(
             get_string('interactions', 'mod_interactivevideo'),
@@ -392,6 +407,7 @@ function interactivevideo_extend_settings_navigation($settingsnav, $interactivev
         );
     }
 
+    // Report tab.
     if (has_capability('mod/interactivevideo:viewreport', $page->context)) {
         $interactivevideonode->add(
             get_string('report', 'mod_interactivevideo'),
@@ -405,8 +421,7 @@ function interactivevideo_extend_settings_navigation($settingsnav, $interactivev
 }
 
 /**
- * Add a get_coursemodule_info function in case any assignment type wants to add 'extra' information
- * for the course (see resource).
+ * Add a get_coursemodule_info function.
  *
  * Given a course_module object, this function returns any "extra" information that may be needed
  * when printing this activity in a course listing.  See get_array_of_activities() in course/lib.php.

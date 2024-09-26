@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * TODO describe file interactions
+ * Interaction editor page
  *
  * @package    mod_interactivevideo
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
@@ -108,7 +108,7 @@ if ($moduleinstance->source == 'url') {
         'mod_interactivevideo',
         'video',
         0,
-        'id',
+        'filesize DESC',
     );
     $file = reset($files);
     $url = moodle_url::make_pluginfile_url(

@@ -202,7 +202,7 @@ export default class H5pUpload extends Base {
             requestAnimationFrame(detectAPI);
         };
 
-        // Apply content
+        // Apply content.
         const applyContent = async(annotation) => {
             const data = await this.render(annotation, 'html');
             $(`#message[data-id='${annotation.id}'] .modal-body`).attr('id', 'content').html(data).fadeIn(300);

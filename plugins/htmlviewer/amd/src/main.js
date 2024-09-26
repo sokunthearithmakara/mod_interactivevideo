@@ -43,7 +43,7 @@ export default class HtmlViewer extends Base {
     postContentRender(annotation) {
         const checkIframe = () => {
             if ($(`#message[data-id='${annotation.id}'] iframe`).length > 0) {
-            // Remove the loading background because some iframe has transparent content
+            // Remove the loading background because some iframe has transparent content.
             setTimeout(() => {
                 $(`#message[data-id='${annotation.id}'] iframe`).css('background', 'none');
             }, 1000);
