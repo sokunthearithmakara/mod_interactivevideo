@@ -165,14 +165,16 @@
     background-color: var(--ivwarning) !important;
 }
 
-.path-mod-interactivevideo #form-preview .mform.full-width-labels:not(.editing) .fitem.row.fhtml  {
+.path-mod-interactivevideo #form-preview .mform.full-width-labels:not(.editing) .fitem.row.fhtml
+.path-mod-interactivevideo #form-preview .mform.full-width-labels:not(.editing) .fitem.row:has(.fhtml)  {
     padding: 0;
     border: 0;
     border-radius: 0;
     background-color: transparent;
 }
 
-.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row.fhtml .col-form-label {
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row.fhtml .col-form-label,
+.path-mod-interactivevideo #form-preview .mform.full-width-labels .fitem.row:has(.fhtml) .col-form-label {
     display: none!important;
 }
 

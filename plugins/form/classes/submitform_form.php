@@ -387,7 +387,17 @@ class submitform_form extends \core_form\dynamic_form {
                             'context' => $this->get_context_for_dynamic_submission(),
                         ])
                     ));
-                    $mform->addGroup($htmlgroup, $field->fieldid, '-', '', false, ['class' => 'fhtml']);
+                    $mform->addGroup(
+                        $htmlgroup,
+                        $field->fieldid,
+                        '<span class="d-none">' . $field->label . '</span>',
+                        '',
+                        false,
+                        [
+                            'class' => 'fhtml',
+                            'data-type' => 'html',
+                        ]
+                    );
                     break;
                 case 'textarea':
                     $mform->addElement('textarea', $field->fieldid, $label, [
