@@ -54,10 +54,12 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
 
         $mform->addElement('hidden', 'content', $this->optional_param('content', '', PARAM_RAW));
+        $mform->setType('content', PARAM_RAW);
         $mform->addElement('html', '<label class="d-flex align-items-center col-form-label pl-0 w-100 justify-content-between">
         <span><i class="bi bi-signpost-split-fill mr-2"></i>' . get_string('destination', 'ivplugin_decision') .
             '</span><span class="btn btn-sm btn-primary float-right" id="add-destination"><i class="bi bi-plus-lg"></i></span>
             </label><div id="destination-list" class="w-100 mb-3"></div>');
+        $mform->addElement('static', 'destination', '', '');
         $mform->addElement('advcheckbox', 'char1', '', get_string('allowskip', 'ivplugin_decision'), ["group" => 1], [0, 1]);
         $this->advanced_form_fields(false, true, true, true);
         $this->close_form();
@@ -73,5 +75,22 @@ class form extends \mod_interactivevideo\form\base_form {
         }
         $actionbuttons .= '</div>';
         $mform->addElement('html', $actionbuttons);
+    }
+
+    /**
+     * Form validation
+     *
+     * @param array $data form data
+     * @param array $files form files
+     * @return array
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        if (empty($data['content'])) {
+            $errors['destination'] = get_string('youmusthaveatleastonedestination', 'ivplugin_decision');
+        }
+
+        return $errors;
     }
 }

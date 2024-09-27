@@ -327,18 +327,6 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     {key: 'delete', component: 'mod_interactivevideo'},
                 ]);
                 try {
-                    notification.deleteCancel(
-                        strings[0],
-                        strings[1],
-                        strings[2],
-                        function() {
-                            videoinput.val('');
-                            videofile.val('');
-                            videowrapper.empty().hide();
-                            uploadfield.show();
-                            deletefield.hide();
-                        });
-                } catch {
                     notification.deleteCancelPromise(
                         strings[0],
                         strings[1],
@@ -353,6 +341,19 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     }).catch(() => {
                         return;
                     });
+                } catch {
+                    notification.saveCancel(
+                        strings[0],
+                        strings[1],
+                        strings[2],
+                        function() {
+                            videoinput.val('');
+                            videofile.val('');
+                            videowrapper.empty().hide();
+                            uploadfield.show();
+                            deletefield.hide();
+                        }
+                    );
                 }
             });
 

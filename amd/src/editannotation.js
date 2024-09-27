@@ -719,24 +719,24 @@ define(['jquery',
                 const id = $(this).closest('.annotation').data('id');
                 const annotation = annotations.find(annotation => annotation.id == id);
                 try {
-                    Notification.deleteCancel(
-                        M.util.get_string('deleteinteraction', 'mod_interactivevideo'),
-                        M.util.get_string('deleteinteractionconfirm', 'mod_interactivevideo'),
-                        M.util.get_string('delete', 'mod_interactivevideo'),
-                        function() {
-                            ctRenderer[annotation.type].deleteAnnotation(annotations, id);
-                        },
-                        null
-                    );
-                } catch {
                     Notification.deleteCancelPromise(
                         M.util.get_string('deleteinteraction', 'mod_interactivevideo'),
                         M.util.get_string('deleteinteractionconfirm', 'mod_interactivevideo'),
+                        M.util.get_string('delete', 'mod_interactivevideo'),
                     ).then(() => {
                         return ctRenderer[annotation.type].deleteAnnotation(annotations, id);
                     }).catch(() => {
                         return;
                     });
+                } catch {
+                    Notification.saveCancel(
+                        M.util.get_string('deleteinteraction', 'mod_interactivevideo'),
+                        M.util.get_string('deleteinteractionconfirm', 'mod_interactivevideo'),
+                        M.util.get_string('delete', 'mod_interactivevideo'),
+                        function() {
+                            return ctRenderer[annotation.type].deleteAnnotation(annotations, id);
+                        }
+                    );
                 }
 
 

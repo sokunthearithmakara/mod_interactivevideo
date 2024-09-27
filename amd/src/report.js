@@ -375,12 +375,12 @@ const init = (cmid, groupid) => {
         const recordid = $(this).data('record');
         let $this = $(this);
         try {
-        Notification.deleteCancel(
-            M.util.get_string('deletecompletion', 'mod_interactivevideo'),
-            M.util.get_string('areyousureyouwanttoresetthecompletiondata', 'mod_interactivevideo'),
-            M.util.get_string('delete', 'mod_interactivevideo'),
-            function() {
-                $.ajax({
+            Notification.deleteCancelPromise(
+                M.util.get_string('deletecompletion', 'mod_interactivevideo'),
+                M.util.get_string('areyousureyouwanttoresetthecompletiondata', 'mod_interactivevideo'),
+                M.util.get_string('delete', 'mod_interactivevideo')
+            ).then(() => {
+                return $.ajax({
                     url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
                     method: 'POST',
                     dataType: "text",
@@ -412,51 +412,50 @@ const init = (cmid, groupid) => {
                         });
                     }
                 });
-            },
-            null
-        );
-    } catch {
-        Notification.deleteCancelPromise(
-            M.util.get_string('deletecompletion', 'mod_interactivevideo'),
-            M.util.get_string('areyousureyouwanttoresetthecompletiondata', 'mod_interactivevideo'),
-            M.util.get_string('delete', 'mod_interactivevideo')
-        ).then(() => {
-            return $.ajax({
-                url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
-                method: 'POST',
-                dataType: "text",
-                data: {
-                    action: 'delete_progress_by_id',
-                    recordid,
-                    contextid: M.cfg.contextid,
-                    sesskey: M.cfg.sesskey,
-                },
-                success: function(response) {
-                    if (response == 'deleted') {
-                        let targetdata = tabledata.row($this.closest('tr')).data();
-                        targetdata.completionpercentage = 0;
-                        targetdata.timecompleted = 0;
-                        targetdata.xp = 0;
-                        targetdata.timecreated = 0;
-                        targetdata.completeditems = null;
-                        targetdata.completiondetails = null;
-                        targetdata.completionid = null;
-                        tabledata.row($this.closest('tr')).data(targetdata).draw();
-                        addToast(M.util.get_string('completionresetsuccess', 'mod_interactivevideo'), {
-                            type: 'success'
-                        });
-                    }
-                },
-                error: function() {
-                    addToast(M.util.get_string('completionreseterror', 'mod_interactivevideo'), {
-                        type: 'error'
+            }).catch(() => {
+                return;
+            });
+        } catch { // Fallback for older versions of Moodle.
+            Notification.saveCancel(
+                M.util.get_string('deletecompletion', 'mod_interactivevideo'),
+                M.util.get_string('areyousureyouwanttoresetthecompletiondata', 'mod_interactivevideo'),
+                M.util.get_string('delete', 'mod_interactivevideo'),
+                function() {
+                    return $.ajax({
+                        url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                        method: 'POST',
+                        dataType: "text",
+                        data: {
+                            action: 'delete_progress_by_id',
+                            recordid,
+                            contextid: M.cfg.contextid,
+                            sesskey: M.cfg.sesskey,
+                        },
+                        success: function(response) {
+                            if (response == 'deleted') {
+                                let targetdata = tabledata.row($this.closest('tr')).data();
+                                targetdata.completionpercentage = 0;
+                                targetdata.timecompleted = 0;
+                                targetdata.xp = 0;
+                                targetdata.timecreated = 0;
+                                targetdata.completeditems = null;
+                                targetdata.completiondetails = null;
+                                targetdata.completionid = null;
+                                tabledata.row($this.closest('tr')).data(targetdata).draw();
+                                addToast(M.util.get_string('completionresetsuccess', 'mod_interactivevideo'), {
+                                    type: 'success'
+                                });
+                            }
+                        },
+                        error: function() {
+                            addToast(M.util.get_string('completionreseterror', 'mod_interactivevideo'), {
+                                type: 'error'
+                            });
+                        }
                     });
                 }
-            });
-        }).catch(() => {
-            return;
-        });
-    }
+            );
+        }
     });
 
     $(document).on('click', 'td .completion-detail', function() {

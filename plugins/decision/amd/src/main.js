@@ -58,7 +58,7 @@ export default class Decision extends Base {
                 const t = Number(e.originalEvent.detail.time);
                 const firstCantSkip = cantSkip[0];
                 if (t > Number(firstCantSkip.timestamp)) {
-                    self.runInteraction(firstCantSkip);
+                    self.player.seek(Number(firstCantSkip.timestamp) - 0.05);
                 }
             });
         }
@@ -72,7 +72,7 @@ export default class Decision extends Base {
      * @returns {void}
      */
     addAnnotation(annotations, timestamp, coursemodule) {
-        $('#addcontent, #interaction-timeline').addClass('no-pointer-events');
+        $('#addcontent, #importcontent').addClass('no-pointer-events');
         let self = this;
         this.annotations = annotations;
         if (!this.isBetweenStartAndEnd(timestamp)) {
@@ -130,6 +130,7 @@ export default class Decision extends Base {
             e.stopImmediatePropagation();
             $('#annotationwrapper #form').remove();
             $('#annotationwrapper table').show();
+            $('#addcontent, #importcontent').removeClass('no-pointer-events');
         });
 
         $(document).off('click', '#submitform-submit').on('click', '#submitform-submit', function(e) {
@@ -139,6 +140,12 @@ export default class Decision extends Base {
             if (!event.defaultPrevented) {
                 decisionform.submitFormAjax();
             }
+        });
+
+        decisionform.addEventListener(decisionform.events.SERVER_VALIDATION_ERROR, (e) => {
+            e.stopImmediatePropagation();
+            self.onEditFormLoaded(decisionform);
+            self.validateTimestampFieldValue('timestampassist', 'timestamp');
         });
 
         decisionform.addEventListener(decisionform.events.FORM_SUBMITTED, (e) => {
@@ -166,7 +173,7 @@ export default class Decision extends Base {
             });
             $('#annotationwrapper #form').remove();
             $('#annotationwrapper table').show();
-            $('#addcontent, #interaction-timeline').removeClass('no-pointer-events');
+            $('#addcontent, #importcontent').removeClass('no-pointer-events');
         });
 
     }
@@ -179,7 +186,7 @@ export default class Decision extends Base {
      */
     editAnnotation(annotations, id) {
         // Disable pointer events on some DOMs.
-        $('#addcontent, #interaction-timeline').addClass('no-pointer-events');
+        $('#addcontent, #importcontent').addClass('no-pointer-events');
         this.annotations = annotations;
         let self = this;
         const annotation = annotations.find(x => x.id == id);
@@ -205,6 +212,7 @@ export default class Decision extends Base {
             e.stopImmediatePropagation();
             $('#annotationwrapper #form').remove();
             $('#annotationwrapper table').show();
+            $('#addcontent, #importcontent').removeClass('no-pointer-events');
         });
 
         $(document).off('click', '#submitform-submit').on('click', '#submitform-submit', function(e) {
@@ -214,6 +222,12 @@ export default class Decision extends Base {
             if (!event.defaultPrevented) {
                 decisionform.submitFormAjax();
             }
+        });
+
+        decisionform.addEventListener(decisionform.events.SERVER_VALIDATION_ERROR, (e) => {
+            e.stopImmediatePropagation();
+            self.onEditFormLoaded(decisionform);
+            self.validateTimestampFieldValue('timestampassist', 'timestamp');
         });
 
         decisionform.addEventListener(decisionform.events.FORM_SUBMITTED, (e) => {
@@ -241,7 +255,7 @@ export default class Decision extends Base {
             });
             $('#annotationwrapper #form').remove();
             $('#annotationwrapper table').show();
-            $('#addcontent, #interaction-timeline').removeClass('no-pointer-events');
+            $('#addcontent, #importcontent').removeClass('no-pointer-events');
         });
     }
 
@@ -269,6 +283,7 @@ export default class Decision extends Base {
                 <input type="text" value="${this.convertSecondsToHMS(this.start)}"
                 placeholder="00:00:00" style="max-width: 120px;" class="form-control timestamp-input">
                 <div class="input-group-append">
+                <button class="btn goto-dest btn-secondary px-2" type="button"><i class="bi bi-play-fill fs-25px"></i></button>
                 <button class="btn add-dest btn-secondary" type="button"><i class="bi bi-plus-lg fs-unset"></i></button>
                 <button class="btn btn-danger delete-dest disabled" disabled type="button">
                     <i class="bi bi-trash3-fill fs-unset"></i></button></div></div>`);
@@ -279,11 +294,12 @@ export default class Decision extends Base {
                     <div class="input-group-prepend">
                     <label class="input-group-text">
                     <i class="bi bi-grip-vertical cursor-move fs-unset"></i></label>
-                </div>
+                    </div>
                     <input type="text" class="form-control" value="${d.title}">
                     <input type="text" value="${this.convertSecondsToHMS(d.timestamp)}"
                     placeholder="00:00:00" style="max-width: 120px;" class="form-control timestamp-input">
                     <div class="input-group-append">
+                    <button class="btn goto-dest btn-secondary px-2" type="button"><i class="bi bi-play-fill fs-25px"></i></button>
                     <button class="btn add-dest btn-secondary" type="button"><i class="bi bi-plus-lg fs-unset"></i></button>
                     <button class="btn btn-danger delete-dest ${i == 0 ? 'disabled' : ''}" ${i == 0 ? 'disabled' : ''}
                     type="button"><i class="bi bi-trash3-fill fs-unset"></i></button></div></div>`);
@@ -317,7 +333,6 @@ export default class Decision extends Base {
         });
 
         body.off('click', '.input-group .add-dest').on('click', '.input-group .add-dest', async function(e) {
-            e.preventDefault();
             e.stopImmediatePropagation();
             let $thisrow = $(this);
             let $parent = $thisrow.closest('.input-group');
@@ -332,10 +347,19 @@ export default class Decision extends Base {
         });
 
         body.off('click', '.input-group .delete-dest').on('click', '.input-group .delete-dest', function(e) {
-            e.preventDefault();
             e.stopImmediatePropagation();
             $(this).closest('.input-group').remove();
             $('.input-group [type="text"]').trigger('input');
+        });
+
+        body.off('click', '.input-group .goto-dest').on('click', '.input-group .goto-dest', function(e) {
+            e.stopImmediatePropagation();
+            const timestamp = $(this).closest('.input-group').find('input.timestamp-input').val();
+            const parts = timestamp.split(':');
+            const seconds = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+            if (seconds >= self.start && seconds <= self.end) {
+                self.player.seek(seconds);
+            }
         });
 
         body.on('input', '.input-group [type="text"]', function() {
@@ -353,7 +377,11 @@ export default class Decision extends Base {
                     });
                 }
             });
-            $('[name=content').val(JSON.stringify(dest));
+            if (dest.length == 0) {
+                $('[name=content').val('');
+            } else {
+                $('[name=content').val(JSON.stringify(dest));
+            }
         });
 
         return {form, event};
@@ -374,15 +402,16 @@ export default class Decision extends Base {
             return !self.isSkipped(d.timestamp);
         });
 
-        if (dest.length == 0) {
-            this.player.play();
-            return;
-        }
-
         if (!self.isEditMode()) {
             annotation.viewed = true;
             this.annotations = this.annotations.filter((d) => d.id != annotation.id);
             this.annotations.push(annotation);
+        }
+
+        if (dest.length == 0) {
+            window.console.log('No destination found');
+            this.player.play();
+            return;
         }
 
         let newannotation = JSON.parse(JSON.stringify(annotation));
@@ -422,6 +451,7 @@ export default class Decision extends Base {
                 $('#taskinfo').fadeOut(300);
                 $('[data-region="chapterlists"], #controller').addClass('no-pointer-events');
             }
+            self.player.pause();
         });
 
         $(document).off('click', `#message[data-id='${annotation.id}'] .decision-option`)

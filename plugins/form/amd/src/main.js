@@ -973,16 +973,6 @@ export default class Form extends Base {
                     };
 
                     try {
-                        Notification.deleteCancel(
-                            M.util.get_string('deletefield', 'ivplugin_form'),
-                            M.util.get_string('deletefieldconfirm', 'ivplugin_form'),
-                            M.util.get_string('delete', 'mod_interactivevideo'),
-                            function() {
-                                deleteField();
-                            },
-                            null
-                        );
-                    } catch {
                         Notification.deleteCancelPromise(
                             M.util.get_string('deletefield', 'ivplugin_form'),
                             M.util.get_string('deletefieldconfirm', 'ivplugin_form'),
@@ -992,6 +982,15 @@ export default class Form extends Base {
                         }).catch(() => {
                             return;
                         });
+                    } catch { // Backward compatible with 4.1 where deleteCancelPromise is not available.
+                        Notification.saveCancel(
+                            M.util.get_string('deletefield', 'ivplugin_form'),
+                            M.util.get_string('deletefieldconfirm', 'ivplugin_form'),
+                            M.util.get_string('delete', 'mod_interactivevideo'),
+                            function() {
+                                return deleteField();
+                            }
+                        );
                     }
                 });
 

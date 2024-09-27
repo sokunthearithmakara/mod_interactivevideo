@@ -33,3 +33,4 @@ $string['destquestion'] = 'Question';
 $string['pluginname'] = 'Decision';
 $string['privacy:metadata'] = 'The Decision plugin doesn\'t store any personal data.';
 $string['skip'] = 'Skip';
+$string['youmusthaveatleastonedestination'] = 'You must have at least one valid destination.';
