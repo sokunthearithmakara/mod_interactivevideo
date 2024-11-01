@@ -25,6 +25,13 @@ Example context (json):
             <div class="p-3" id="player-region">
                 {{! Player }}
                 <div id="video-wrapper">
+                <div class="position-absolute w-100 h-100 no-pointer bg-transparent" id="background-loading" style="display:none;">
+                    <div class="d-flex h-100 align-items-center justify-content-center">
+                        <div class="spinner-border text-danger" style="width: 3rem; height: 3rem;" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                </div>
                     <div id="annotation-canvas">
                         <div id="video-block"
                              class="position-absolute w-100 h-100"
@@ -103,7 +110,7 @@ Example context (json):
                             <div class="btns d-flex align-items-center">
                                 <span data-editable="xp"
                                       title="{{#str}}xppoint, mod_interactivevideo{{/str}}"
-                                      class="border-0 btn btn-sm xp">
+                                      class="border-0 p-1 btn btn-sm xp">
                                     <span>12</span>
                                     <i class="bi bi-star ml-1"></i>
                                 </span>
@@ -112,14 +119,14 @@ Example context (json):
                                        data-field="xp"
                                        class="form-control form-control-sm d-none">
                                 <button title="{{#str}}clone, mod_interactivevideo{{/str}}"
-                                        class="border-0 btn btn-sm copy">
+                                        class="border-0 p-1 btn btn-sm copy">
                                     <i class="bi bi-copy"></i>
                                 </button>
                                 <button title="{{#str}}edit, mod_interactivevideo{{/str}}"
-                                        class="border-0 btn btn-sm edit">
+                                        class="border-0 p-1 btn btn-sm edit">
                                     <i class="bi bi-pencil-square"></i>
                                 </button>
-                                <button class="border-0 btn btn-sm text-danger delete"
+                                <button class="border-0 p-1 btn btn-sm text-danger delete"
                                         title="{{#str}}delete, mod_interactivevideo{{/str}}">
                                     <i class="bi bi-trash3-fill"></i>
                                 </button>
@@ -136,3 +143,8 @@ Example context (json):
 {{! content type modal }}
 {{> mod_interactivevideo/addcontenttype }}
 {{> mod_interactivevideo/editortimeline }}
+
+
+
+{{! {a little hack for sites that use classic-based themes} }}
+{{> mod_interactivevideo/blocksettingshack }}

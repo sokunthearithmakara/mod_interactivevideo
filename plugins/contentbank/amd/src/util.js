@@ -103,6 +103,10 @@ const init = (contextid) => {
                 }
 
                 if (typeof H5P !== 'undefined' && H5P !== null) {
+                    if (H5P.externalDispatcher === undefined) {
+                        requestAnimationFrame(checkH5P);
+                        return;
+                    }
                     $("#contentbank-preview .xapi").remove();
                     $(`#contentbank-preview[data-contentid=${id}]`)
                         .prepend(`<div class="xapi float-right alert-secondary d-inline px-2 text-center rounded-pill mb-2">

@@ -3,27 +3,27 @@
     z-index: 5;
     color: #fff;
     top: 0;
+}
 
-    span {
-        border-left: 5px solid var(--ivdanger);
-        padding-left: 0.45em;
-        left: 0.75em;
-        top: -40px;
-        position: absolute;
-        transition: all ease-in-out 300ms;
-    }
+.path-mod-interactivevideo #message.chapter span {
+    border-left: 5px solid var(--ivdanger);
+    padding-left: 0.45em;
+    left: 0.75em;
+    top: -40px;
+    position: absolute;
+    transition: all ease-in-out 300ms;
+}
 
-    #chapterprogress {
-        height: 5px;
-        bottom: 0;
-        left: 0;
-        background-color: var(--ivdark);
-    }
+.path-mod-interactivevideo #message.chapter #chapterprogress {
+    height: 5px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--ivdark);
+}
 
-    #chapterprogress .progress-bar {
-        width: 0;
-        height: 100%;
-        position: absolute;
-        background-color: #fff;
-    }
+.path-mod-interactivevideo #message.chapter #chapterprogress .progress-bar {
+    width: 0;
+    height: 100%;
+    position: absolute;
+    background-color: #fff;
 }

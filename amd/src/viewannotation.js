@@ -35,10 +35,12 @@ define([
         displayoptions, // Display options.
         releventAnnotations, // Array of annotations that are not skipped.
         completionid, // Id of the completion record.
-        player; // Video player instance.
+        player, // Video player instance.
+        lastrun; // Last run annotation.
 
     const $videoNav = $('#video-nav');
     const $interactionNav = $('#interactions-nav');
+    const $loader = $('#background-loading');
 
     const formatTime = (seconds) => {
         const hours = Math.floor(seconds / 3600);
@@ -57,8 +59,9 @@ define([
         return string;
     };
 
-    const renderAnnotationItems = async(annos, start, totaltime) => {
+    const renderAnnotationItems = async (annos, start, totaltime) => {
         releventAnnotations = annos;
+        window.IVANNO = annos;
         let actualduration = totaltime;
 
         const skipsegments = annos.filter(x => x.type == 'skipsegment');
@@ -89,10 +92,6 @@ define([
 
         $("#interactions-nav ul").empty();
 
-        if (annos.length == 0) {
-            return;
-        }
-
         if (displayoptions.preventseeking == 1) {
             $videoNav.addClass('no-pointer-events');
         }
@@ -101,13 +100,27 @@ define([
             if (displayoptions.hidemainvideocontrols == 1) {
                 $('#wrapper').addClass('no-videonav');
             }
+            dispatchEvent('annotationitemsrendered', {
+                'annotations': annos,
+                'completed': completedAnnos.length,
+                'total': actualAnnotationCounts,
+                'xp': xpEarned,
+                'totalxp': xp,
+            });
             return;
         }
         for (const x of annos) {
             const renderer = ctRenderer[x.type];
             await renderer.renderItemOnVideoNavigation(x);
         }
-        dispatchEvent('annotationitemsrendered', {'annotations': annos});
+        dispatchEvent('annotationitemsrendered', {
+            'annotations': annos,
+            'completed': completedAnnos.length,
+            'total': actualAnnotationCounts,
+            'xp': xpEarned,
+            'totalxp': xp,
+        });
+
         $('.annolistinchapter').empty();
         const chapteritems = releventAnnotations.filter(x => x.type != 'skipsegment' && x.hascompletion == 1);
         chapteritems.sort((a, b) => a.timestamp - b.timestamp);
@@ -152,12 +165,13 @@ define([
          * @param {number} moment - The moment to share.
          * @param {object} doptions - The display options.
          * @param {string} token - The token.
+         * @param {string} extendedcompletion - The extended completion requirements.
          * @return {void}
          */
         init: function(
             url, cmid, interaction, course, userid, start = 0, end,
             completionpercentage, gradeiteminstance, grademax, vtype,
-            preventskip = true, moment = null, doptions = {}, token = null) {
+            preventskip = true, moment = null, doptions = {}, token = null, extendedcompletion = null) {
             // Convert start to number if string
             start = Number(start);
             if (isNaN(start)) {
@@ -185,6 +199,9 @@ define([
              * @returns {string}
              */
             const convertSecondsToHMS = (seconds) => {
+                if (seconds < 0) {
+                    return '00:00';
+                }
                 const h = Math.floor(seconds / 3600);
                 const m = Math.floor(seconds % 3600 / 60);
                 const s = Math.floor(seconds % 3600 % 60);
@@ -246,7 +263,7 @@ define([
                     method: "POST",
                     dataType: "text",
                     data: {
-                        action: 'getallcontenttypes',
+                        action: 'get_all_contenttypes',
                         sesskey: M.cfg.sesskey,
                         token: token,
                         cmid: cmid,
@@ -443,7 +460,7 @@ define([
                             require([contentType.amdmodule], function(Type) {
                                 ctRenderer[contentType.name] = new Type(player, releventAnnotations, interaction, course, userid,
                                     completionpercentage, gradeiteminstance, grademax, vtype, preventskip, totaltime, start,
-                                    end, contentType, cmid, token, displayoptions, completionid);
+                                    end, contentType, cmid, token, displayoptions, completionid, extendedcompletion);
                                 try {
                                     ctRenderer[contentType.name].init();
                                 } catch (error) {
@@ -461,7 +478,8 @@ define([
              * @param {object} annotation annotation object
              * @returns {void}
              */
-            const runInteraction = async(annotation) => {
+            const runInteraction = async (annotation) => {
+                lastrun = annotation.id;
                 $('#video-wrapper').data('timestamp', new Date().getTime());
                 viewedAnno.push(Number(annotation.id));
                 viewedAnno = [...new Set(viewedAnno)];
@@ -476,7 +494,7 @@ define([
                             && x.completed == false && x.hascompletion == 1);
                     if (theAnnotations.length > 0) {
                         const theAnnotation = theAnnotations[0];
-                        player.pause();
+                        await player.pause();
                         await player.seek((theAnnotation.timestamp - 0.7 > start) ? (theAnnotation.timestamp - 0.7) : start);
                         Toast.add(M.util.get_string('youmustcompletethepreviousactivity', 'mod_interactivevideo'), {
                             type: 'danger'
@@ -486,6 +504,7 @@ define([
                 }
                 activityType = ctRenderer[annotation.type];
                 activityType.runInteraction(annotation);
+                dispatchEvent('interactionrun', {'annotation': annotation});
             };
 
             /**
@@ -498,7 +517,7 @@ define([
              * @function shareMoment
              * @returns {Promise<void>} A promise that resolves when the video has been successfully sought and played.
              */
-            const shareMoment = async() => {
+            const shareMoment = async () => {
                 if (!moment) {
                     return;
                 }
@@ -511,10 +530,6 @@ define([
                     replaceProgressBars(((time - start) / totaltime) * 100);
                     await player.seek(time);
                     player.play();
-                    const theAnnotation = releventAnnotations.find(x => x.timestamp == time);
-                    if (theAnnotation) {
-                        runInteraction(theAnnotation);
-                    }
                 }
                 urlParams.delete('t');
                 const newurl = window.location.protocol
@@ -539,7 +554,10 @@ define([
              * @function onReady
              * @returns {Promise<void>} A promise that resolves when the player is fully initialized and ready.
              */
-            const onReady = async() => {
+            const onReady = async () => {
+                // Add player to Window object.
+                window.IVPLAYER = player;
+                // Check if the player supports playback rate and quality adjustments.
                 if (player.support.playbackrate == false) {
                     $('#changerate').remove();
                 } else {
@@ -611,7 +629,7 @@ define([
                         $('#seek #position').css('left', ui.position.left + 'px');
                         $('#seek #position #timelabel').text(convertSecondsToHMS(timestamp - start));
                         await player.seek(timestamp);
-                        player.pause();
+                        await player.pause();
                     },
                     'stop': async function() {
                         setTimeout(function() {
@@ -624,8 +642,25 @@ define([
                         player.play();
                     }
                 });
-            };
 
+                dispatchEvent('timeupdate', {'time': start});
+
+                // Resize observer
+                let vwrapper = document.querySelector('#video-wrapper');
+                const resizeObserver = new ResizeObserver(() => {
+                    // If vwrapper is larger than 1050px, show #expand; otherwise, hide it.
+                    if (vwrapper.clientWidth > 1050) {
+                        $('#controller #expand').removeClass('d-none');
+                    } else {
+                        $('#controller #expand').addClass('d-none');
+                    }
+                });
+
+                resizeObserver.observe(vwrapper);
+
+                // Scroll into view #video-wrapper
+                vwrapper.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"});
+            };
 
             /**
              * Handles the event when the video player is paused.
@@ -640,7 +675,6 @@ define([
                 if (!playerReady) {
                     return;
                 }
-                clearInterval(interval);
                 $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
                 $('#playpause').attr('data-original-title', M.util.get_string('play', 'mod_interactivevideo'));
             };
@@ -649,48 +683,26 @@ define([
             /**
              * Handles the end of the video playback.
              *
-             * @param {number} t - The current time of the video playback. If not provided, defaults to the end time.
              *
              * @returns {void}
              *
              * This function performs the following actions:
              * - Checks if the player is ready.
-             * - Finds the relevant annotation at the end of the video.
-             * - If the annotation exists and is not the last one, pauses the player and runs the interaction.
-             * - Toggles the tooltip to show the annotation title and hides it after 2 seconds.
              * - Updates the UI to show the end screen and restart button.
              * - Clears the interval and pauses the player.
              * - Updates the play/pause button to show the play icon.
              */
-            const onEnded = (t) => {
+            const onEnded = async () => {
                 if (!playerReady) {
                     return;
-                }
-                const time = t || end;
-                // Check if theAnnotation exists at the end of the video.
-                const theAnnotation = releventAnnotations.find(x => x.timestamp == time && x.id != 0 &&
-                    !viewedAnno.includes(Number(x.id)));
-                if (theAnnotation) {
-                    if (!theAnnotation.completed || theAnnotation.rerunnable) {
-                        player.pause();
-                        runInteraction(theAnnotation);
-                    }
-                    // Toggle the tooltip to show the title.
-                    $interactionNav.find('.annotation[data-id="' + theAnnotation.id + '"] .item').trigger('mouseover')
-                        .addClass('active');
-                    // Hide the tooltip after 2 seconds.
-                    setTimeout(function() {
-                        $interactionNav.find('.annotation[data-id="' + theAnnotation.id + '"] .item').trigger('mouseout')
-                            .removeClass('active');
-                    }, 2000);
                 }
                 $('#currenttime').text(convertSecondsToHMS(totaltime));
                 $('#restart').removeClass('d-none').fadeIn(300);
                 $('#end-screen').removeClass('d-none').fadeIn(300);
                 $('#progress').css('width', '100%');
                 $('#seekhead').css('left', '100%');
-                clearInterval(interval);
-                player.pause();
+                await player.pause();
+                dispatchEvent('timeupdate', {'time': end});
                 $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
                 $('#playpause').attr('data-original-title', M.util.get_string('play', 'mod_interactivevideo'));
             };
@@ -701,7 +713,7 @@ define([
              * @param {number} t - The time to seek to. If not provided, the current time of the player will be used.
              * @returns {Promise<void>} - A promise that resolves when the seek operation is complete.
              */
-            const onSeek = async(t) => {
+            const onSeek = async (t) => {
                 if (!playerReady) {
                     return;
                 }
@@ -719,7 +731,6 @@ define([
                 dispatchEvent('timeupdate', {'time': t});
             };
 
-            let interval;
             let visualized = false;
             /**
              * Handles the 'playing' event of the video player.
@@ -762,12 +773,10 @@ define([
                     const isPlaying = await player.isPlaying();
                     const isEnded = await player.isEnded();
                     if (!isPlaying || isEnded) {
-                        clearInterval(interval);
                         return;
                     }
 
                     if (t > end || isEnded) {
-                        clearInterval(interval);
                         onEnded(end);
                         return;
                     }
@@ -796,29 +805,33 @@ define([
                             $('#interactions-nav .annotation[data-id="' + theAnnotation.id + '"] .item')
                                 .trigger('mouseout').removeClass('active');
                         }, 2000);
+
+                        if (lastrun && theAnnotation.id == lastrun) {
+                            return;
+                        }
+                        // If in preview mode, don't run the interaction.
+                        if ($('body').hasClass('preview-mode')) {
+                            return;
+                        }
+                        // Run the interaction if it isn't complete or rerunnable.
                         if (!theAnnotation.completed || theAnnotation.rerunnable) {
-                            player.pause();
-                            await player.seek(theAnnotation.timestamp);
-                            player.pause();
                             $('#video-nav #progress')
                                 .css('width', (theAnnotation.timestamp - start) / totaltime * 100 + '%');
                             $('#video-nav #seekhead').css('left', (theAnnotation.timestamp - start) / totaltime * 100 + '%');
-                            if (player.type == 'yt') {
-                                const isPlayingInterval = setInterval(async function() {
-                                    if (player.isPaused()) {
-                                        clearInterval(isPlayingInterval);
-                                        runInteraction(theAnnotation);
-                                    }
-                                }, 10);
-                            } else {
-                                runInteraction(theAnnotation);
-                            }
+                            await player.seek(theAnnotation.timestamp);
+                            runInteraction(theAnnotation);
                         }
                     }
                 };
 
                 if (player.type == 'yt' || player.type == 'wistia') {
-                    interval = setInterval(intervalFunction, player.frequency * 100);
+                    const animate = async () => {
+                        intervalFunction();
+                        if (await player.isPlaying()) {
+                            requestAnimationFrame(animate);
+                        }
+                    };
+                    requestAnimationFrame(animate);
                 } else {
                     intervalFunction();
                 }
@@ -830,9 +843,12 @@ define([
                     url,
                     start,
                     end,
-                    displayoptions.useoriginalvideocontrols == 1,
-                    true,
-                    false
+                    {
+                        'showControls': displayoptions.useoriginalvideocontrols == 1,
+                        'customStart': true,
+                        'preload': false,
+                        'autoplay': displayoptions.autoplay == 1,
+                    }
                 );
             });
 
@@ -847,9 +863,8 @@ define([
                         && x.completed == false && x.hascompletion == 1);
                     if (theAnnotations.length > 0) {
                         const theAnnotation = theAnnotations[0];
-                        player.pause();
+                        await player.pause();
                         await player.seek((theAnnotation.timestamp - 0.7 > start) ? (theAnnotation.timestamp - 0.7) : start);
-                        clearInterval(interval);
                         Toast.add(M.util.get_string('youmustcompletethepreviousactivity', 'mod_interactivevideo'), {
                             type: 'danger'
                         });
@@ -866,7 +881,7 @@ define([
                 const id = $(this).data('id');
                 const annotation = releventAnnotations.find(x => x.id == id);
                 $(this).closest('#message').remove();
-                runInteraction(annotation, true);
+                runInteraction(annotation);
             });
 
             // Handle video control events:: fullscreen toggle
@@ -888,6 +903,14 @@ define([
                         elem.webkitRequestFullscreen();
                     } else if (elem.msRequestFullscreen) { /* IE/Edge */
                         elem.msRequestFullscreen();
+                    } else if (elem.webkitEnterFullscreen) { /* IOS Safari */
+                        elem.webkitEnterFullscreen();
+                    } else {
+                        Toast.add(M.util.get_string('fullscreenisnotsupported', 'mod_interactivevideo'), {
+                            type: 'danger'
+                        });
+                        // Remove the fullscreen button.
+                        $('#fullscreen').remove();
                     }
                 } else {
                     if (document.exitFullscreen) {
@@ -924,6 +947,9 @@ define([
             // Pause video when the tab is not visible.
             if (displayoptions.pauseonblur && displayoptions.pauseonblur == 1) {
                 $(document).on('visibilitychange', function() {
+                    if (!playerReady) {
+                        return;
+                    }
                     if (document.visibilityState == 'hidden') {
                         player.pause();
                     }
@@ -997,6 +1023,7 @@ define([
             $(document).on('click', '#interactions-nav .annotation, #video-nav .annotation', async function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
+                $loader.fadeIn(300);
                 if ($(this).hasClass('no-click')) {
                     // Add a tooltip that seeking is disabled.
                     Toast.add(M.util.get_string('youcannotviewthisannotationyet', 'mod_interactivevideo'), {
@@ -1006,16 +1033,18 @@ define([
                 }
                 const timestamp = $(this).data('timestamp');
                 replaceProgressBars(((timestamp - start) / totaltime) * 100);
-                player.play();
-                if (player.type == 'yt') {
-                    clearInterval(interval);
+                if (await player.getCurrentTime() == timestamp && lastrun) {
+                    $loader.fadeOut(300);
+                    return;
                 }
+                lastrun = null;
+                await player.pause();
                 await player.seek(Number(timestamp));
-                player.pause();
                 const id = $(this).data('id');
                 const theAnnotation = releventAnnotations.find(x => x.id == id);
                 setTimeout(() => {
                     runInteraction(theAnnotation);
+                    $loader.fadeOut(300);
                 }, 500);
                 // Clear the viewed annotations that are after this timestamp.
                 const preceedingAnno = releventAnnotations.filter(x => x.timestamp < timestamp).map(x => Number(x.id));
@@ -1045,16 +1074,14 @@ define([
                 const relX = e.pageX - parentOffset.left;
                 const percentage = relX / $(this).width();
                 replaceProgressBars(percentage * 100);
-                // Gotta check if this affects anything.
-                if (player.type == 'yt') {
-                    clearInterval(interval);
-                }
-                player.pause(); // Especially for vimeo.
+                $loader.fadeIn(300);
+                await player.pause(); // Especially for vimeo.
                 await player.seek((percentage * totaltime) + start);
                 player.play();
                 setTimeout(() => {
                     // Remove the position.
                     $('#position').remove();
+                    $loader.fadeOut(300);
                 }, 300);
             });
 
@@ -1072,6 +1099,8 @@ define([
                 e.preventDefault();
                 $('#message').remove();
                 viewedAnno = [];
+                lastrun = null;
+                $loader.fadeIn(300);
                 await player.seek(start);
                 $videoNav.find("#progress").css('width', '0%');
                 $videoNav.find("#seekhead").css('left', '0%');
@@ -1079,6 +1108,7 @@ define([
                 $(this).addClass('d-none');
                 $videoNav.removeClass('d-none');
                 player.play();
+                $loader.fadeOut(300);
             });
 
             // Handle video control events:: pause/resume when user click on the video
@@ -1086,12 +1116,11 @@ define([
                 if (!playerReady) {
                     return;
                 }
-                clearInterval(interval);
                 e.preventDefault();
                 // Pause or resume the video.
                 const playing = await player.isPlaying();
                 if (playing) {
-                    player.pause();
+                    await player.pause();
                 } else {
                     player.play();
                 }
@@ -1106,7 +1135,7 @@ define([
                 // Pause or resume the video.
                 const playing = await player.isPlaying();
                 if (playing) {
-                    player.pause();
+                    await player.pause();
                 } else {
                     let t = await player.getCurrentTime();
                     if (t >= end) {
@@ -1188,6 +1217,7 @@ define([
 
             $(document).on('iv:playerPlaying', function() {
                 onPlaying();
+                $loader.fadeOut(300);
             });
 
             $(document).on('iv:playerEnded', function() {
@@ -1216,6 +1246,7 @@ define([
                 $(`.changequality[data-quality="${e.originalEvent.detail.quality}"]`).find('i').addClass('bi-check');
             });
 
+            let firstPlay = false;
             $(document).on('annotationitemsrendered', function() {
                 $('#wrapper [data-toggle="tooltip"]').tooltip({
                     container: '#wrapper',
@@ -1230,6 +1261,16 @@ define([
                 if (displayoptions.preventseeking == 1) {
                     $interactionNav.find('li').addClass('no-click');
                     $videoNav.addClass('no-click');
+                }
+                if ($interactionNav.find('li').length > 0) {
+                    $('#taskinfo').removeClass('border-0');
+                }
+                // Autoplay if enabled.
+                if (displayoptions.autoplay == 1 && !firstPlay && !$('body').hasClass('preview-mode')) {
+                    $('#play').trigger('click');
+                    firstPlay = true;
+                    // Make sure to unmute.
+                    player.unMute();
                 }
             });
 

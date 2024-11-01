@@ -186,10 +186,19 @@ export default class Chapter extends Base {
     /**
      * Run the interaction
      * @param {object} annotation The annotation object
-     * @returns {void}
      */
-    runInteraction(annotation) {
-        this.player.pause();
+    async runInteraction(annotation) {
+        if (annotation.char1 != '1') {
+            this.player.play();
+            // Show the tooltip for 2 seconds.
+            $('#video-nav ul li[data-id=' + annotation.id + '] .item').tooltip('show');
+            setTimeout(() => {
+                $('#video-nav ul li[data-id=' + annotation.id + '] .item').tooltip('hide');
+            }, 2000);
+            return;
+        }
+
+        await this.player.pause();
         $('#controler').addClass('no-pointer-events');
         $('#video-wrapper').append(`<h2 id="message" style="z-index:105" class="chapter position-absolute w-100 py-4
         px-3 m-0 justify-content-start"><span class="text-truncate">${annotation.formattedtitle}</span></h2>`);

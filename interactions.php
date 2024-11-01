@@ -62,12 +62,12 @@ if (!has_capability('mod/interactivevideo:edit', $modulecontext)) {
     );
 }
 // Prepare strings for js files using string manager.
-$subplugins = get_config('mod_interactivevideo', 'enablecontenttypes');
-$subplugins = explode(',', $subplugins);
 $stringman = get_string_manager();
-foreach ($subplugins as $subplugin) {
-    $strings = $stringman->load_component_strings('ivplugin_' . $subplugin, current_language());
-    $PAGE->requires->strings_for_js(array_keys($strings), 'ivplugin_' . $subplugin);
+$contentoptions = interactivevideo_util::get_all_activitytypes();
+foreach ($contentoptions as $contentoption) {
+    $stringcomponent = $contentoption['stringcomponent'];
+    $strings = $stringman->load_component_strings($stringcomponent, current_language());
+    $PAGE->requires->strings_for_js(array_keys($strings), $stringcomponent);
 }
 
 $strings = $stringman->load_component_strings('mod_interactivevideo', current_language());
@@ -81,8 +81,6 @@ $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
 $PAGE->set_pagelayout('embedded');
 $PAGE->add_body_class('page-interactions');
-
-$contentoptions = interactivevideo_util::get_all_activitytypes();
 
 // Sort the content types by title.
 usort($contentoptions, function ($a, $b) {
@@ -128,6 +126,7 @@ $primarymenu = $primary->export_for_template($renderer);
 
 // Display page navigation.
 $datafortemplate = [
+    "cmid" => $cm->id,
     "returnurl" => new moodle_url('/course/view.php', ['id' => $course->id]),
     "canedit" => has_capability('mod/interactivevideo:edit', $modulecontext),
     "completion" => ($attempted ? '<span class="mb-0 border-left border-danger pl-3"><button class="btn btn-sm"

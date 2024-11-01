@@ -33,8 +33,8 @@ $addons = [
                 'delegate' => 'CoreCourseModuleDelegate',
                 'method' => 'mobile_module_view',
                 'displaydata' => [
-                    'title' => 'hello',
-                    'icon' => 'earth',
+                    'icon' => $CFG->wwwroot . '/mod/interactivevideo/pix/monologo.svg',
+                    'class' => '',
                 ],
             ],
         ],
@@ -42,4 +42,4 @@ $addons = [
             ['pluginname', 'mod_interactivevideo'],
         ],
     ],
-  ];
+];

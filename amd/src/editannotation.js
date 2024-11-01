@@ -31,6 +31,7 @@ define(['jquery',
     let totaltime;
     let currentTime;
     let playerReady = false;
+    let $loader = $('#background-loading');
     /**
      * Replace the progress bar on the video navigation.
      * @param {Number} percentage - Percentage to replace the progress bar.
@@ -210,14 +211,14 @@ define(['jquery',
                     method: "POST",
                     dataType: "text",
                     data: {
-                        action: 'getallcontenttypes',
+                        action: 'get_all_contenttypes',
                         sesskey: M.cfg.sesskey,
                         contextid: M.cfg.contextid,
                         coursecontextid: M.cfg.courseContextId
                     }
                 });
 
-                $.when(getItems, getContentTypes).done(function(items, contenttypes) {
+                $.when(getItems, getContentTypes).done(async function(items, contenttypes) {
                     annotations = JSON.parse(items[0]);
                     contentTypes = JSON.parse(contenttypes[0]);
                     // Remove all annotations that are not in the enabled content types.
@@ -229,23 +230,24 @@ define(['jquery',
                                 ctRenderer[x.name] = new Type(player, annotations, interaction,
                                     course, 0, 0, 0, 0, type, 0, totaltime, start, end, x, coursemodule);
                                 count++;
+                                ctRenderer[x.name].init();
                                 if (count == contentTypes.length) {
                                     resolve(ctRenderer);
                                 }
-                                ctRenderer[x.name].init();
                             });
                         });
                     });
                     annotations.map(x => {
-                        x.prop = JSON.stringify(contentTypes.find(y => y.name === x.type));
+                        let prop = contentTypes.find(y => y.name === x.type);
+                        // Clean up the prop by removing author, authorlink, description;
+                        delete prop.author;
+                        delete prop.authorlink;
+                        delete prop.description;
+                        x.prop = JSON.stringify(prop);
                         return x;
                     });
-                    getRenderers.then(() => {
-                        renderAnnotationItems(annotations);
-                        return;
-                    }).catch(() => {
-                        // Do nothing.
-                    });
+                    ctRenderer = await getRenderers;
+                    renderAnnotationItems(annotations);
                 });
             };
 
@@ -435,8 +437,8 @@ define(['jquery',
                 $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
                 // Cover the video with a message on a white background div.
                 $('#video-wrapper').append(`<div id="end-screen" class="border position-absolute w-100 h-100 bg-white d-flex
-                     justify-content-center align-items-center style="top: 0; left: 0;">
-                     <button class="btn btn-danger rounded-circle" style="font-size: 1.5rem;" id="restart">
+                     justify-content-center align-items-center" style="top: 0; left: 0;">
+                     <button class="btn btn-danger border-0 rounded-circle" style="font-size: 1.5rem;" id="restart">
                     <i class="bi bi-arrow-repeat" style="font-size: x-large;"></i></button></div>`);
                 $('#video-nav #progress').css('width', '100%');
                 $('#scrollbar, #scrollhead-top').css('left', '100%');
@@ -574,8 +576,9 @@ define(['jquery',
                     url,
                     start,
                     end,
-                    false,
-                    true,
+                    {
+                        'customStart': true,
+                    }
                 );
             });
 
@@ -661,8 +664,12 @@ define(['jquery',
                 if (!playerReady) {
                     return;
                 }
-                e.preventDefault();
                 $('#addcontentdropdown .dropdown-item').removeClass('active');
+                // Check if the target item is a link.
+                if ($(e.target).is('a')) {
+                    return;
+                }
+
                 const ctype = $(this).data('type');
                 player.pause();
                 let timestamp = currentTime || await player.getCurrentTime();
@@ -683,7 +690,8 @@ define(['jquery',
                     }
                 }
                 if (!contenttype.allowmultiple && annotations.find(x => x.type == ctype)) {
-                    addNotification(M.util.get_string('interactionalreadyexists', 'mod_interactivevideo'), 'danger');
+                    addNotification(M.util.get_string(
+                        'thisinteractionalreadyexists', 'mod_interactivevideo', contenttype.title), 'danger');
                     return;
                 }
                 currentTime = null;
@@ -694,13 +702,13 @@ define(['jquery',
             $(document).on('click', 'tr.annotation .edit', async function(e) {
                 e.preventDefault();
                 const timestamp = $(this).closest('.annotation').data('timestamp');
+                const id = $(this).closest('.annotation').data('id');
+                const contenttype = $(this).closest('.annotation').data('type');
+                ctRenderer[contenttype].editAnnotation(annotations, id, coursemodule);
                 if (timestamp) {
                     await player.seek(timestamp, true);
                 }
                 player.pause();
-                const id = $(this).closest('.annotation').data('id');
-                const contenttype = $(this).closest('.annotation').data('type');
-                ctRenderer[contenttype].editAnnotation(annotations, id, coursemodule);
             });
 
             // Implement copy annotation
@@ -892,7 +900,7 @@ define(['jquery',
                         method: "POST",
                         dataType: "text",
                         data: {
-                            action: 'quickeditfield',
+                            action: 'quick_edit_field',
                             sesskey: M.cfg.sesskey,
                             id: id,
                             field: fld,
@@ -1390,7 +1398,11 @@ define(['jquery',
                 e.stopImmediatePropagation();
                 const id = $(this).data('id');
                 const annotation = annotations.find(x => x.id == id);
-                await player.seek(annotation.timestamp);
+                $loader.fadeIn(300);
+                if (await player.getCurrentTime() != annotation.timestamp) {
+                    await player.seek(annotation.timestamp);
+                }
+                $loader.fadeOut(300);
                 runInteraction(annotation);
             });
 
@@ -1400,8 +1412,10 @@ define(['jquery',
                 e.stopImmediatePropagation();
                 const percentage = e.offsetX / $(this).width();
                 replaceProgressBars(percentage * 100);
+                $loader.fadeIn(300);
                 await player.seek((percentage * totaltime) + start);
                 player.pause();
+                $loader.fadeOut(300);
                 $("#message, #end-screen").remove();
             });
 
@@ -1460,7 +1474,7 @@ define(['jquery',
                         method: "POST",
                         dataType: "text",
                         data: {
-                            action: 'quickeditfield',
+                            action: 'quick_edit_field',
                             sesskey: M.cfg.sesskey,
                             id: a.id,
                             field: 'timestamp',
@@ -1481,7 +1495,7 @@ define(['jquery',
                             method: "POST",
                             dataType: "text",
                             data: {
-                                action: 'quickeditfield',
+                                action: 'quick_edit_field',
                                 sesskey: M.cfg.sesskey,
                                 id: a.id,
                                 field: 'title',
@@ -1567,16 +1581,16 @@ define(['jquery',
                             <div class="modal-header">
                                 <h5 class="modal-title" id="importmodalLabel">
                                 ${M.util.get_string('importcontent', 'mod_interactivevideo')}</h5>
-                                <button type="button" class="btn p-0 " data-dismiss="modal" aria-label="Close">
+                                <button type="button" class="btn p-0 border-0" data-dismiss="modal" aria-label="Close">
                                     <i class="bi bi-x-lg fa-fw fs-25px"></i>
                                 </button>
                             </div>
                             <div class="modal-body">
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                <button type="button" class="btn btn-secondary border-0" data-dismiss="modal">
                                 ${M.util.get_string('cancel', 'mod_interactivevideo')}</button>
-                                <button type="button" class="btn btn-primary" id="importcontentbutton">
+                                <button type="button" class="btn btn-primary border-0" id="importcontentbutton">
                                 ${M.util.get_string('import', 'mod_interactivevideo')}</button>
                             </div>
                         </div>
@@ -1608,7 +1622,7 @@ define(['jquery',
                         success: function(data) {
                             let courses = JSON.parse(data);
                             // Sort courses by name.
-                            courses.sort((a, b) => b.fullname.localeCompare(a.fullname));
+                            courses.sort((a, b) => a.fullname.localeCompare(b.fullname));
                             let courseSelect = `<select class="custom-select w-100" id="importcourse">`;
                             courses.forEach(course => {
                                 courseSelect += `<option value="${course.id}">${course.fullname} (${course.shortname})</option>`;
@@ -1641,7 +1655,7 @@ define(['jquery',
                     },
                     success: function(data) {
                         let cms = JSON.parse(data);
-                        cms.sort((a, b) => b.name.localeCompare(a.name));
+                        cms.sort((a, b) => a.name.localeCompare(b.name));
                         let cmSelect = `<select class="custom-select w-100" id="importcm">
                         <option value="">${M.util.get_string('select', 'mod_interactivevideo')}</option>`;
                         cms.forEach(cm => {
@@ -1811,6 +1825,26 @@ define(['jquery',
                             });
                         }
                     });
+            });
+
+            // Implement content type filter.
+            $(document).on('keyup', '#contentmodal #contentsearch', function() {
+                let search = $(this).val().toLowerCase();
+
+                $('#addcontentdropdown .dropdown-item').removeClass('d-none').addClass('d-flex');
+
+                if (search == '') {
+                    return;
+                }
+
+                $('#contentmodal #addcontentdropdown .dropdown-item').each(function() {
+                    let text = $(this).find('.contenttype-title').text().toLowerCase();
+                    if (text.includes(search)) {
+                        $(this).addClass('d-flex').removeClass('d-none');
+                    } else {
+                        $(this).addClass('d-none').removeClass('d-flex');
+                    }
+                });
             });
         }
     };

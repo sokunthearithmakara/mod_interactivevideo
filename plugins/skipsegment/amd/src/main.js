@@ -37,13 +37,15 @@ export default class SkipSegment extends Base {
         if (!this.isEditMode()) {
             let self = this;
             const skipsegment = this.annotations.filter((annotation) => annotation.type == 'skipsegment');
-            $(document).on('timeupdate', function(e) {
+            $(document).on('timeupdate', async function(e) {
                 const t = e.originalEvent.detail.time;
-                skipsegment.forEach((annotation) => {
+                for (let annotation of skipsegment) {
                     if (annotation.timestamp < t && annotation.title > t) {
-                        self.runInteraction(annotation);
+                        await self.player.seek(Number(annotation.title));
+                        await self.runInteraction(annotation);
+                        break;
                     }
-                });
+                }
             });
         }
     }
@@ -205,7 +207,7 @@ export default class SkipSegment extends Base {
         $('.video-block').append(`<div id="skipsegment" class="text-white position-absolute p-3 hide">
          <i class="${this.prop.icon}"></i></div>`);
         $('#skipsegment').fadeIn(300);
-        await this.player.seek(Number(annotation.title));
+        await this.player.seek(Number(annotation.title) + 0.01);
         this.player.play();
         setTimeout(() => {
             $('#skipsegment').fadeOut(300);

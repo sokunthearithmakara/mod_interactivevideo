@@ -39,6 +39,8 @@ class main extends \ivplugin_richtext\main {
             'hastimestamp' => true,
             'hasreport' => false,
             'description' => get_string('skipsegmentdescription', 'ivplugin_skipsegment'),
+            'author' => 'tsmakara',
+            'authorlink' => 'mailto:sokunthearithmakara@gmail.com',
         ];
     }
 

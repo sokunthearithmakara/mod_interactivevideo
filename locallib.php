@@ -116,7 +116,7 @@ class interactivevideo_util {
         global $DB;
         if ($userid == 1 || $preview) {
             global $SESSION;
-            $progress = $SESSION->ivprogress;
+            $progress = isset($SESSION->ivprogress) ? $SESSION->ivprogress : null;
             if (!isset($progress)) {
                 $SESSION->ivprogress = [];
             }
@@ -145,6 +145,7 @@ class interactivevideo_util {
             $record->timecompleted = 0;
             $record->completeditems = '[]';
             $record->completionpercentage = 0;
+            $record->completiondetails = '[]';
             $record->id = $DB->insert_record('interactivevideo_completion', $record);
         }
         return $record;
@@ -166,6 +167,7 @@ class interactivevideo_util {
      * @param float $grade The grade achieved (optional, default is 0).
      * @param int $gradeiteminstance The grade item instance (optional, default is 0).
      * @param int $xp The experience points earned (optional, default is 0).
+     * @param bool $updatestate Whether to update the completion state (optional, default is true).
      * @return stdClass The updated progress record.
      */
     public static function save_progress(
@@ -180,7 +182,9 @@ class interactivevideo_util {
         $percentage = 0,
         $grade = 0,
         $gradeiteminstance = 0,
-        $xp = 0
+        $xp = 0,
+        $updatestate = true,
+        $courseid = 0
     ) {
         global $DB, $CFG, $SESSION;
         // If guess user, save progress in the session; otherwise in the database.
@@ -229,6 +233,7 @@ class interactivevideo_util {
                 $item = json_decode($item);
                 return $item->id != $completion->id;
             });
+            $cdetails = array_values($cdetails);
         }
         $record->completiondetails = json_encode($cdetails);
         $DB->update_record('interactivevideo_completion', $record);
@@ -254,16 +259,13 @@ class interactivevideo_util {
         }
 
         // Update completion state.
-        $cm = get_coursemodule_from_instance('interactivevideo', $interactivevideo);
-        if ($cm->completion == 2) {
+        if ($updatestate) {
+            $cm = get_coursemodule_from_instance('interactivevideo', $interactivevideo);
             require_once($CFG->libdir . '/completionlib.php');
-            $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
+            $course = new stdClass();
+            $course->id = $courseid;
             $completion = new completion_info($course);
-            if ($completed) {
-                $completion->update_state($cm, COMPLETION_COMPLETE, $userid);
-            } else {
-                $completion->update_state($cm, COMPLETION_INCOMPLETE, $userid);
-            }
+            $completion->update_state($cm);
         }
 
         // Update grade.
@@ -272,7 +274,7 @@ class interactivevideo_util {
         $gradeitem->userid = $userid;
         $gradeitem->rawgrade = $grade;
 
-        grade_update('mod/interactivevideo', $cm->course, 'mod', 'interactivevideo', $gradeiteminstance, 0, $gradeitem);
+        grade_update('mod/interactivevideo', $courseid, 'mod', 'interactivevideo', $gradeiteminstance, 0, $gradeitem);
 
         $record->grade = $grade;
         $record->gradeiteminstance = $gradeiteminstance;
@@ -323,6 +325,11 @@ class interactivevideo_util {
                 'link' => true,
                 'includefullname' => true,
             ]);
+            $record->pictureonly = $OUTPUT->user_picture($record, [
+                'size' => 24,
+                'link' => false,
+                'includefullname' => true,
+            ]);
         }
         return $records;
     }
@@ -335,9 +342,18 @@ class interactivevideo_util {
     public static function get_all_activitytypes() {
         $subplugins = get_config('mod_interactivevideo', 'enablecontenttypes');
         $subplugins = explode(',', $subplugins);
+        $subplugins = array_map(function ($subplugin) {
+            return [
+                'name' => $subplugin,
+                'custom' => strpos($subplugin, 'ivplugin_') === false,
+                'class' => $subplugin . '\\main',
+            ];
+        }, $subplugins);
+
         $contentoptions = [];
+
         foreach ($subplugins as $subplugin) {
-            $class = "ivplugin_" . $subplugin . "\\main";
+            $class = $subplugin['class'];
 
             if (!class_exists($class)) {
                 continue;
@@ -345,36 +361,40 @@ class interactivevideo_util {
 
             $contenttype = new $class();
             if ($contenttype && $contenttype->can_used() && $contenttype->get_property()) {
-                if ($contenttype->can_used()) {
-                    $properties = $contenttype->get_property();
-                    if (
-                        !isset($properties['name']) || !isset($properties['class'])
-                        || !isset($properties['amdmodule']) || !isset($properties['form'])
-                    ) {
-                        return;
-                    }
-                    if (!isset($properties['hascompletion'])) {
-                        $properties['hascompletion'] = false;
-                    }
-                    if (!isset($properties['hastimestamp'])) {
-                        $properties['hastimestamp'] = true;
-                    }
-                    if (!isset($properties['allowmultiple'])) {
-                        $properties['allowmultiple'] = true;
-                    }
-                    if (!isset($properties['icon'])) {
-                        $properties['icon'] = 'bi bi-cursor';
-                    }
-                    if (!isset($properties['title'])) {
-                        $properties['title'] = get_string('unknowncontenttype', 'mod_interactivevideo');
-                    }
-                    if (!isset($properties['description'])) {
-                        $properties['description'] = '';
-                    }
-                    $contentoptions[] = $properties;
+                $properties = $contenttype->get_property();
+                if (
+                    !isset($properties['name']) || !isset($properties['class'])
+                    || !isset($properties['amdmodule']) || !isset($properties['form'])
+                ) {
+                    continue;
                 }
+                if (!isset($properties['hascompletion'])) {
+                    $properties['hascompletion'] = false;
+                }
+                if (!isset($properties['hastimestamp'])) {
+                    $properties['hastimestamp'] = true;
+                }
+                if (!isset($properties['allowmultiple'])) {
+                    $properties['allowmultiple'] = true;
+                }
+                if (!isset($properties['icon'])) {
+                    $properties['icon'] = 'bi bi-cursor';
+                }
+                if (!isset($properties['title'])) {
+                    $properties['title'] = get_string('unknowncontenttype', 'mod_interactivevideo');
+                }
+                if (!isset($properties['description'])) {
+                    $properties['description'] = '';
+                }
+                if (!isset($properties['stringcomponent'])) {
+                    $properties['stringcomponent'] = $subplugin['name'];
+                }
+                $contentoptions[] = $properties;
             }
         }
+
+        // Make sure contentTypes do not have the same name key.
+        $contentoptions = array_values(array_column($contentoptions, null, 'name'));
         return $contentoptions;
     }
 
@@ -417,7 +437,6 @@ class interactivevideo_util {
             // Remove orphaned files.
             self::file_remove_editor_orphaned_files($draftitemid, $value);
             self::file_remove_editor_orphaned_files($olddraftitemid, $value);
-            // Replace < and > with &lt; and &gt; to prevent XSS.
             $value = $postvalue;
         }
         $DB->set_field('interactivevideo_items', $field, $value, ['id' => $id]);
@@ -488,6 +507,64 @@ class interactivevideo_util {
     }
 
     /**
+     * Encodes the given text.
+     *
+     * This function takes a string of text and applies encoding to it.
+     *
+     * @param string $text The text to be encoded.
+     * @return string The encoded text.
+     */
+    public static function encode_text($text) {
+        $search = '/@@ANNOID#([0-9]+)/';
+        $text = preg_replace_callback($search, function ($matches) {
+            return $matches[1];
+        }, $text);
+
+        $search = '/@@INSTANCEID#([0-9]+)/';
+        $text = preg_replace_callback($search, function ($matches) {
+            return $matches[1];
+        }, $text);
+
+        $search = '/@@CMID#([0-9]+)/';
+        $text = preg_replace_callback($search, function ($matches) {
+            return $matches[1];
+        }, $text);
+
+        $search = '/@@COURSEID#([0-9]+)/';
+        $text = preg_replace_callback($search, function ($matches) {
+            return $matches[1];
+        }, $text);
+
+        return $text;
+    }
+
+    /**
+     * Processes the given text within a specific context.
+     *
+     * @param string $text The text to be processed.
+     * @param int $contextid The ID of the context in which the text is being processed.
+     * @param string $field The field associated with the text.
+     * @param int $id The ID related to the text processing.
+     *
+     * @return void
+     */
+    public static function process_text($text, $contextid, $field, $id) {
+        if (!$text) {
+            return $text;
+        }
+        $text = file_rewrite_pluginfile_urls(
+            str_replace('\\/', '/', $text),
+            'pluginfile.php',
+            $contextid,
+            'mod_interactivevideo',
+            $field,
+            $id
+        );
+        $text = self::encode_text($text);
+        return $text;
+    }
+
+    /**
      * Get log.
      *
      * @param int $userid
@@ -502,30 +579,9 @@ class interactivevideo_util {
 
         $record = $DB->get_record('interactivevideo_log', ['userid' => $userid, 'cmid' => $cmid, 'annotationid' => $annotationid]);
         if ($record) {
-            $record->text1 = file_rewrite_pluginfile_urls(
-                str_replace('\\/', '/', $record->text1),
-                'pluginfile.php',
-                $contextid,
-                'mod_interactivevideo',
-                'text1',
-                $record->id
-            );
-            $record->text2 = file_rewrite_pluginfile_urls(
-                str_replace('\\/', '/', $record->text2),
-                'pluginfile.php',
-                $contextid,
-                'mod_interactivevideo',
-                'text2',
-                $record->id
-            );
-            $record->text3 = file_rewrite_pluginfile_urls(
-                str_replace('\\/', '/', $record->text3),
-                'pluginfile.php',
-                $contextid,
-                'mod_interactivevideo',
-                'text3',
-                $record->id
-            );
+            $record->text1 = self::process_text($record->text1, $contextid, 'text1', $record->id);
+            $record->text2 = self::process_text($record->text2, $contextid, 'text2', $record->id);
+            $record->text3 = self::process_text($record->text3, $contextid, 'text3', $record->id);
         }
         return $record;
     }
@@ -536,43 +592,39 @@ class interactivevideo_util {
      * @param array $userids
      * @param int $annotationid
      * @param int $contextid
+     * @param string $type
+     * @param int $cmid
      * @return array
      */
-    public static function get_logs_by_userids($userids, $annotationid, $contextid) {
+    public static function get_logs_by_userids($userids, $annotationid, $contextid, $type, $cmid) {
         global $DB, $CFG;
         require_once($CFG->libdir . '/filelib.php');
         $inparams = $DB->get_in_or_equal($userids)[1];
         $inparams = implode(',', $inparams);
-        $sql = "SELECT * FROM {interactivevideo_log} WHERE annotationid = ? AND userid IN ($inparams) ORDER BY
+        $where = '';
+        if ($annotationid != 0) {
+            $where = "annotationid = ? ";
+        }
+        if ($type) {
+            $where .= "char1 = ? AND cmid = ?";
+        }
+        $sql = "SELECT * FROM {interactivevideo_log} WHERE {$where} AND userid IN ($inparams) ORDER BY
         timecreated DESC";
-        $records = $DB->get_records_sql($sql, [$annotationid]);
+        $params = [];
+        if ($annotationid != 0) {
+            $params[] = $annotationid;
+        }
+        if ($type) {
+            $params[] = $type;
+            $params[] = $cmid;
+        }
+        $records = $DB->get_records_sql($sql, $params);
         foreach ($records as $record) {
             $record->formattedtimecreated = userdate($record->timecreated, get_string('strftimedatetime'));
             $record->formattedtimemodified = userdate($record->timemodified, get_string('strftimedatetime'));
-            $record->text1 = file_rewrite_pluginfile_urls(
-                str_replace('\\/', '/', $record->text1),
-                'pluginfile.php',
-                $contextid,
-                'mod_interactivevideo',
-                'text1',
-                $record->id
-            );
-            $record->text2 = file_rewrite_pluginfile_urls(
-                str_replace('\\/', '/', $record->text2),
-                'pluginfile.php',
-                $contextid,
-                'mod_interactivevideo',
-                'text2',
-                $record->id
-            );
-            $record->text3 = file_rewrite_pluginfile_urls(
-                str_replace('\\/', '/', $record->text3),
-                'pluginfile.php',
-                $contextid,
-                'mod_interactivevideo',
-                'text3',
-                $record->id
-            );
+            $record->text1 = self::process_text($record->text1, $contextid, 'text1', $record->id);
+            $record->text2 = self::process_text($record->text2, $contextid, 'text2', $record->id);
+            $record->text3 = self::process_text($record->text3, $contextid, 'text3', $record->id);
         }
         return array_values($records);
     }
@@ -677,5 +729,81 @@ class interactivevideo_util {
             $copied[] = $annotation;
         }
         return $copied;
+    }
+
+
+    /**
+     * Get completion information for a course module.
+     *
+     * @param int $cmid The course module ID.
+     * @param int $userid The user ID.
+     * @param int $courseid The course ID.
+     * @param int $contextid The context ID.
+     * @return string The completion information.
+     */
+    public static function get_cm_completion($cmid, $userid, $courseid, $contextid) {
+        global $OUTPUT, $CFG, $PAGE, $USER;
+        if (!$userid || $userid == 0) {
+            $userid = $USER->id;
+        }
+        $context = \context::instance_by_id($contextid);
+        $PAGE->set_context($context);
+        // Get completion information.
+        $completion = '';
+        $cminfo = get_fast_modinfo($courseid);
+        $cm = $cminfo->get_cm($cmid);
+        $completiondetails = \core_completion\cm_completion_details::get_instance($cm, $userid);
+        // If moodle version is 4.4 or below, use new completion information.
+        if ($CFG->branch < 404) {
+            $completion = $OUTPUT->activity_information($cm, $completiondetails, []);
+        } else {
+            $activitycompletion = new \core_course\output\activity_completion($cm, $completiondetails);
+            $output = $PAGE->get_renderer('core');
+            $activitycompletiondata = (array) $activitycompletion->export_for_template($output);
+            if ($activitycompletiondata["hascompletion"]) {
+                $completion = $OUTPUT->render_from_template('core_course/activity_info', $activitycompletiondata);
+            }
+        }
+        return $completion;
+    }
+
+    /**
+     * Delete progress by ID.
+     *
+     * @param int $contextid The context ID.
+     * @param int $recordid The record ID.
+     * @param int $courseid The course ID.
+     * @param int $cmid The course module ID.
+     * @return string The result of the deletion.
+     */
+    public static function delete_progress_by_id($contextid, $recordid, $courseid, $cmid) {
+        global $DB, $CFG;
+        // Delete completion record.
+        $DB->delete_records('interactivevideo_completion', ['id' => $recordid]);
+        // Delete logs.
+        $logs = $DB->get_field('interactivevideo_log', 'id', ['completionid' => $recordid], IGNORE_MISSING);
+        // Delete associated files.
+        if ($logs) {
+            $fs = get_file_storage();
+            foreach ($logs as $log) {
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'attachments', $log->id);
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text1', $log->id);
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text2', $log->id);
+                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text3', $log->id);
+            }
+            $DB->delete_records('interactivevideo_log', ['completionid' => $recordid]);
+        }
+
+        // Update completion state.
+        $cm = get_coursemodule_from_instance('interactivevideo', $cmid);
+        require_once($CFG->libdir . '/completionlib.php');
+        if ($cm->completion == COMPLETION_TRACKING_AUTOMATIC) {
+            $course = new stdClass();
+            $course->id = $courseid;
+            $completion = new completion_info($course);
+            $completion->update_state($cm);
+        }
+
+        return 'deleted';
     }
 }

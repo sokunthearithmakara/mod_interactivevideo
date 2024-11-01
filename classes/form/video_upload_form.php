@@ -85,6 +85,7 @@ class video_upload_form extends \core_form\dynamic_form {
                     $file->get_filepath(),
                     $file->get_filename()
                 )->out();
+                $fromform->name = $file->get_filename();
                 $fromform->url = $downloadurl;
             }
         }

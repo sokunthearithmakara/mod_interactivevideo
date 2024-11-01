@@ -41,6 +41,8 @@ class main extends \ivplugin_richtext\main {
             'hastimestamp' => true,
             'hasreport' => true,
             'description' => get_string('contentbankdescription', 'ivplugin_contentbank'),
+            'author' => 'tsmakara',
+            'authorlink' => 'mailto:sokunthearithmakara@gmail.com',
         ];
     }
 
@@ -52,7 +54,8 @@ class main extends \ivplugin_richtext\main {
     public function get_content($arg) {
         $id = $arg["contentid"];
         $contextid = $arg["contextid"];
-        return $this->get_contentbank_content($id, $contextid);
+        return '<div class="h5p-player-wrapper p-3 w-100 h-100 overflow-visible">'
+            . $this->get_contentbank_content($id, $contextid) . '</div>';
     }
 
     /**

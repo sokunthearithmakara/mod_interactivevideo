@@ -47,6 +47,9 @@ class form extends \mod_interactivevideo\form\base_form {
         $mform->setType('title', PARAM_TEXT);
         $mform->setDefault('title', get_string('defaulttitle', 'mod_interactivevideo'));
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
+        $mform->addElement('advcheckbox', 'char1', get_string('showtitle', 'ivplugin_chapter'));
+        $mform->setDefault('char1', 1);
+        $mform->addHelpButton('char1', 'showtitle', 'ivplugin_chapter');
 
         $this->advanced_form_fields(false, true, true, true);
 

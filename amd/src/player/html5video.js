@@ -30,27 +30,12 @@ class Html5Video {
      * @param {string} url - The URL of the video to be played.
      * @param {number} start - The start time of the video in seconds.
      * @param {number} [end] - The end time of the video in seconds. If not provided, defaults to the video's duration.
-     * @param {boolean} showControls - Whether to show the video controls.
-     *
-     * @property {string} type - The type of the player, set to "html5video".
-     * @property {number} start - The start time of the video.
-     * @property {number} end - The end time of the video.
-     * @property {number} frequency - The frequency of some operation, set to 0.28.
-     * @property {Object} support - An object indicating support for playback rate and quality.
-     * @property {boolean} support.playbackrate - Indicates if playback rate control is supported.
-     * @property {boolean} support.quality - Indicates if quality control is supported.
-     * @property {HTMLVideoElement} player - The HTML5 video element.
-     * @property {string} posterImage - The poster image of the video.
-     *
-     * @fires iv:playerReady - Dispatched when the video's metadata is loaded.
-     * @fires iv:playerSeek - Dispatched when the video is seeked.
-     * @fires iv:playerEnded - Dispatched when the video ends.
-     * @fires iv:playerPaused - Dispatched when the video is paused.
-     * @fires iv:playerPlaying - Dispatched when the video is playing.
-     * @fires iv:playerError - Dispatched when there is an error with the video.
-     * @fires iv:playerRateChange - Dispatched when the playback rate changes.
+    * @param {object} opts - The options for the player.
      */
-    constructor(url, start, end, showControls) {
+    constructor(url, start, end, opts = {}) {
+        const showControls = opts.showControls || false;
+        const node = opts.node || 'player';
+        const autoplay = opts.autoplay || false;
         this.type = "html5video";
         this.start = start;
         this.end = end;
@@ -59,7 +44,7 @@ class Html5Video {
             playbackrate: true,
             quality: false,
         };
-        var player = document.getElementById('player');
+        var player = document.getElementById(node);
         this.posterImage = player.poster;
         // Check if the url is for video or audio.
         const video = ['fmp4', 'm4v', 'mov', 'mp4', 'ogv', 'webm'];
@@ -75,8 +60,9 @@ class Html5Video {
         player.src = url;
         player.controls = showControls;
         player.currentTime = start;
-        if (document.body.classList.contains('mobiletheme')) {
-            // Preload video on mobile app.
+        if (document.body.classList.contains('mobiletheme') || autoplay) {
+            // Preload video on mobile app. Must mute to avoid browser restriction.
+            player.muted = true;
             player.autoplay = true;
         }
         // Disable keyboard controls.
@@ -198,8 +184,8 @@ class Html5Video {
      *
      * This method calls the pause function on the player instance to stop the video.
      */
-    pause() {
-        this.player.pause();
+    async pause() {
+        await this.player.pause();
     }
     /**
      * Stops the video playback and sets the current time to the specified start time.

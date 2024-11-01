@@ -25,14 +25,12 @@
     border-radius: 1px;
 }
 
-.path-mod-interactivevideo #video-nav li.skipped {
-    .item {
-        background-color: var(--ivgray);
-    }
+.path-mod-interactivevideo #video-nav li.skipped .item {
+    background-color: var(--ivgray);
+}
 
-    i {
-        color: var(--ivgray);
-    }
+.path-mod-interactivevideo #video-nav li.skipped i {
+    color: var(--ivgray);
 }
 
 .path-mod-interactivevideo .delete-skipsegment {
@@ -50,8 +48,8 @@
     right: 0;
     text-shadow: 1px 2px 3px gray;
     line-height: 1rem;
+}
 
-    i {
-        font-size: xxx-large;
-    }
+.path-mod-interactivevideo #skipsegment i {
+    font-size: xxx-large;
 }

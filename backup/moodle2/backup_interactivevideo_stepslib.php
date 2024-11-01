@@ -50,6 +50,7 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
             'type',
             'displayoptions',
             'posterimage',
+            'extendedcompletion',
         ]);
 
         $items = new backup_nested_element('items');
@@ -171,6 +172,7 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
         $interactivevideo->annotate_files('mod_interactivevideo', 'intro', null); // This file area hasn't itemid.
         $interactivevideo->annotate_files('mod_interactivevideo', 'endscreentext', null);
         $interactivevideo->annotate_files('mod_interactivevideo', 'video', null);
+        $interactivevideo->annotate_files('mod_interactivevideo', 'posterimage', null);
         // Contentbank content is at course level, so we must indicate the course context id.
         $item->annotate_files('contentbank', 'public', 'contentid', context_course::instance($this->task->get_courseid())->id);
         $item->annotate_files('mod_interactivevideo', 'content', 'id'); // Itemid is the id of the annotationitem.

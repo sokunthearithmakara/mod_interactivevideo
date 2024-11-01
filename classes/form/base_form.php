@@ -245,6 +245,7 @@ class base_form extends \core_form\dynamic_form {
         $mform->setDefault('requiremintime', 0);
         $mform->addRule('requiremintime', null, 'numeric', null, 'client');
         $mform->hideIf('requiremintime', 'completiontracking', 'neq', 'manual');
+        $mform->addHelpButton('requiremintime', 'requiremintime', 'mod_interactivevideo');
     }
 
     /**

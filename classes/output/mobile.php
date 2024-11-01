@@ -38,29 +38,19 @@ class mobile {
      * @return void
      */
     public static function mobile_module_view($args) {
+        global $OUTPUT;
         $args = (object)$args;
-        $cm = get_coursemodule_from_id('interactivevideo', $args->cmid);
-
-        require_login($args->courseid, false, $cm, true, true);
-
-        $context = context_module::instance($cm->id);
-
-        require_capability('mod/interactivevideo:view', $context);
-
-        $url = new moodle_url('/mod/interactivevideo/view.php', [
-            'id' => $cm->id,
-            'iframe' => 1,
-            'token' => self::create_token(),
+        $data = [
             'lang' => $args->applang,
-        ]);
+            'cmid' => $args->cmid,
+            'token' => self::create_token(),
+        ];
 
         return [
             'templates' => [
                 [
                     'id' => 'main',
-                    'html' => '<iframe src="' . $url->out(false) . '" width="100%" height="100%" allow="accelerometer; '
-                        . 'autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"'
-                        . ' referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
+                    'html' => $OUTPUT->render_from_template('mod_interactivevideo/mobile', $data),
                 ],
             ],
         ];

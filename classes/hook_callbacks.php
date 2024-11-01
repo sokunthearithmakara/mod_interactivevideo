@@ -14,22 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace mod_interactivevideo;
+
 /**
- * Version information for Rich Text
+ * Class hook_callbacks
  *
- * @package    ivplugin_richtext
+ * @package    mod_interactivevideo
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->component    = 'ivplugin_richtext';
-$plugin->release      = '1.0';
-$plugin->version      = 2024071500;
-$plugin->requires     = 2022112800;
-$plugin->supported    = [401, 405];
-$plugin->maturity     = MATURITY_STABLE;
-$plugin->dependencies = [
-    'interactivevideo' => 2024042720,
-];
+class hook_callbacks {
+    /**
+     * Add messaging widgets after the main region content.
+     *
+     * @param \core\hook\output\after_standard_main_region_html_generation $hook
+     */
+    public static function launch_player_modal(\core\hook\output\after_standard_main_region_html_generation $hook): void {
+        global $PAGE;
+        if (strpos($PAGE->bodyclasses, 'path-course-view') === false) {
+            return;
+        }
+        $PAGE->requires->js_call_amd('mod_interactivevideo/launch', 'init');
+    }
+}

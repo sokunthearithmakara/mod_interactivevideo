@@ -48,9 +48,21 @@ class restore_interactivevideo_activity_task extends restore_activity_task {
      */
     public static function define_decode_contents() {
         $contents = [];
-        $contents[] = new restore_decode_content('interactivevideo', ['intro', 'endscreentext'], 'interactivevideo');
-        $contents[] = new restore_decode_content('interactivevideo_items', ['content'], 'interactivevideo_items');
-        $contents[] = new restore_decode_content('interactivevideo_log', ['text1', 'text2', 'text3'], 'interactivevideo_log');
+        $contents[] = new restore_decode_content(
+            'interactivevideo',
+            ['intro', 'endscreentext'],
+            'interactivevideo'
+        );
+        $contents[] = new restore_decode_content(
+            'interactivevideo_items',
+            ['content', 'text1', 'text2', 'text3'],
+            'interactivevideo_items'
+        );
+        $contents[] = new restore_decode_content(
+            'interactivevideo_log',
+            ['text1', 'text2', 'text3'],
+            'interactivevideo_log'
+        );
         return $contents;
     }
 

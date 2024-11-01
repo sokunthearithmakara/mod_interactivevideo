@@ -35,16 +35,27 @@ import 'mod_interactivevideo/libraries/buttons.html5';
  *
  * @param {number} cmid - The course module ID.
  * @param {number} groupid - The group ID.
+ * @param {number} grademax - The maximum grade.
+ * @param {Array} itemids - The annotation IDs.
+ * @param {number} completionpercentage - The completion percentage.
+ * @param {string} videourl - The video URL.
+ * @param {string} videotype - The video type.
+ * @param {Object} cm - The course module object.
+ * @param {number} courseid - The course ID.
+ * @param {number} start - The start time.
+ * @param {number} end - The end time.
  */
-const init = (cmid, groupid) => {
+const init = (cmid, groupid, grademax, itemids, completionpercentage, videourl, videotype, cm, courseid, start, end) => {
     window.JSZip = JSZip;
+
+    let player;
 
     const getContentTypes = $.ajax({
         url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
         method: "POST",
         dataType: "text",
         data: {
-            action: 'getallcontenttypes',
+            action: 'get_all_contenttypes',
             sesskey: M.cfg.sesskey,
             contextid: M.cfg.contextid,
         }
@@ -54,7 +65,7 @@ const init = (cmid, groupid) => {
         url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
         method: 'POST',
         data: {
-            action: 'getreportdatabygroup',
+            action: 'get_report_data_by_group',
             cmid: cmid,
             sesskey: M.cfg.sesskey,
             contextid: M.cfg.contextid,
@@ -68,26 +79,10 @@ const init = (cmid, groupid) => {
 
     let contentTypes;
     let tabledata;
-    $.when(getContentTypes, getReportData).done((ct, data) => {
+    $.when(getContentTypes, getReportData).done(async (ct, data) => {
         contentTypes = JSON.parse(ct[0]);
         data = data[0];
-        /**
-         * Configuration options for initializing a DataTable.
-         *
-         * @type {Object}
-         * @property {Array} data - The data to be displayed in the table.
-         * @property {boolean} deferRender - If true, the table will defer rendering of rows until they are needed.
-         * @property {string} rowId - The property to use as the unique identifier for each row.
-         * @property {number} pageLength - The number of rows to display per page.
-         * @property {Array} order - The initial sorting order of the table.
-         * @property {Array} columns - Configuration for each column in the table.
-         * @property {Object} language - Customization of the language strings used by the DataTable.
-         * @property {Function} stateSaveParams - Function to modify the state saving parameters.
-         * @property {boolean} stateSave - If true, the table state will be saved in local storage.
-         * @property {string} dom - The layout of the table controls.
-         * @property {Array} buttons - Configuration for the export buttons.
-         * @property {Function} initComplete - Function to execute when the table initialization is complete.
-         */
+
         let datatableOptions = {
             "data": data,
             "deferRender": true,
@@ -103,10 +98,11 @@ const init = (cmid, groupid) => {
                     data: "picture",
                     render: function(data, type, row) {
                         let deletebutton = `<button title="${M.util.get_string('reset', 'mod_interactivevideo')}"
-                         class="btn btn-sm text-danger reset m-1" data-record="${row.completionid}" data-userid="${row.id}">
+                         class="btn border-0 btn-sm text-danger reset m-1" data-record="${row.completionid}"
+                          data-userid="${row.id}">
                          <i class="bi bi-trash3"></i></button>`;
                         return `<div class="text-truncate d-flex align-items-center justify-content-between">${data}
-                        ${row.completionpercentage > 0 ? deletebutton : ''}</div>`;
+                        ${row.timecreated > 0 ? deletebutton : ''}</div>`;
                     },
                     className: "bg-white sticky-left-0",
                 },
@@ -221,7 +217,7 @@ const init = (cmid, groupid) => {
                 {
                     extend: "copyHtml5",
                     text: '<i class="bi bi-copy fa-fw fs-unset"></i>',
-                    className: "btn btn-sm",
+                    className: "btn btn-sm border-0",
                     messageTop: null,
                     title: null,
                     exportOptions: {
@@ -239,7 +235,7 @@ const init = (cmid, groupid) => {
                 {
                     extend: "csvHtml5",
                     text: '<i class="bi bi-filetype-csv fa-fw fs-unset"></i>',
-                    className: "btn btn-sm",
+                    className: "btn btn-sm border-0",
                     exportOptions: {
                         columns: ['.exportable'],
                         format: {
@@ -255,7 +251,7 @@ const init = (cmid, groupid) => {
                 {
                     extend: "excelHtml5",
                     text: '<i class="bi bi-file-earmark-excel fa-fw fs-unset"></i>',
-                    className: "btn btn-sm",
+                    className: "btn btn-sm border-0",
                     exportOptions: {
                         columns: ['.exportable'],
                         format: {
@@ -289,30 +285,18 @@ const init = (cmid, groupid) => {
                 sortable: false,
                 className: "text-center exportable",
                 render: function(data, rtype, row) {
-                    if (!data.completeditems) {
-                        return `<i class="fa fa-times"></i>`;
-                    }
-                    let completeditems = JSON.parse(data.completeditems);
                     let completiondetails;
                     try {
                         completiondetails = JSON.parse(data.completiondetails).map(x => JSON.parse(x));
                     } catch (e) {
                         completiondetails = [];
                     }
-                    if (completeditems) {
-                        if (completeditems.indexOf(itemid) > -1) {
-                            let details = completiondetails.find(x => Number(x.id) == Number(itemid));
-                            if (details) {
-                                return `<span class="completion-detail ${details.hasDetails ? 'cursor-pointer' : ''}"
+                    let details = completiondetails.find(x => Number(x.id) == Number(itemid));
+                    if (details) {
+                        return `<span class="completion-detail ${details.hasDetails ? 'cursor-pointer' : ''}"
                                  data-id="${itemid}" data-userid="${row.id}" data-type="${ctype}">${details.reportView}</span>`;
-                            } else {
-                                return '';
-                            }
-                        } else {
-                            return '<i class="fa fa-times"></i><span class="d-none">-</span>';
-                        }
                     } else {
-                        return '<i class="fa fa-times"></i><span class="d-none">-</span>';
+                        return '-';
                     }
                 },
             });
@@ -331,17 +315,20 @@ const init = (cmid, groupid) => {
         let annotationid = $(this).closest('th').data('item');
         let theAnnotation = itemsdata.find(x => x.id == annotationid);
         let tabledatajson = tabledata.rows().data().toArray();
+        let title = theAnnotation.formattedtitle;
+        if (theAnnotation.timestamp > 0) {
+            title += " @ " + convertSecondsToHMS(theAnnotation.timestamp);
+        }
         const modal = `<div class="modal fade" id="annotation-modal" role="dialog"
             aria-labelledby="annotation-modal"
          aria-hidden="true" data-backdrop="static" data-keyboard="false">
          <div id="message" data-id="${theAnnotation.id}" data-placement="popup"
-          class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+          class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable ${theAnnotation.type}" role="document">
             <div class="modal-content rounded-lg">
                 <div class="modal-header d-flex align-items-center shadow-sm" id="title">
-                    <h5 class="modal-title text-truncate mb-0">${theAnnotation.formattedtitle
-            + " @ " + convertSecondsToHMS(theAnnotation.timestamp)}</h5>
+                    <h5 class="modal-title text-truncate mb-0">${title}</h5>
                     <div class="btns d-flex align-items-center">
-                        <button class="btn close-modal p-0" aria-label="Close" data-dismiss="modal">
+                        <button class="btn close-modal p-0 border-0" aria-label="Close" data-dismiss="modal">
                         <i class="bi bi-x-lg fa-fw fs-25px"></i>
                         </button>
                     </div>
@@ -362,9 +349,11 @@ const init = (cmid, groupid) => {
             $('#annotation-modal .modal-body').fadeIn(300);
             let matchingContentTypes = contentTypes.find(x => x.name === theAnnotation.type);
             let amdmodule = matchingContentTypes.amdmodule;
-            require([amdmodule + ''], function(Module) {
+            require([amdmodule], function(Module) {
                 theAnnotation.completed = true;
-                new Module().displayReportView(theAnnotation, tabledatajson);
+                new Module(player, itemsdata, cmid, courseid, null,
+                    completionpercentage, null, grademax, videotype, null,
+                    end - start, start, end, theAnnotation.prop, cm).displayReportView(theAnnotation, tabledatajson);
             });
             $(this).find('.close-modal').focus();
         });
@@ -387,10 +376,13 @@ const init = (cmid, groupid) => {
                     data: {
                         action: 'delete_progress_by_id',
                         recordid,
+                        courseid: courseid,
+                        cmid: cmid,
                         contextid: M.cfg.contextid,
                         sesskey: M.cfg.sesskey,
                     },
                     success: function(response) {
+                        window.console.log(response);
                         if (response == 'deleted') {
                             let targetdata = tabledata.row($this.closest('tr')).data();
                             targetdata.completionpercentage = 0;
@@ -406,7 +398,8 @@ const init = (cmid, groupid) => {
                             });
                         }
                     },
-                    error: function() {
+                    error: function(e) {
+                        window.console.log(e);
                         addToast(M.util.get_string('completionreseterror', 'mod_interactivevideo'), {
                             type: 'error'
                         });
@@ -466,8 +459,10 @@ const init = (cmid, groupid) => {
         let amdmodule = matchingContentTypes.amdmodule;
         // Get column header with the item id.
         let theAnnotation = itemsdata.find(x => x.id == id);
-        require([amdmodule + ''], function(Module) {
-            new Module().getCompletionData(theAnnotation, userid);
+        require([amdmodule], function(Module) {
+            new Module(player, itemsdata, cmid, courseid, null,
+                completionpercentage, null, grademax, videotype, null,
+                end - start, start, end, theAnnotation.prop, cm).getCompletionData(theAnnotation, userid);
         });
     });
 };
@@ -522,7 +517,7 @@ const renderAnnotationLogs = (data, node, title) => {
             {
                 extend: "copyHtml5",
                 text: '<i class="bi bi-copy fa-fw fs-unset"></i>',
-                className: "btn btn-sm",
+                className: "btn btn-sm border-0",
                 messageTop: null,
                 title: null,
                 exportOptions: {
@@ -533,7 +528,7 @@ const renderAnnotationLogs = (data, node, title) => {
                 extend: "csvHtml5",
                 text: '<i class="bi bi-filetype-csv fa-fw fs-unset"></i>',
                 title: title,
-                className: "btn btn-sm",
+                className: "btn btn-sm border-0",
                 exportOptions: {
                     columns: ['.exportable']
                 }
@@ -541,7 +536,7 @@ const renderAnnotationLogs = (data, node, title) => {
             {
                 extend: "excelHtml5",
                 text: '<i class="bi bi-file-earmark-excel fa-fw fs-unset"></i>',
-                className: "btn btn-sm",
+                className: "btn btn-sm border-0",
                 title: title,
                 exportOptions: {
                     columns: ['.exportable']

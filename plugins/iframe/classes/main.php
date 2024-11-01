@@ -39,6 +39,8 @@ class main extends \ivplugin_richtext\main {
             'hastimestamp' => true,
             'hasreport' => true,
             'description' => get_string('iframedescription', 'ivplugin_iframe'),
+            'author' => 'tsmakara',
+            'authorlink' => 'mailto:sokunthearithmakara@gmail.com',
         ];
     }
 

@@ -45,8 +45,9 @@ if ($id) {
     $cm = get_coursemodule_from_instance('interactivevideo', $moduleinstance->id, $course->id, false, MUST_EXIST);
 }
 
+$getcompletion = true;
 $modulecontext = context_module::instance($cm->id);
-if ($iframe) {
+if ($iframe && !isloggedin()) {
     $token = required_param('token', PARAM_TEXT);
     $validated = \mod_interactivevideo\output\mobile::login_after_validate_token($token, $cm->id);
     if (!$validated) {
@@ -69,77 +70,104 @@ if (!isset($moduleinstance->displayoptions['distractionfreemode'])) {
 if ($iframe) {
     $moduleinstance->displayoptions['darkmode'] = 0;
     $moduleinstance->displayoptions['distractionfreemode'] = 1;
-    $PAGE->add_body_class($class = 'iframe mobiletheme');
+    $PAGE->add_body_class('iframe mobiletheme');
+    $getcompletion = false;
 }
 
 if ($embed) {
-    $PAGE->add_body_class($class = 'embed-mode');
+    $PAGE->add_body_class('embed-mode');
     $moduleinstance->displayoptions['distractionfreemode'] = 1;
+    $getcompletion = false;
 }
 
-if ($preview) {
-    $PAGE->add_body_class($class = 'preview-mode');
+if ($preview && has_capability('mod/interactivevideo:edit', $modulecontext)) {
+    $PAGE->add_body_class('preview-mode');
 }
 
 // Prepare strings for js files using string manager.
-$subplugins = get_config('mod_interactivevideo', 'enablecontenttypes');
-$subplugins = explode(',', $subplugins);
+$subplugins = interactivevideo_util::get_all_activitytypes();
 $stringman = get_string_manager();
 foreach ($subplugins as $subplugin) {
-    $strings = $stringman->load_component_strings('ivplugin_' . $subplugin, current_language());
-    $PAGE->requires->strings_for_js(array_keys($strings), 'ivplugin_' . $subplugin);
+    $stringcomponent = $subplugin['stringcomponent'];
+    $strings = $stringman->load_component_strings($stringcomponent, current_language());
+    $PAGE->requires->strings_for_js(array_keys($strings), $stringcomponent);
 }
-$stringman = get_string_manager();
 $strings = $stringman->load_component_strings('mod_interactivevideo', current_language());
 $PAGE->requires->strings_for_js(array_keys($strings), 'mod_interactivevideo');
 
 // Enable jQuery UI.
 $PAGE->requires->jquery_plugin('ui-css');
 
-// Log view.
-$event = \mod_interactivevideo\event\course_module_viewed::create([
-    'objectid' => $moduleinstance->id,
-    'context' => $modulecontext,
-]);
-$event->add_record_snapshot('course', $course);
-$event->add_record_snapshot('interactivevideo', $moduleinstance);
-$event->trigger();
+if ($cm->completion != COMPLETION_TRACKING_NONE) {
+    $completionview = new completion_info($course);
+    $completionstate = $completionview->internal_get_state($cm, $USER->id, true);
+}
 
-// Set view completion.
-$completionview = new completion_info($course);
-$completionview->set_module_viewed($cm);
-$completionstate = $completionview->internal_get_state($cm, $USER->id, true);
+// Log view.
+if (!$preview) {
+    $event = \mod_interactivevideo\event\course_module_viewed::create([
+        'objectid' => $moduleinstance->id,
+        'context' => $modulecontext,
+    ]);
+    $event->add_record_snapshot('course', $course);
+    $event->add_record_snapshot('interactivevideo', $moduleinstance);
+    $event->trigger();
+
+    // Set view completion.
+    if ($cm->completionview == COMPLETION_VIEW_REQUIRED) {
+        $completionview->set_module_viewed($cm);
+    }
+} else {
+    $getcompletion = false;
+}
+
+if ($cm->completion == COMPLETION_TRACKING_NONE) {
+    $getcompletion = false;
+}
 
 // Add body class to display editor view vs student view.
 if (has_capability('mod/interactivevideo:edit', $modulecontext)) {
     $PAGE->add_body_class('editorview');
 }
 
+// Toggle dark-mode.
 if ($moduleinstance->displayoptions['darkmode']) {
     $PAGE->add_body_class('darkmode bg-dark');
 }
 
+// Force theme.
 if (isset($moduleinstance->displayoptions['theme']) && $moduleinstance->displayoptions['theme'] != '') {
     $PAGE->force_theme($moduleinstance->displayoptions['theme']);
 }
+
+// Get completion information.
 $completion = null;
-$completiondetails = \core_completion\cm_completion_details::get_instance($PAGE->cm, $USER->id);
-// If moodle version is 4.4 or below, use new completion information.
-if ($CFG->version < 2024081000) {
-    $completion = $OUTPUT->activity_information($PAGE->cm, $completiondetails, []);
-} else {
-    $activitycompletion = new \core_course\output\activity_completion($PAGE->cm, $completiondetails);
-    $output = $PAGE->get_renderer('core');
-    $activitycompletiondata = (array) $activitycompletion->export_for_template($output);
-    if ($activitycompletiondata["hascompletion"]) {
-        $completion = $OUTPUT->render_from_template('core_course/activity_info', $activitycompletiondata);
+if ($getcompletion) {
+    $completiondetails = \core_completion\cm_completion_details::get_instance($PAGE->cm, $USER->id);
+    // If moodle version is 4.4 or below, use new completion information.
+    if ($CFG->branch < 404) {
+        $completion = $OUTPUT->activity_information($PAGE->cm, $completiondetails, []);
+    } else {
+        $activitycompletion = new \core_course\output\activity_completion($PAGE->cm, $completiondetails);
+        $output = $PAGE->get_renderer('core');
+        $activitycompletiondata = (array) $activitycompletion->export_for_template($output);
+        if ($activitycompletiondata["hascompletion"]) {
+            $completion = $OUTPUT->render_from_template('core_course/activity_info', $activitycompletiondata);
+        }
     }
 }
+
+// Toggle distraction-free mode.
 if ($moduleinstance->displayoptions['distractionfreemode']) {
     $PAGE->activityheader->disable();
     $PAGE->set_pagelayout('embedded');
+    $PAGE->add_body_class('distraction-free');
 } else {
     $PAGE->add_body_class('default-mode');
+    if ($moduleinstance->displayasstartscreen == 1 || $moduleinstance->displayoptions['showdescription'] == 0) {
+        // Don't show description in the header.
+        $PAGE->activityheader->set_attrs(['description' => '']);
+    }
 }
 
 $PAGE->set_url('/mod/interactivevideo/view.php', [
@@ -148,12 +176,15 @@ $PAGE->set_url('/mod/interactivevideo/view.php', [
     'i' => $moduleinstance->id,
     'iframe' => $iframe,
     'token' => $token ?? '',
+    'embed' => $embed,
+    'preview' => $preview,
 ]);
 
 $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($moduleinstance->name));
 $PAGE->set_context($modulecontext);
 
+// Get end screen content.
 $endcontent = file_rewrite_pluginfile_urls(
     $moduleinstance->endscreentext,
     'pluginfile.php',
@@ -182,7 +213,6 @@ $gradeitem = grade_item::fetch([
 $PAGE->requires->css(new moodle_url('/mod/interactivevideo/libraries/bootstrap-icons/bootstrap-icons.min.css'));
 
 echo $OUTPUT->header();
-// Check if the url is youtube url using regex.
 if ($moduleinstance->source == 'url') {
     $url = $moduleinstance->videourl;
 } else {
@@ -216,6 +246,7 @@ if (empty($url)) {
     die;
 }
 
+// Render primary navigation.
 $primary = new core\navigation\output\primary($PAGE);
 $renderer = $PAGE->get_renderer('core');
 $primarymenu = $primary->export_for_template($renderer);
@@ -230,6 +261,7 @@ if ($iframe || $embed) {
 }
 if ($rendernav) {
     $datafortemplate = [
+        "cmid" => $cm->id,
         "darkmode" => $moduleinstance->displayoptions['darkmode'] == '1',
         "returnurl" => new moodle_url('/course/view.php', ['id' => $course->id]),
         "completion" => $completion,
@@ -248,7 +280,10 @@ if ($rendernav) {
         "viewurl" => '',
         "backupurl" => has_capability('moodle/backup:backupactivity', $modulecontext) ? new moodle_url(
             '/backup/backup.php',
-            ['cm' => $cm->id, 'id' => $course->id]
+            [
+                'cm' => $cm->id,
+                'id' => $course->id,
+            ]
         ) : '',
         "restoreurl" => has_capability('moodle/restore:restoreactivity', $modulecontext) ? new moodle_url(
             '/backup/restorefile.php',
@@ -256,6 +291,29 @@ if ($rendernav) {
         ) : '',
     ];
     echo $OUTPUT->render_from_template('mod_interactivevideo/pagenav', $datafortemplate);
+}
+
+// Custom poster image.
+if (isset($moduleinstance->displayoptions['usecustomposterimage']) && $moduleinstance->displayoptions['usecustomposterimage']) {
+    $fs = get_file_storage();
+    $posterfiles = $fs->get_area_files(
+        $modulecontext->id,
+        'mod_interactivevideo',
+        'posterimage',
+        0,
+        'filesize DESC',
+    );
+    $posterfiles = reset($posterfiles);
+    if ($posterfiles) {
+        $moduleinstance->posterimage = moodle_url::make_pluginfile_url(
+            $posterfiles->get_contextid(),
+            $posterfiles->get_component(),
+            $posterfiles->get_filearea(),
+            $posterfiles->get_itemid(),
+            $posterfiles->get_filepath(),
+            $posterfiles->get_filename()
+        )->out();
+    }
 }
 
 // Display player.
@@ -291,5 +349,6 @@ $PAGE->requires->js_call_amd('mod_interactivevideo/viewannotation', 'init', [
     $moment, // Current time in seconds.
     $moduleinstance->displayoptions, // Display options array set in mod_form.
     $token ?? '', // Token for mobile app.
+    $moduleinstance->extendedcompletion, // Extended completion settings.
 ]);
 echo $OUTPUT->footer();

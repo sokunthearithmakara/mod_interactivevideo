@@ -34,5 +34,37 @@
 function xmldb_interactivevideo_upgrade($oldversion) {
     global $DB;
     $dbman = $DB->get_manager();
+    if ($oldversion < 2024092204) {
+
+        // Changing type of field start on table interactivevideo to number.
+        $table = new xmldb_table('interactivevideo');
+        $field = new xmldb_field('start', XMLDB_TYPE_NUMBER, '10, 2', null, null, null, null, 'displayasstartscreen');
+
+        // Launch change of type for field start.
+        $dbman->change_field_type($table, $field);
+
+        $field = new xmldb_field('end', XMLDB_TYPE_NUMBER, '10, 2', null, null, null, null, 'start');
+
+        // Launch change of type for field end.
+        $dbman->change_field_type($table, $field);
+
+        // Interactivevideo savepoint reached.
+        upgrade_mod_savepoint(true, 2024092204, 'interactivevideo');
+    }
+
+    if ($oldversion < 2024092214) {
+
+        // Define field extendedcompletion to be added to interactivevideo.
+        $table = new xmldb_table('interactivevideo');
+        $field = new xmldb_field('extendedcompletion', XMLDB_TYPE_TEXT, null, null, null, null, null, 'posterimage');
+
+        // Conditionally launch add field extendedcompletion.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Interactivevideo savepoint reached.
+        upgrade_mod_savepoint(true, 2024092214, 'interactivevideo');
+    }
     return true;
 }

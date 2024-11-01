@@ -15,21 +15,19 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for Rich Text
+ * Hook callbacks for Interactive Video
  *
- * @package    ivplugin_richtext
+ * @package    mod_interactivevideo
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component    = 'ivplugin_richtext';
-$plugin->release      = '1.0';
-$plugin->version      = 2024071500;
-$plugin->requires     = 2022112800;
-$plugin->supported    = [401, 405];
-$plugin->maturity     = MATURITY_STABLE;
-$plugin->dependencies = [
-    'interactivevideo' => 2024042720,
+$callbacks = [
+    [
+        'hook' => \core\hook\output\after_standard_main_region_html_generation::class,
+        'callback' => \mod_interactivevideo\hook_callbacks::class . '::launch_player_modal',
+        'priority' => 0,
+    ],
 ];

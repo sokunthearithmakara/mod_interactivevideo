@@ -30,11 +30,13 @@ class Yt {
      * @param {string} url - The URL of the YouTube video.
      * @param {number} start - The start time of the video in seconds.
      * @param {number} end - The end time of the video in seconds.
-     * @param {boolean} showControls - Whether to show the video controls.
-     * @param {boolean} [customStart=false] - Whether to use a custom start time.
-     * @param {boolean} [preload=false] - Whether to preload the video.
+     * @param {object} opts - The options for the player.
      */
-    constructor(url, start, end, showControls, customStart = false, preload = false) {
+    constructor(url, start, end, opts = {}) {
+        const showControls = opts.showControls || false;
+        const customStart = opts.customStart || false;
+        const preload = opts.preload || false;
+        const node = opts.node || 'player';
         /**
          * The type of the player
          * @type {String}
@@ -65,21 +67,26 @@ class Yt {
         };
         // Documented at https://developers.google.com/youtube/iframe_api_reference
         var YT;
-        var regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)(?:\/embed\/|\/watch\?v=|\/)([^\/]+)/g;
+        let regex = new RegExp(
+            '(?:https?:\\/\\/)?' +
+            '(?:www\\.)?' +
+            '(?:youtube\\.com|youtu\\.be|youtube-nocookie\\.com)' +
+            '(?:\\/embed\\/|\\/watch\\?v=|\\/)([^\\/]+)',
+            'g'
+        );
         var match = regex.exec(url);
         var videoId = match[1];
+        videoId = videoId.split("&")[0];
         this.videoId = videoId;
         this.posterImage = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
         var ready = false;
         var self = this;
         var options = {
             videoId: videoId,
-            // host: 'https://www.youtube-nocookie.com',
             width: 1080,
             height: 720,
             playerVars: {
-                origin: window.location.host,
-                autoplay: 0,
+                autoplay: opts.autoplay || 0,
                 hl: M.cfg.language,
                 start: start,
                 end: end,
@@ -87,17 +94,19 @@ class Yt {
                 showinfo: 0,
                 fs: 0,
                 iv_load_policy: 3,
+                cc_load_policy: 0,
                 autohide: 1,
                 rel: 0,
                 playsinline: 1,
                 disablekb: 1,
+                mute: 1,
             },
             events: {
                 onError: function(e) {
                     dispatchEvent('iv:playerError', {error: e.data});
                 },
                 onReady: function(e) {
-                    e.target.getOptions();
+                    self.title = e.target.videoTitle;
                     self.end = !self.end ? e.target.getDuration() : Math.min(self.end, e.target.getDuration());
                     self.aspectratio = self.ratio();
                     // It's always good idea to play the video at the beginning to download some data.
@@ -155,6 +164,9 @@ class Yt {
             }
         };
 
+        if (url.includes('youtube-nocookie')) {
+            options.host = 'https://www.youtube-nocookie.com';
+        }
         // Load the IFrame Player API code asynchronously.
         if (!window.YT) {
             var tag = document.createElement('script');
@@ -164,11 +176,11 @@ class Yt {
             // Replace the 'player' element with an <iframe> and YouTube player
             window.onYouTubeIframeAPIReady = function() {
                 YT = window.YT || {};
-                player = new YT.Player('player', options);
+                player = new YT.Player(node, options);
             };
         } else {
             YT = window.YT || {};
-            player = new YT.Player('player', options);
+            player = new YT.Player(node, options);
         }
     }
     /**
@@ -182,8 +194,8 @@ class Yt {
      * Pause the video
      * @return {Void}
      */
-    pause() {
-        player.pauseVideo();
+    async pause() {
+        await player.pauseVideo();
     }
     /**
      * Stop the video

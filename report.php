@@ -63,22 +63,27 @@ $PAGE->set_context($context);
 $PAGE->set_pagelayout('embedded');
 $PAGE->activityheader->disable();
 
-$subplugins = get_config('mod_interactivevideo', 'enablecontenttypes');
-$subplugins = explode(',', $subplugins);
 $stringman = get_string_manager();
-foreach ($subplugins as $subplugin) {
-    $strings = $stringman->load_component_strings('ivplugin_' . $subplugin, current_language());
-    $PAGE->requires->strings_for_js(array_keys($strings), 'ivplugin_' . $subplugin);
+// Get all enabled content types.
+$contenttypes = interactivevideo_util::get_all_activitytypes();
+foreach ($contenttypes as $subplugin) {
+    $stringcomponent = $subplugin['stringcomponent'];
+    $strings = $stringman->load_component_strings($stringcomponent, current_language());
+    $PAGE->requires->strings_for_js(array_keys($strings), $stringcomponent);
 }
-$stringman = get_string_manager();
+
 $strings = $stringman->load_component_strings('mod_interactivevideo', current_language());
 $PAGE->requires->strings_for_js(array_keys($strings), 'mod_interactivevideo');
 
 // Get all interactions for moduleid.
-$items = interactivevideo_util::get_items($moduleinstance->id, $context->id, true);
+$items = interactivevideo_util::get_items($moduleinstance->id, $context->id, false);
+// Remove items that are not in the enabled content types.
+$items = array_filter($items, function ($item) use ($contenttypes) {
+    return in_array($item->type, array_map(function ($contenttype) {
+        return $contenttype["name"];
+    }, $contenttypes));
+});
 
-// Get all enabled content types.
-$contenttypes = interactivevideo_util::get_all_activitytypes();
 // Order the items by timestamp.
 usort($items, function ($a, $b) {
     return $a->timestamp - $b->timestamp;
@@ -87,42 +92,6 @@ usort($items, function ($a, $b) {
 // Get skip segments.
 $skip = array_filter($items, function ($item) {
     return $item->type === 'skipsegment';
-});
-
-// Get content types that hasreport = true.
-$reportables = array_filter($contenttypes, function ($contenttype) {
-    return $contenttype["hasreport"];
-});
-
-$reportables = array_map(function ($reportable) {
-    return $reportable["name"];
-}, $reportables);
-
-// Filter items that are within the time limit start and end (if end time is set).
-$items = array_filter($items, function ($item) use ($moduleinstance, $skip, $subplugins, $reportables) {
-    // Remove items that has no completion or hasreport = false.
-    if (!$item->hascompletion && !in_array($item->type, $reportables)) {
-        return false;
-    }
-
-    // Remove items that are not within the time limit.
-    if ($item->timestamp < $moduleinstance->start || $item->timestamp > $moduleinstance->end) {
-        return false;
-    }
-
-    // Remove items that are within the skip segment.
-    foreach ($skip as $ss) {
-        if ($item->timestamp > $ss->timestamp && $item->timestamp < $ss->title) {
-            return false;
-        }
-    }
-
-    // Remove items that are not in the enabled content types.
-    if (!in_array($item->type, $subplugins)) {
-        return false;
-    }
-
-    return true;
 });
 
 $items = array_map(function ($item) use ($contenttypes) {
@@ -138,6 +107,48 @@ $items = array_map(function ($item) use ($contenttypes) {
     return $item;
 }, $items);
 
+$allitems = $items;
+
+// Get content types that hasreport = true.
+$reportables = array_filter($contenttypes, function ($contenttype) {
+    return $contenttype["hasreport"];
+});
+
+$reportables = array_map(function ($reportable) {
+    return $reportable["name"];
+}, $reportables);
+
+$reportables = array_values($reportables);
+
+// Filter items that are within the time limit start and end (if end time is set).
+$contenttypenames = array_map(function ($contenttype) {
+    return $contenttype["name"];
+}, $contenttypes);
+$items = array_filter($items, function ($item) use ($moduleinstance, $skip, $contenttypenames, $reportables) {
+    // Remove items that has no completion or hasreport = false.
+    if (!in_array($item->type, $reportables)) {
+        return false;
+    }
+
+    if ($item->hascompletion == 0 && $item->timestamp >= 0) {
+        return false;
+    }
+
+    // Remove items that are not within the time limit.
+    if (($item->timestamp < $moduleinstance->start || $item->timestamp > $moduleinstance->end) && $item->timestamp >= 0) {
+        return false;
+    }
+
+    // Remove items that are within the skip segment.
+    foreach ($skip as $ss) {
+        if ($item->timestamp > $ss->timestamp && $item->timestamp < $ss->title) {
+            return false;
+        }
+    }
+
+    return true;
+});
+
 $itemids = array_map(function ($item) {
     return $item->id;
 }, $items);
@@ -150,8 +161,10 @@ $primary = new core\navigation\output\primary($PAGE);
 $renderer = $PAGE->get_renderer('core');
 $primarymenu = $primary->export_for_template($renderer);
 $datafortemplate = [
+    "cmid" => $cm->id,
     "returnurl" => new moodle_url('/course/view.php', ['id' => $course->id]),
-    "completion" => '<h4 class="mb-0 border-left border-danger pl-3">' . format_string($moduleinstance->name) . '</h4>',
+    "completion" => '<h4 class="mb-0 border-left border-danger pl-3 text-truncate">'
+        . format_string($moduleinstance->name) . '</h4>',
     "manualcompletion" => 1,
     "settingurl" => has_capability('mod/interactivevideo:edit', $context)
         ? new moodle_url('/course/modedit.php', ['update' => $cm->id]) : '',
@@ -170,16 +183,19 @@ $datafortemplate = [
     ) : '',
 ];
 
+
 echo $OUTPUT->render_from_template('mod_interactivevideo/pagenav', $datafortemplate);
 
-groups_print_activity_menu($cm, $PAGE->url);
-echo '<textarea class="d-none" id="itemsdata">' . json_encode(array_values($items)) . '</textarea>';
+echo $OUTPUT->render_from_template('mod_interactivevideo/blocksettingshack', []);
+
+echo '<textarea class="d-none" id="itemsdata">' . json_encode(array_values($allitems)) . '</textarea>';
 // Get total xp from $items.
 $totalxp = array_reduce($items, function ($carry, $item) {
     return $carry + $item->xp;
 }, 0);
 
 echo '<div id="reporttable" class="p-3" style="margin-top: 70px;">';
+groups_print_activity_menu($cm, $PAGE->url);
 echo html_writer::start_tag('table', [
     'id' => 'completiontable',
     'class' => 'table table-sm table-bordered table-striped w-100',
@@ -205,11 +221,37 @@ foreach ($items as $item) {
 }
 echo '</tr>';
 echo html_writer::end_tag('thead');
-
 echo html_writer::start_tag('tbody');
 echo html_writer::end_tag('tbody');
 echo html_writer::end_tag('table');
 echo '</div>';
+
+if ($moduleinstance->source == 'url') {
+    $url = $moduleinstance->videourl;
+} else {
+    $fs = get_file_storage();
+    $files = $fs->get_area_files(
+        $context->id,
+        'mod_interactivevideo',
+        'video',
+        0,
+        'filesize DESC',
+    );
+    $file = reset($files);
+    if (!$file) {
+        $url = '';
+    } else {
+        $url = moodle_url::make_pluginfile_url(
+            $file->get_contextid(),
+            $file->get_component(),
+            $file->get_filearea(),
+            $file->get_itemid(),
+            $file->get_filepath(),
+            $file->get_filename()
+        )->out();
+    }
+    $moduleinstance->type = 'html5video';
+}
 
 $PAGE->requires->js_call_amd('mod_interactivevideo/report', "init", [
     $cm->instance,
@@ -217,6 +259,12 @@ $PAGE->requires->js_call_amd('mod_interactivevideo/report', "init", [
     $moduleinstance->grade,
     $itemids,
     $moduleinstance->completionpercentage,
+    $url,
+    $moduleinstance->type,
+    $cm->id,
+    $course->id,
+    $moduleinstance->start,
+    $moduleinstance->end,
 ]);
 
 echo $OUTPUT->footer();

@@ -30,10 +30,12 @@ class DailyMotion {
      * @param {string} url - The URL of the Dailymotion video.
      * @param {number} start - The start time of the video in seconds.
      * @param {number} end - The end time of the video in seconds.
-     * @param {boolean} showControls - Whether to show player controls.
-     * @param {boolean} [customStart=false] - Whether to start the video with custom behavior.
+     * @param {object} opts - The options for the player.
      */
-    constructor(url, start, end, showControls, customStart = false) {
+    constructor(url, start, end, opts = {}) {
+        const showControls = opts.showControls || false;
+        const customStart = opts.customStart || false;
+        const node = opts.node || 'player';
         this.type = 'dailymotion';
         this.start = start;
         this.frequency = 0.27;
@@ -42,9 +44,9 @@ class DailyMotion {
             quality: true,
         };
 
-        var reg = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^\/]+)/g;
-        var match = reg.exec(url);
-        var videoId = match[1];
+        const reg = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^\/]+)/g;
+        const match = reg.exec(url);
+        const videoId = match[1];
         this.videoId = videoId;
         var self = this;
         fetch(`https://api.dailymotion.com/video/${videoId}?fields=thumbnail_720_url`)
@@ -64,17 +66,15 @@ class DailyMotion {
             },
         };
         let dailymotion;
-        const dailymotionEvents = (player) => {
-            self.aspectratio = self.ratio();
+        const dailymotionEvents = async (player) => {
+            self.aspectratio = await self.ratio();
             if (showControls) {
                 player.setQuality(480);
             }
-            player.getState().then(function(state) {
-                end = !end ? state.videoDuration : Math.min(end, state.videoDuration);
-                return;
-            }).catch(() => {
-                // Do nothing.
-            });
+            const state = await player.getState();
+            end = !end ? state.videoDuration : Math.min(end, state.videoDuration);
+            self.end = end;
+            self.title = state.videoTitle;
             // Handle Dailymotion behavior. Video always start from the start time,
             // So if you seek before starting the video, it will just start from the beginning.
             // So, to deal with this, we have to start the video as soon as the player is ready.
@@ -84,6 +84,7 @@ class DailyMotion {
                 player.setMute(true);
                 player.play();
                 player.on(dailymotion.events.VIDEO_START, function() {
+                    $("#start-screen").removeClass('bg-transparent');
                     if (ready == true) { // When the video is replayed, it will fire VIDEO_START event again.
                         player.setMute(true);
                     }
@@ -105,6 +106,7 @@ class DailyMotion {
             // Show ads to user so they know ad is playing, not because something is wrong.
             player.on(dailymotion.events.AD_START, function() {
                 $(".video-block").css('background', 'transparent');
+                $("#start-screen").addClass('bg-transparent');
             });
 
             player.on(dailymotion.events.VIDEO_SEEKEND, function(e) {
@@ -130,6 +132,18 @@ class DailyMotion {
                 } else if (e.playerIsPlaying === true) {
                     dispatchEvent('iv:playerPlaying');
                 }
+            });
+
+            player.on(dailymotion.events.VIDEO_PLAY, function() {
+                dispatchEvent('iv:playerPlaying');
+            });
+
+            player.on(dailymotion.events.VIDEO_PAUSE, function() {
+                dispatchEvent('iv:playerPaused');
+            });
+
+            player.on(dailymotion.events.VIDEO_END, function() {
+                dispatchEvent('iv:playerEnded');
             });
 
             player.on(dailymotion.events.PLAYER_ERROR, function(e) {
@@ -159,7 +173,7 @@ class DailyMotion {
             window.dailymotion = {
                 onScriptLoaded: () => {
                     dailymotion = window.dailymotion;
-                    dailymotion.createPlayer("player", dmOptions).then(function(pl) {
+                    dailymotion.createPlayer(node, dmOptions).then(function(pl) {
                         player = pl;
                         dailymotionEvents(player);
                         return;
@@ -169,7 +183,7 @@ class DailyMotion {
                 }
             };
         } else {
-            window.dailymotion.createPlayer("player", dmOptions).then(function(pl) {
+            window.dailymotion.createPlayer(node, dmOptions).then(function(pl) {
                 player = pl;
                 dailymotionEvents(player);
                 dailymotion = window.dailymotion;
@@ -190,8 +204,8 @@ class DailyMotion {
      *
      * This method calls the `pause` function on the `player` object to halt video playback.
      */
-    pause() {
-        player.pause();
+    async pause() {
+        await player.pause();
     }
     /**
      * Stops the video playback and seeks to the specified start time.

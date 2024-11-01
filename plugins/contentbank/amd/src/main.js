@@ -106,6 +106,7 @@ export default class ContentBank extends Base {
     renderContainer(annotation) {
         super.renderContainer(annotation);
         let $message = $(`#message[data-id='${annotation.id}']`);
+        $message.find('.modal-body').addClass('p-0');
         let $completiontoggle = $message.find('#completiontoggle');
         $message.find('#title .info').remove();
         switch (annotation.completiontracking) {
@@ -129,17 +130,35 @@ export default class ContentBank extends Base {
     }
 
     /**
+     * Resizes the iframe within a modal body based on the height of the iframe content.
+     *
+     * @param {Object} annotation - The annotation object containing the id.
+     */
+    resizeIframe(annotation) {
+        const modalbody = document.querySelector(`#message[data-id='${annotation.id}'] .modal-body`);
+        const resizeObserver = new ResizeObserver(() => {
+            const iframe = modalbody.querySelector('iframe.h5p-player');
+            if (iframe) {
+                const height = iframe.scrollHeight;
+                modalbody.style.height = `${height + 2000}px`;
+            }
+        });
+
+        resizeObserver.observe(modalbody);
+    }
+
+    /**
      * Run the interaction
      * @param {Object} annotation The annotation object
      * @returns {void}
      */
     async runInteraction(annotation) {
-        this.player.pause();
+        await this.player.pause();
         const annoid = annotation.id;
         let self = this;
         let $message;
 
-        const xAPICheck = (annotation) => {
+        const xAPICheck = (annotation, listenToEvents = true) => {
             const detectH5P = () => {
                 let H5P;
                 try { // Try to get the H5P object.
@@ -148,6 +167,13 @@ export default class ContentBank extends Base {
                     H5P = null;
                 }
                 if (typeof H5P !== 'undefined' && H5P !== null) {
+                    if (H5P.externalDispatcher === undefined) {
+                        requestAnimationFrame(detectH5P);
+                        return;
+                    }
+                    if (!listenToEvents) {
+                        return;
+                    }
                     if (self.isEditMode()) {
                         $message.find(`#title .btns .xapi`).remove();
                         $message.find(`#title .btns`)
@@ -234,16 +260,17 @@ export default class ContentBank extends Base {
             if (!annotation.completed && annotation.completiontracking == 'view') {
                 self.toggleCompletion(annoid, 'mark-done', 'automatic');
             }
-            if (!annotation.completed && annotation.completiontracking != 'manual') {
-                xAPICheck(annotation);
-            }
+            xAPICheck(annotation, !annotation.completed && annotation.completiontracking != 'manual');
         };
+
 
         await this.renderViewer(annotation);
         $message = this.renderContainer(annotation);
         applyContent(annotation);
 
         this.enableManualCompletion(annotation);
+
+        this.resizeIframe(annotation);
 
         if (annotation.displayoptions == 'popup') {
             $('#annotation-modal').on('shown.bs.modal', function() {

@@ -32,9 +32,11 @@ class Wistia {
      * @param {string} url - The URL of the Wistia video.
      * @param {number} start - The start time of the video in seconds.
      * @param {number} end - The end time of the video in seconds.
-     * @param {boolean} showControls - Flag indicating whether to show video controls.
+     * @param {object} opts - The options for the player.
      */
-    constructor(url, start, end, showControls) {
+    constructor(url, start, end, opts = {}) {
+        const showControls = opts.showControls || false;
+        const node = opts.node || 'player';
         this.type = 'wistia';
         this.start = start;
         this.frequency = 0.3;
@@ -49,13 +51,14 @@ class Wistia {
         const match = regex.exec(url);
         const videoId = match[1];
         this.videoId = videoId;
-        $("#player").html(`<div class="wistia_embed wistia_async_${videoId} wmode=transparent
+        $(`#${node}`).html(`<div class="wistia_embed wistia_async_${videoId} wmode=transparent
              controlsVisibleOnLoad=${showControls} playButton=${showControls} videoFoam=false silentAutoPlay=allow playsinline=true
               fullscreenButton=false time=${start} fitStrategy=contain" style="height:100%;width:100%"></div>`);
         let self = this;
         $.get('https://fast.wistia.com/oembed.json?url=' + url)
             .then(function(data) {
                 self.posterImage = data.thumbnail_url;
+                self.title = data.title;
                 return self.posterImage;
             }).catch(() => {
                 return;
@@ -63,14 +66,15 @@ class Wistia {
         let ready = false;
         const wistiaOptions = {
             id: videoId,
-            onReady: function(video) {
+            onReady: async function(video) {
                 player = video;
                 end = !end ? video.duration() : Math.min(end, video.duration());
                 self.aspectratio = self.ratio();
+                self.end = end;
                 if (start > 0) {
                     video.play();
-                    video.time(start);
-                    video.pause();
+                    await video.time(start);
+                    await video.pause();
                     video.on("pause", () => {
                         if (!ready) {
                             ready = true;
@@ -165,8 +169,8 @@ class Wistia {
      * This method calls the `pause` function on the Wistia player instance,
      * effectively pausing the video playback.
      */
-    pause() {
-        player.pause();
+    async pause() {
+        await player.pause();
     }
     /**
      * Stops the video playback and sets the playback time to the specified start time.

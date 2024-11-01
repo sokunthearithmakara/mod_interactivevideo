@@ -26,8 +26,9 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
          * Init function on page loads.
          * @param {Number} id module id
          * @param {Number} usercontextid user context id
+         * @param {String} videotypes allowed video types
          */
-        'init': function(id, usercontextid) {
+        'init': function(id, usercontextid, videotypes) {
             let totaltime, player;
             let videowrapper = $('#video-wrapper');
             let endinput = $('input[name=end]');
@@ -71,6 +72,10 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     ratio = 1;
                 }
                 $("#video-wrapper").css('padding-bottom', (1 / ratio) * 100 + '%');
+
+                if ($(`[name="name"]`).val() == '') {
+                    $(`[name="name"]`).val(player.title);
+                }
 
                 const duration = await player.getDuration();
                 totaltime = Number(duration.toFixed(2));
@@ -125,6 +130,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
             videourlinput.on('input', async function() {
                 videourlinput.removeClass('is-invalid');
                 videourlinput.next('.form-control-feedback').remove();
+                let currenttype = videotype.val();
                 videotype.val('');
                 if (player) {
                     player.destroy();
@@ -136,70 +142,98 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 }
 
                 // YOUTUBE:: Check if the video is a youtube video.
-                let regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube.com|youtu.be)(?:\/embed\/|\/watch\?v=|\/)([^/]+)/g;
-                let match = regex.exec(url);
-                if (match) {
-                    videowrapper.show();
-                    // Show loader while the video is loading.
-                    videowrapper.html('<div id="player" class="w-100"></div>');
-                    videotype.val('yt');
-                    require(['mod_interactivevideo/player/yt'], function(VP) {
-                        player = new VP(url, 0, null, true, false, true);
-                    });
-                    return;
+                if (videotypes.includes('yt') || currenttype == 'yt') {
+                    let regex = new RegExp(
+                        '(?:https?:\\/\\/)?' +
+                        '(?:www\\.)?' +
+                        '(?:youtube\\.com|youtu\\.be|youtube-nocookie\\.com)' +
+                        '(?:\\/embed\\/|\\/watch\\?v=|\\/)([^\\/]+)',
+                        'g'
+                    );
+                    let match = regex.exec(url);
+                    if (match) {
+                        videowrapper.show();
+                        // Show loader while the video is loading.
+                        videowrapper.html('<div id="player" class="w-100"></div>');
+                        videotype.val('yt');
+                        require(['mod_interactivevideo/player/yt'], function(VP) {
+                            player = new VP(url, 0, null, {
+                                'showControls': true,
+                                'preload': true
+                            });
+                        });
+                        return;
+                    }
                 }
 
-                // VIMEO:: Extract id from the URL.
-                regex = /(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com)\/(?:channels\/[A-Za-z0-9]+\/|)([^\/]+)/g;
-                match = regex.exec(url);
-                let vid = match ? match[1] : null;
-                if (vid) {
-                    url = 'https://vimeo.com/' + vid;
-                    videourlinput.val(url);
-                    videowrapper.html('<div id="player" class="w-100"></div>');
-                    videotype.val('vimeo');
-                    require(['mod_interactivevideo/player/vimeo'], function(VP) {
-                        player = new VP(url, 0, null, true);
-                    });
-                    return;
+                if (videotypes.includes('vimeo') || currenttype == 'vimeo') {
+                    // VIMEO:: Extract id from the URL.
+                    let regex = /(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com)\/(?:channels\/[A-Za-z0-9]+\/|)([^\/]+)/g;
+                    let match = regex.exec(url);
+                    let vid = match ? match[1] : null;
+                    if (vid) {
+                        url = 'https://vimeo.com/' + vid;
+                        videourlinput.val(url);
+                        videowrapper.html('<div id="player" class="w-100"></div>');
+                        videotype.val('vimeo');
+                        require(['mod_interactivevideo/player/vimeo'], function(VP) {
+                            player = new VP(url, 0, null, {
+                                'showControls': true,
+                            });
+                        });
+                        return;
+                    }
                 }
 
                 // DAILYMOTION:: Check if the video is from daily motion.
-                regex = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^\/]+)/g;
-                match = regex.exec(url);
-                if (match) {
-                    videowrapper.show();
-                    // Show loader while the video is loading
-                    videowrapper.html('<div id="player" class="w-100"></div>');
-                    videotype.val('dailymotion');
-                    require(['mod_interactivevideo/player/dailymotion'], function(VP) {
-                        player = new VP(url, 0, null, true);
-                    });
-                    return;
+                if (videotypes.includes('dailymotion') || currenttype == 'dailymotion') {
+                    let regex = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^\/]+)/g;
+                    let match = regex.exec(url);
+                    if (match) {
+                        videowrapper.show();
+                        // Show loader while the video is loading
+                        videowrapper.html('<div id="player" class="w-100"></div>');
+                        videotype.val('dailymotion');
+                        require(['mod_interactivevideo/player/dailymotion'], function(VP) {
+                            player = new VP(url, 0, null, {
+                                'showControls': true,
+                                'preload': true
+                            });
+                        });
+                        return;
+                    }
                 }
 
                 // WISTIA:: Check if the video is from wistia e.g. https://sokunthearithmakara.wistia.com/medias/kojs3bi9bf.
-                const regexWistia = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^/]+)/g;
-                match = regexWistia.exec(url);
-                const mediaId = match ? match[1] : null;
-                if (mediaId) {
-                    videowrapper.show();
-                    videotype.val('wistia');
-                    require(['mod_interactivevideo/player/wistia'], function(VP) {
-                        player = new VP(url, 0, null, true);
-                    });
-                    return;
+                if (videotypes.includes('wistia') || currenttype == 'wistia') {
+                    const regexWistia = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^/]+)/g;
+                    let match = regexWistia.exec(url);
+                    const mediaId = match ? match[1] : null;
+                    if (mediaId) {
+                        videowrapper.show();
+                        videotype.val('wistia');
+                        require(['mod_interactivevideo/player/wistia'], function(VP) {
+                            player = new VP(url, 0, null, {
+                                'showControls': true,
+                            });
+                        });
+                        return;
+                    }
                 }
 
                 // VIDEO URL:: Check if the link is a direct video link and video is "canplay".
-                if (await checkVideo(url)) {
-                    // Show loader while the video is loading.
-                    videowrapper.html('<video id="player" class="w-100"></video>');
-                    videotype.val('html5video');
-                    require(['mod_interactivevideo/player/html5video'], function(VP) {
-                        player = new VP(url, 0, null, true);
-                    });
-                    return;
+                if (videotypes.includes('videolink') || currenttype == 'html5video') {
+                    if (await checkVideo(url)) {
+                        // Show loader while the video is loading.
+                        videowrapper.html('<video id="player" class="w-100"></video>');
+                        videotype.val('html5video');
+                        require(['mod_interactivevideo/player/html5video'], function(VP) {
+                            player = new VP(url, 0, null, {
+                                'showControls': true
+                            });
+                        });
+                        return;
+                    }
                 }
 
                 // Invalid video url.
@@ -208,6 +242,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     {key: 'error', component: 'core'}
                 ]);
                 notification.alert(strings[1], strings[0]);
+                videourlinput.val('').addClass('is-invalid');
                 videowrapper.hide();
             });
 
@@ -293,8 +328,12 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
                 form.show();
 
-                form.addEventListener(form.events.FORM_SUBMITTED, async(e) => {
+                form.addEventListener(form.events.FORM_SUBMITTED, async (e) => {
                     const url = e.detail.url;
+                    let name = e.detail.name;
+                    if ($(`[name="name"]`).val() == '') {
+                        $(`[name="name"]`).val(name.split('.').slice(0, -1).join('.'));
+                    }
                     videowrapper.html('<video id="player" class="w-100"></video>');
                     require(['mod_interactivevideo/player/html5video'], function(VP) {
                         player = new VP(url, 0, null, true);
@@ -386,6 +425,8 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     $('#id_upload').prop('disabled', 'true');
                     $('#id_delete').prop('disabled', 'true');
                 }
+
+                $('#background-loading').fadeOut(300);
             });
 
             startassistinput.val(convertSecondsToHMS(startinput.val()));

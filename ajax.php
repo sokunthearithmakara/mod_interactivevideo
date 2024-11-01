@@ -33,7 +33,7 @@ $contextid = required_param('contextid', PARAM_INT);
 $context = context::instance_by_id($contextid);
 
 switch ($action) {
-    case 'getallcontenttypes':
+    case 'get_all_contenttypes':
         echo json_encode(interactivevideo_util::get_all_activitytypes());
         break;
     case 'format_text':
@@ -42,16 +42,8 @@ switch ($action) {
         break;
 }
 
-if ($token) {
-    $validated = \mod_interactivevideo\output\mobile::login_after_validate_token($token, $cmid);
-    if (!$validated) {
-        echo json_encode(['error' => 'invalidtoken']);
-        die();
-    }
-} else {
-    require_sesskey();
-    require_login();
-}
+require_sesskey();
+require_login();
 
 switch ($action) {
     case 'get_items':
@@ -105,15 +97,6 @@ switch ($action) {
         }
         echo $id;
         break;
-    case 'quickeditfield':
-        require_capability('mod/interactivevideo:edit', $context);
-        $id = required_param('id', PARAM_INT);
-        $field = required_param('field', PARAM_TEXT);
-        $value = required_param('value', PARAM_TEXT);
-        $draftitemid = optional_param('draftitemid', 0, PARAM_INT);
-        $item = interactivevideo_util::quick_edit_field($id, $field, $value, $contextid, $draftitemid);
-        echo json_encode($item);
-        break;
     case 'get_progress':
         require_capability('mod/interactivevideo:view', $context);
         $id = required_param('id', PARAM_INT);
@@ -136,6 +119,8 @@ switch ($action) {
         $details = required_param('details', PARAM_RAW);
         $markdone = required_param('markdone', PARAM_BOOL);
         $type = required_param('annotationtype', PARAM_TEXT);
+        $updatestate = required_param('updatestate', PARAM_INT);
+        $courseid = required_param('courseid', PARAM_INT);
         $progress = interactivevideo_util::save_progress(
             $id,
             $userid,
@@ -148,11 +133,13 @@ switch ($action) {
             $percentage,
             $g,
             $ginstance,
-            $xp
+            $xp,
+            $updatestate == 1,
+            $courseid
         );
         echo json_encode($progress);
         break;
-    case 'getreportdatabygroup':
+    case 'get_report_data_by_group':
         require_capability('mod/interactivevideo:viewreport', $context);
         $groupid = required_param('groupid', PARAM_INT);
         $cmid = required_param('cmid', PARAM_INT);
@@ -172,28 +159,17 @@ switch ($action) {
         $userids = required_param('userids', PARAM_TEXT);
         $userids = explode(',', $userids);
         $annotationid = required_param('annotationid', PARAM_INT);
-        $log = interactivevideo_util::get_logs_by_userids($userids, $annotationid, $contextid);
+        $type = optional_param('type', '', PARAM_TEXT);
+        $cmid = optional_param('cmid', 0, PARAM_INT);
+        $log = interactivevideo_util::get_logs_by_userids($userids, $annotationid, $contextid, $type, $cmid);
         echo json_encode($log);
         break;
     case 'delete_progress_by_id':
         require_capability('mod/interactivevideo:viewreport', $context);
         $recordid = required_param('recordid', PARAM_INT);
-        // Delete completion record.
-        $DB->delete_records('interactivevideo_completion', ['id' => $recordid]);
-        // Delete logs.
-        $logs = $DB->get_field('interactivevideo_log', 'id', ['completionid' => $recordid], IGNORE_MISSING);
-        // Delete associated files.
-        if ($logs) {
-            $fs = get_file_storage();
-            foreach ($logs as $log) {
-                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'attachments', $log->id);
-                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text1', $log->id);
-                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text2', $log->id);
-                $fs->delete_area_files($contextid, 'mod_interactivevideo', 'text3', $log->id);
-            }
-            $DB->delete_records('interactivevideo_log', ['completionid' => $recordid]);
-        }
-        echo 'deleted';
+        $courseid = required_param('courseid', PARAM_INT);
+        $cmid = required_param('cmid', PARAM_INT);
+        echo interactivevideo_util::delete_progress_by_id($contextid, $recordid, $courseid, $cmid);
         break;
     case 'get_taught_courses':
         require_capability('mod/interactivevideo:edit', $context);
@@ -226,5 +202,22 @@ switch ($action) {
             $contextid
         );
         echo json_encode($annotations);
+        break;
+    case 'quick_edit_field':
+        require_capability('mod/interactivevideo:edit', $context);
+        $id = required_param('id', PARAM_INT);
+        $field = required_param('field', PARAM_TEXT);
+        $value = required_param('value', PARAM_TEXT);
+        $draftitemid = optional_param('draftitemid', 0, PARAM_INT);
+        $item = interactivevideo_util::quick_edit_field($id, $field, $value, $contextid, $draftitemid);
+        echo json_encode($item);
+        break;
+    case 'get_cm_completion':
+        require_capability('mod/interactivevideo:view', $context);
+        $cmid = required_param('cmid', PARAM_INT);
+        $userid = required_param('userid', PARAM_INT);
+        $courseid = required_param('courseid', PARAM_INT);
+        $completion = interactivevideo_util::get_cm_completion($cmid, $userid, $courseid, $contextid);
+        echo $completion;
         break;
 }

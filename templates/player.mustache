@@ -23,11 +23,18 @@ Example context (json):
       {{#displayoptions.distractionfreemode}}position-absolute{{/displayoptions.distractionfreemode}}">
     <div class="row justify-content-center mx-0">
         <div class="col-12 px-0">
-            <div id="wrapper" class="position-relative mx-auto" style="width: calc((-125px - 2.5rem + 100dvh)* 1.78);">
+            <div id="wrapper" class="position-relative mx-auto">
                 <div id="video-wrapper"
                      class="d-flex align-items-center justify-content-center {{^darkmode}}border{{/darkmode}}">
+                    <div class="position-fixed w-100 h-100 no-pointer bg-transparent" id="background-loading" style="display:none">
+                        <div class="d-flex h-100 align-items-center justify-content-center">
+                            <div class="spinner-border text-danger" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
                     {{#displayoptions.hidemainvideocontrols}}
-                    <span class="rotatex-360 btn border-0 btn-sm btn-control btn-secondary rounded-circle position-absolute px-0"
+                    <span class="rotatex-360 btn border-0 btn-sm btn-control rounded-circle p-1"
                           id="fullscreen"
                           data-toggle="tooltip"
                           data-trigger="hover"
@@ -35,7 +42,7 @@ Example context (json):
                 {{/displayoptions.hidemainvideocontrols}}
                 {{^displayoptions.disablechapternavigation}}
                 <div id="chapter-container-left"
-                     class="d-none sticky-top position-fixed w-100 h-100">
+                     class="d-none sticky-top position-fixed w-100">
                     <div data-region="chapterwrapper"
                          class="d-flex w-100 position-absolute h-100 flex-column shadow">
                         <div class="w-100 p-3 d-flex flex-column">
@@ -64,7 +71,7 @@ Example context (json):
                         <div class="metadata d-block d-md-none"></div>
                         <h2 class="line-height-100 mb-0 title">{{title}}</h2>
                     </div>
-                    <div id="spinner" class="spinner-grow text-white" role="status">
+                    <div id="spinner" class="spinner-border text-danger" style="width: 3rem; height: 3rem;" role="status">
                         <span class="sr-only">Loading...</span>
                     </div>
                     <button id="play"
@@ -80,16 +87,17 @@ Example context (json):
 {{/displayasstartscreen}}
 {{^displayasstartscreen}}
 <div id="start-screen"
-     class="w-100 position-absolute h-100 {{^html5}}bg-transparent{{/html5}} bottom-0" {{#posterimage}}style="background: url({{{posterimage}}}) center center / cover no-repeat;"{{/posterimage}}>
+     class="w-100 position-absolute h-100 bottom-0" {{#posterimage}}style="background: url({{{posterimage}}}) center center / cover no-repeat;"{{/posterimage}}>
     <div class="intro-content d-flex align-items-center justify-content-center position-absolute w-100">
     </div>
     <div id="video-info"
-         class="p-3 text-white w-100 h-100 position-absolute align-items-start flex-column justify-content-between">
-        <div class="mb-2 d-flex flex-column">
+         class="p-1 p-sm-3 text-white w-100 h-100 position-absolute align-items-start flex-column justify-content-between d-none d-flex">
+        <div class="justify-content-between w-100 h-100 d-flex flex-column">
             <div class="metadata d-block d-md-none"></div>
-            <span class="h1 text-white font-weight-bold line-height-100">{{title}}</span>
+            <span class="h1 text-white font-weight-bold line-height-100 m-1 m-sm-2 p-sm-2 p-1">{{title}}</span>
         </div>
-        <div id="spinner" class="spinner-grow text-secondary position-absolute" role="status" style="left: calc(50% - 20px); top: calc(50% - 20px);">
+        <div id="spinner" class="spinner-border text-danger position-absolute" role="status"
+         style="width: 3rem; height: 3rem;left: calc(50% - 1.5rem); top: calc(50% - 1.5rem);">
             <span class="sr-only">Loading...</span>
         </div>
         <button class="btn bg-white rounded-circle d-none position-absolute pulse"
@@ -136,7 +144,7 @@ Example context (json):
 <div class="mt-0 mt-md-2 bg-dark d-flex flex-column p-0 justify-content-center w-100"
      id="controller">
     <div id="taskinfo"
-         class="flex-column align-items-center justify-content-end w-100 px-3 bg-transparent">
+         class="border-0 flex-column align-items-center justify-content-end w-100 px-3 bg-transparent">
         <div class="align-items-start position-relative w-100"
              id="interactions-nav">
             <ul>
@@ -173,7 +181,7 @@ Example context (json):
                       class="btn border-0 btn-sm btn-control text-white bg-transparent py-0 px-1"
                       id="chapterbutton"><i class="bi bi-collection"></i></span>
             </div>
-        {{/displayoptions.disablechapternavigation}}
+            {{/displayoptions.disablechapternavigation}}
         <span class="text-white ml-2" id="currenttime">00:00</span><span class="text-white mx-1">/</span>
         <span class="text-white" id="duration">--:--</span>
         <span class="text-secondary ml-2 d-none d-md-inline" id="chaptertitle"></span>
@@ -217,7 +225,7 @@ Example context (json):
               data-toggle="tooltip"
               data-trigger="focus"
               title="{{#str}}sharethismoment,mod_interactivevideo{{/str}}"><i class="bi bi-share"></i></span>
-        <span class="btn border-0 btn-sm btn-control text-white py-0 px-1 mx-1 rotate d-none d-xl-inline"
+        <span class="btn border-0 btn-sm btn-control text-white py-0 px-1 mx-1 rotate d-none"
               id="expand"
               data-toggle="tooltip"
               data-trigger="focus"
@@ -238,3 +246,5 @@ Example context (json):
 </div>
 </div>
 </div>
+
+{{> mod_interactivevideo/blocksettingshack }}

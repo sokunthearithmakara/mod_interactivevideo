@@ -50,10 +50,11 @@ class Base {
      * @param {string} token - Access token.
      * @param {Object} displayoptions - Display options.
      * @param {number} completionid - Completion record id.
+     * @param {number} extracompletion - Extra completion.
      *
      */
     constructor(player, annotations, interaction, course, userid, completionpercentage, gradeiteminstance, grademax, vtype,
-        preventskip, totaltime, start, end, properties, cm, token, displayoptions, completionid) {
+        preventskip, totaltime, start, end, properties, cm, token, displayoptions, completionid, extracompletion) {
         /**
          * Access token
          * @type {string}
@@ -165,6 +166,11 @@ class Base {
          * @type {number}
          */
         this.completionid = Number(completionid);
+        /**
+         * Extra completion
+         * @type {Object}
+         */
+        this.extracompletion = extracompletion ? JSON.parse(extracompletion) : {};
     }
 
     /**
@@ -353,7 +359,7 @@ class Base {
      */
     validateTimestampFieldValue(fld, hiddenfield) {
         const self = this;
-        $(document).on('change', `form [name=${fld}]`, function(e) {
+        $(document).on('change', `form [name=${fld}]`, async function(e) {
             e.preventDefault();
             // Make sure the timestamp format is hh:mm:ss.
             if (!self.validateTimestampFormat($(this).val())) {
@@ -391,9 +397,9 @@ class Base {
 
             $(`form [name=${hiddenfield}]`).val(timestamp);
 
-            self.player.seek(timestamp, true);
+            await self.player.seek(timestamp, true);
             // Make sure the video is paused.
-            self.player.pause();
+            await self.player.pause();
         });
     }
 
@@ -553,14 +559,19 @@ class Base {
             ? M.util.get_string('skipsegmentcontent', 'ivplugin_skipsegment').toLowerCase()
             : annotation.formattedtitle;
 
+        let modalTitle = M.util.get_string('editinteractiontitlenotime', 'mod_interactivevideo', title);
+        if (timestamp > 0) {
+            modalTitle = M.util.get_string('editinteractiontitle', 'mod_interactivevideo', {
+                name: title,
+                time: timestampassist
+            });
+        }
+
         const form = new ModalForm({
             formClass: this.prop.form,
             args: annotation,
             modalConfig: {
-                title: M.util.get_string("editinteractiontitle", "mod_interactivevideo", {
-                    name: title,
-                    time: timestampassist
-                }),
+                title: modalTitle,
             }
         });
 
@@ -635,18 +646,6 @@ class Base {
     }
 
     /**
-     * Dispatch an event when an interaction is run
-     * @param {Object} annotation The annotation object
-     * @param {Object} data The data to be passed
-     */
-    interactionRunEvent(annotation, data) {
-        dispatchEvent('interactionrun', {
-            annotation,
-            data,
-        });
-    }
-
-    /**
      * Called when the edit form is loaded.
      * @param {Object} form The form
      * @return {jQuery} The modal body element
@@ -670,6 +669,14 @@ class Base {
      */
     isEditMode() {
         return $('body').hasClass('page-interactions');
+    }
+
+    /**
+     * Check if the page is in preview mode
+     * @returns {boolean}
+     */
+    isPreviewMode() {
+        return $('body').hasClass('preview-mode');
     }
 
     /**
@@ -963,19 +970,21 @@ class Base {
                     cmid: this.cm,
                     completionid: this.completionid,
                     contextid: thisItem.contextid,
+                    updatestate: this.completionpercentage > 0 || Object.keys(this.extracompletion).length != 0 ? 1 : 0,
+                    courseid: this.course,
                 },
                 success: () => {
                     // Update the annotations array.
                     const annotations = this.annotations.map(x => {
                         if (x.id == id) {
                             x.completed = action == 'mark-done';
-                            x.earned = completionDetails.xp;
+                            x.earned = completionDetails.xp || 0;
                         }
                         return x;
                     });
 
                     renderAnnotationItems(annotations, this.start, this.totaltime);
-                    thisItem.earned = completionDetails.xp;
+                    thisItem.earned = completionDetails.xp || 0;
                     this.completionCallback(annotations, thisItem, action, type);
                     dispatchEvent('interactionCompletionUpdated', {
                         annotations,
@@ -1037,7 +1046,7 @@ class Base {
      */
     async runInteraction(annotation) {
         let self = this;
-        this.player.pause();
+        await this.player.pause();
 
         const applyContent = async function(annotation) {
             const data = await self.render(annotation);
@@ -1045,7 +1054,6 @@ class Base {
             $message.find(`.modal-body`).html(data);
             $message.find(`.modal-body`).attr('id', 'content');
             self.postContentRender(annotation);
-            self.interactionRunEvent(annotation, data);
             if (annotation.completed) {
                 return;
             }
@@ -1117,7 +1125,7 @@ class Base {
                     userids: userids,
                     sesskey: M.cfg.sesskey,
                     token: self.token,
-                    cmid: self.cm,
+                    cmid: self.interaction,
                 },
                 success: (data) => {
                     try {

@@ -185,8 +185,44 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
         $data->annotationid = $this->get_mappingid('annotationitems', $data->annotationid);
         $oldcompletionid = $data->completionid;
         $data->completionid = $this->get_mappingid('completiondata', $oldcompletionid);
+
+        // Decode @@ANNOID=xxx@@ in text fields.
+        $data->text1 = $data->text1 ? $this->decode_text($data->text1) : $data->text1;
+        $data->text2 = $data->text2 ? $this->decode_text($data->text2) : $data->text2;
+        $data->text3 = $data->text3 ? $this->decode_text($data->text3) : $data->text3;
         $newitemid = $DB->insert_record('interactivevideo_log', $data);
         $this->set_mapping('logdata', $oldid, $newitemid, true);
+    }
+
+    /**
+     * Decodes the given text.
+     *
+     * @param string $text The text to be decoded.
+     * @return string The decoded text.
+     */
+    protected function decode_text($text) {
+        // Annotation id.
+        $search = '/@@ANNOID#([0-9]+)/';
+        $text = preg_replace_callback($search, function ($matches) {
+            return '@@ANNOID#' . $this->get_mappingid('annotationitems', $matches[1]);
+        }, $text);
+        // Interactive video instance id.
+        $search = '/@@INSTANCEID#([0-9]+)/';
+        $text = preg_replace_callback($search, function ($matches) {
+            return '@@INSTANCEID#' . $this->get_mappingid('interactivevideo', $matches[1]);
+        }, $text);
+        // Course module id.
+        $search = '/@@CMID#([0-9]+)/';
+        $text = preg_replace_callback($search, function ($matches) {
+            return '@@CMID#' . $this->get_mappingid('course_module', $matches[1]);
+        }, $text);
+        // Course id.
+        $search = '/@@COURSEID#([0-9]+)/';
+        $text = preg_replace_callback($search, function ($matches) {
+            return '@@COURSEID#' . $this->get_mappingid('course', $matches[1]);
+        }, $text);
+
+        return $text;
     }
 
     /**
@@ -197,6 +233,7 @@ class restore_interactivevideo_activity_structure_step extends restore_activity_
         $this->add_related_files('mod_interactivevideo', 'intro', null);
         $this->add_related_files('mod_interactivevideo', 'endscreentext', null);
         $this->add_related_files('mod_interactivevideo', 'video', null);
+        $this->add_related_files('mod_interactivevideo', 'posterimage', null);
         $this->add_related_files('mod_interactivevideo', 'content', 'annotationitems');
         $this->add_related_files('mod_interactivevideo', 'text1', 'logdata');
         $this->add_related_files('mod_interactivevideo', 'text2', 'logdata');

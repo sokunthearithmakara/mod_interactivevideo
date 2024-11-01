@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/interactivevideo/db" VERSION="20240924" COMMENT="XMLDB file for Moodle mod/interactivevideo"
+<XMLDB PATH="mod/interactivevideo/db" VERSION="20241010" COMMENT="XMLDB file for Moodle mod/interactivevideo"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -19,12 +19,13 @@
         <FIELD NAME="video" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The video file"/>
         <FIELD NAME="endscreentext" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="End screen description."/>
         <FIELD NAME="displayasstartscreen" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="start" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="end" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="start" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false" DECIMALS="2"/>
+        <FIELD NAME="end" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false" DECIMALS="2"/>
         <FIELD NAME="completionpercentage" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="grade" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="displayoptions" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="display options object"/>
         <FIELD NAME="posterimage" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="extendedcompletion" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

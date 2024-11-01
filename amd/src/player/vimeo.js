@@ -30,9 +30,11 @@ class Vimeo {
      * @param {string} url - The URL of the Vimeo video.
      * @param {number} start - The start time of the video in seconds.
      * @param {number} end - The end time of the video in seconds.
-     * @param {boolean} showControls - Flag to show or hide video controls.
+     * @param {object} opts - The options for the player.
      */
-    constructor(url, start, end, showControls) {
+    constructor(url, start, end, opts = {}) {
+        const showControls = opts.showControls || false;
+        const node = opts.node || 'player';
         this.type = 'vimeo';
         this.start = start;
         this.frequency = 0.27;
@@ -53,6 +55,7 @@ class Vimeo {
                 // Change the dimensions of the poster image to 16:9.
                 poster = poster.replace(/_\d+x\d+/, '_720x405');
                 this.posterImage = poster;
+                this.title = data.title;
                 return poster;
             }).catch(() => {
                 return;
@@ -63,7 +66,7 @@ class Vimeo {
             width: 1080,
             height: 720,
             autoplay: false,
-            quality: showControls ? '540p' : 'auto', // Reduce quality in editor.
+            quality: 'auto', // Reduce quality in editor.
             controls: showControls,
             loop: false,
             muted: false,
@@ -79,15 +82,16 @@ class Vimeo {
             pip: false,
             fullscreen: false,
             watch_full_video: false,
-            play_button_position: 'bottom',
             keyboard: false,
+            dnt: true,
         };
 
         const vimeoEvents = (player) => {
             player.on('loaded', async function() {
                 let duration = await player.getDuration();
-                end = !end ? duration : Math.min(end, duration);
+                end = !end ? duration - 0.1 : Math.min(end, duration - 0.1);
                 self.aspectratio = await self.ratio();
+                self.end = end;
                 dispatchEvent('iv:playerReady');
             });
 
@@ -96,9 +100,7 @@ class Vimeo {
                 let currentTime = await player.getCurrentTime();
                 if (isEnded || (end && currentTime >= end)) {
                     dispatchEvent('iv:playerEnded');
-                    if (player) {
-                        player.pause();
-                    }
+                    player.pause();
                 } else if (await player.getPaused()) {
                     dispatchEvent('iv:playerPaused');
                 } else {
@@ -129,11 +131,11 @@ class Vimeo {
         if (!VimeoPlayer) {
             require(['https://player.vimeo.com/api/player.js'], function(Player) {
                 VimeoPlayer = Player;
-                player = new Player('player', option);
+                player = new Player(node, option);
                 vimeoEvents(player);
             });
         } else {
-            player = new VimeoPlayer('player', option);
+            player = new VimeoPlayer(node, option);
             vimeoEvents(player);
         }
     }
@@ -142,19 +144,15 @@ class Vimeo {
      * If the player is not initialized, logs an error to the console.
      */
     play() {
-        if (player) {
-            player.play();
-        } else {
-            window.console.error('Player is not initialized.');
-        }
+        player.play();
     }
     /**
      * Pauses the Vimeo player.
      *
      * This method calls the `pause` function on the `player` object to pause the video playback.
      */
-    pause() {
-        player.pause();
+    async pause() {
+        await player.pause();
     }
     /**
      * Stops the video playback and sets the current time to the specified start time.
@@ -172,6 +170,9 @@ class Vimeo {
      * @returns {Promise<number>} A promise that resolves to the time sought to.
      */
     async seek(time) {
+        if (time < 0) {
+            time = 0;
+        }
         await player.setCurrentTime(time);
         return time;
     }

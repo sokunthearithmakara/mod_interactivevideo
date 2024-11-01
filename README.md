@@ -2,9 +2,10 @@
 
 Transform your video/audio content into an interactive learning adventure! Add dynamic annotations and interactions like H5P activities, PDFs, HTML games/simulations, rich text, and more. Track every learner’s journey with detailed reports.
 
-Main Features:
+## Main Features: ##
 - Media Support: Upload video/audio files or use YouTube, Vimeo, DailyMotion, Wistia, and direct file URLs.
 - Interactive Content: Add interactions or content types at specific points in the video/audio.
+- Inline activity card: When enabled, the activity card on the course page will be displayed with poster image and video can be launched as a popup
 - Display Modes: Choose from three display modes for interactions: inline (covering the video), popup (modal), and below the video.
 - Customizable Timing: Set the start and end times for the video/audio.
 - Distract-Free Mode: Display video/audio in a mode that maximizes focus.
@@ -12,21 +13,22 @@ Main Features:
 - Activity Completion: Set activity completion based on the percentage of interaction completed.
 - Experience Points: Award participants experience points after each content/interaction completion.
 - Detailed Reports: Access completion reports with details for each interaction.
-- Mobile Support: Compatible with mobile apps.
-- Modular Design: Administrators can add, remove, enable, or disable content types as sub-plugins. Developers can extend Interactive Video through custom sub-plugins.
+- Mobile Support: Compatible with mobile apps both on Android and iOS.
+- Modular Design: Administrators can add, remove, enable, or disable content types as plugins/subplugins. Developers can extend Interactive Video through custom plugins.
 
-Out-of-the-box interaction/content types:
-- Annotations: Add persistan annotations on top of the video/canvas.
+## Out-of-the-box interaction/content types: ##
 - Chapter: Break video/audio into segments.
 - Content bank item: Add content from the course's content bank.
-- Decision: Add a crossroad/decision point.
 - External content: Embed an external content using OEmbed library.
-- Form: Collect response from learners using Moodle's dynamic form.
+- Skip segment: Skip certain segments of the video/audio.
+
+## Optional content types: ##
+- Annotations: Add persistant annotations on top of the video/canvas.
+- Decision: Add a crossroad/decision point.
 - H5P viewer: Upload H5P activity in .h5p and .html format. (You can convert .h5p to .html using Lumi). Tracking completion using xAPI events is supported in both formats.
 - HTML viewer: Include content such as HTML5 games, simulations, etc.
 - PDF viewer: Display PDF file using PDFjs viewer.
 - Paused annotation: Superimpose audio/image/video/text/shape/file on the video at a certain point.
-- Skip segment: Skip certain segments of the video/audio.
 - XP reward: Simply reward learners with XP points.
 
 ## Installing via uploaded ZIP file ##

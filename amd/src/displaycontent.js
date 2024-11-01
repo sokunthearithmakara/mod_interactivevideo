@@ -106,8 +106,12 @@ const defaultDisplayContent = async function(annotation, player) {
     let displayoptions = annotation.displayoptions;
 
     // If the theme is mobile, display the message as a popup.
-    if ($('body').hasClass('mobiletheme') || $('body').hasClass('embed-mode')) {
+    if ($('body').hasClass('mobiletheme') && displayoptions == 'inline') {
         displayoptions = 'popup';
+    }
+
+    if ($('body').hasClass('embed-mode')) {
+        displayoptions = 'inline';
     }
 
     // If the wrapper is in fullscreen mode, display the message inline (on top of the video).
@@ -126,12 +130,12 @@ const defaultDisplayContent = async function(annotation, player) {
     // Display the completion button conditionally.
     if (annotation.hascompletion == 1) {
         if (annotation.completed) {
-            completionbutton += `<button id="completiontoggle" class="btn mark-undone btn-success btn-sm"
+            completionbutton += `<button id="completiontoggle" class="btn mark-undone btn-success btn-sm border-0"
              data-id="${annotation.id}"><i class="bi bi-check2"></i>
              <span class="ml-2 d-none d-sm-block">
              ${M.util.get_string('completionmarkincomplete', 'mod_interactivevideo')}</span></button>`;
         } else {
-            completionbutton += `<button  id="completiontoggle" class="btn mark-done btn-secondary btn-sm"
+            completionbutton += `<button  id="completiontoggle" class="btn mark-done btn-secondary btn-sm border-0"
              data-id="${annotation.id}"><i class="bi bi-circle"></i>
              <span class="ml-2 d-none d-sm-block">
              ${M.util.get_string('completionmarkcomplete', 'mod_interactivevideo')}</span></button>`;
@@ -140,7 +144,8 @@ const defaultDisplayContent = async function(annotation, player) {
 
     // Append refresh button after the completion button.
     if (!$('body').hasClass('page-interactions')) {
-        completionbutton += `<button class="btn btn-secondary btn-sm ml-2 rotatez-360" data-id="${annotation.id}" id="refresh">
+        completionbutton += `<button class="btn btn-secondary btn-sm ml-2 rotatez-360 border-0"
+         data-id="${annotation.id}" id="refresh">
         <i class="bi bi-arrow-repeat"></i></button>`;
     } else {
         completionbutton = ``;
@@ -151,7 +156,7 @@ const defaultDisplayContent = async function(annotation, player) {
     <i class="${JSON.parse(annotation.prop).icon} mr-2 d-none d-md-inline"></i>${annotation.formattedtitle}</h5>
                             <div class="btns d-flex align-items-center">
                             ${completionbutton}
-                            <button class="btn mx-2 p-0" id="close-${annotation.id}" aria-label="Close">
+                            <button class="btn mx-2 p-0 border-0" id="close-${annotation.id}" aria-label="Close">
                             <i class="bi bi-x-lg fa-fw fs-25px"></i>
                             </button>
                             </div>`;
@@ -160,7 +165,7 @@ const defaultDisplayContent = async function(annotation, player) {
     $('#annotation-modal').modal('hide');
 
     // Handle annotation close event:: when user click on the close button of the annotation.
-    $(document).off('click', `#close-${annotation.id}`).on('click', `#close-${annotation.id}`, function(e) {
+    $(document).off('click', `#close-${annotation.id}`).on('click', `#close-${annotation.id}`, async function(e) {
         e.preventDefault();
         $(this).closest("#annotation-modal").modal('hide');
         const targetMessage = $(this).closest("#message");
@@ -173,7 +178,9 @@ const defaultDisplayContent = async function(annotation, player) {
         }, 100);
 
         if (!$('body').hasClass('page-interactions')) { // Do not auto resume if on interactions page.
-            player.play();
+            if (player.end != await player.getCurrentTime()) {
+                player.play();
+            }
         }
     });
 
@@ -182,7 +189,7 @@ const defaultDisplayContent = async function(annotation, player) {
              id="annotation-modal" role="dialog" aria-labelledby="annotation-modal"
          aria-hidden="true" data-backdrop="static" data-keyboard="false">
          <div id="message" data-id="${annotation.id}" data-placement="popup"
-          class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+          class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable ${annotation.type}" role="document">
                 <div class="modal-content rounded-lg">
                     <div class="modal-header d-flex align-items-center shadow-sm pr-0" id="title">
                         ${messageTitle}
@@ -206,7 +213,7 @@ const defaultDisplayContent = async function(annotation, player) {
 
     const handleInlineDisplay = (annotation, messageTitle) => {
         $('#video-wrapper').append(`<div id="message" style="z-index:105;top:100%" data-placement="inline"
-         data-id="${annotation.id}">
+         data-id="${annotation.id}" class="${annotation.type}">
         <div id="title" class="modal-header shadow-sm pr-0">${messageTitle}</div><div class="modal-body" id="content">
         </div></div>`);
         $(`#message[data-id='${annotation.id}']`).animate({
@@ -219,7 +226,7 @@ const defaultDisplayContent = async function(annotation, player) {
     const handleBottomDisplay = (annotation, messageTitle, isDarkMode) => {
         $('#annotation-content').empty();
         $('#annotation-content').append(`<div id="message" class="fade show mt-3 ${!isDarkMode ? 'border' : ''}
-                 rounded-lg bg-white" data-placement="bottom" data-id="${annotation.id}">
+                 rounded-lg bg-white ${annotation.type}" data-placement="bottom" data-id="${annotation.id}">
                  <div id='title' class='modal-header shadow-sm pr-0'>${messageTitle}</div>
                 <div class="modal-body" id="content"></div></div>`);
         $('html, body, #page.drawers, .modal-body').animate({

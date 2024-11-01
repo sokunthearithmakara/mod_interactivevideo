@@ -26,6 +26,32 @@ use core_completion\activity_custom_completion;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class custom_completion extends activity_custom_completion {
+    /**
+     * Plugins with completion.
+     *
+     * @var array
+     */
+    public $subplugins = [];
+
+    /**
+     * activity_custom_completion constructor.
+     *
+     * @param cm_info $cm
+     * @param int $userid
+     * @param array|null $completionstate The current state of the core completion criteria
+     */
+    public function __construct(\cm_info $cm, int $userid, ?array $completionstate = null) {
+        $allsubplugins = explode(',', get_config('mod_interactivevideo', 'enablecontenttypes'));
+        $subpluginclass = [];
+        foreach ($allsubplugins as $subplugin) {
+            $class = $subplugin . '\\ivcompletion';
+            if (class_exists($class)) {
+                $subpluginclass[] = $class;
+            }
+        }
+        $this->subplugins = $subpluginclass;
+        parent::__construct($cm, $userid, $completionstate);
+    }
 
     /**
      * Fetches the completion state for a given completion rule.
@@ -38,57 +64,67 @@ class custom_completion extends activity_custom_completion {
 
         $this->validate_rule($rule);
 
-        $userid = $this->userid;
-        $cm = $this->cm;
-        $completionpercentage = $cm->customdata['customcompletionrules']['completionpercentage'];
-        // We must take into account the start and end times of the video as well.
-        // Interactions outside of start and end times OR skipped should not be considered for completion.
-        $startendtimes = explode("-", $cm->customdata['startendtime']);
-        $start = $startendtimes[0];
-        $end = $startendtimes[1];
-        $select = "annotationid = ? AND timestamp >= ? AND timestamp <= ? AND (hascompletion = 1 OR type = 'skipsegment')";
+        if ($rule === 'completionpercentage') {
+            $userid = $this->userid;
+            $cm = $this->cm;
+            $completionpercentage = $cm->customdata['customcompletionrules']['completionpercentage'];
+            // We must take into account the start and end times of the video as well.
+            // Interactions outside of start and end times OR skipped should not be considered for completion.
+            $startendtimes = explode("-", $cm->customdata['startendtime']);
+            $start = $startendtimes[0];
+            $end = $startendtimes[1];
+            $select = "annotationid = ? AND ((timestamp >= ? AND timestamp <= ?) OR timestamp < 0) AND "
+                . "(hascompletion = 1 OR type = 'skipsegment')";
 
-        $relevantitems = $DB->get_records_select('interactivevideo_items', $select, [$cm->instance, $start, $end]);
-        $skipsegment = array_filter($relevantitems, function ($item) {
-            return $item->type === 'skipsegment';
-        });
+            $relevantitems = $DB->get_records_select('interactivevideo_items', $select, [$cm->instance, $start, $end]);
+            $skipsegment = array_filter($relevantitems, function ($item) {
+                return $item->type === 'skipsegment';
+            });
 
-        $relevantitems = array_filter($relevantitems, function ($item) use ($skipsegment) {
-            foreach ($skipsegment as $ss) {
-                if ($item->timestamp > $ss->timestamp && $item->timestamp < $ss->title) {
+            $relevantitems = array_filter($relevantitems, function ($item) use ($skipsegment) {
+                foreach ($skipsegment as $ss) {
+                    if ($item->timestamp > $ss->timestamp && $item->timestamp < $ss->title && $item->timestamp >= 0) {
+                        return false;
+                    }
+                }
+                if ($item->type === 'skipsegment') {
                     return false;
                 }
-            }
-            if ($item->type === 'skipsegment') {
-                return false;
-            }
-            return true;
-        });
+                return true;
+            });
 
-        $relevantitems = array_map(function ($item) {
-            return $item->id;
-        }, $relevantitems);
+            $relevantitems = array_map(function ($item) {
+                return $item->id;
+            }, $relevantitems);
 
-        $usercompletion = $DB->get_field(
-            'interactivevideo_completion',
-            'completeditems',
-            ['userid' => $userid, 'cmid' => $cm->instance]
-        );
-        if (!$usercompletion) {
+            $usercompletion = $DB->get_field(
+                'interactivevideo_completion',
+                'completeditems',
+                ['userid' => $userid, 'cmid' => $cm->instance]
+            );
+            if (!$usercompletion) {
+                return COMPLETION_INCOMPLETE;
+            }
+            $usercompletion = json_decode($usercompletion, true);
+            $usercompletion = array_intersect($usercompletion, $relevantitems);
+            $usercompletion = count($usercompletion);
+            if ($usercompletion > 0) {
+                $usercompletion = ($usercompletion / count($relevantitems)) * 100;
+            } else {
+                $usercompletion = 0;
+            }
+            if ($usercompletion >= $completionpercentage) {
+                return COMPLETION_COMPLETE;
+            }
+            return COMPLETION_INCOMPLETE;
+        } else {
+            foreach ($this->subplugins as $class) {
+                if ($class::get_state($rule, $this->cm, $this->userid)) {
+                    return COMPLETION_COMPLETE;
+                }
+            }
             return COMPLETION_INCOMPLETE;
         }
-        $usercompletion = json_decode($usercompletion, true);
-        $usercompletion = array_intersect($usercompletion, $relevantitems);
-        $usercompletion = count($usercompletion);
-        if ($usercompletion > 0) {
-            $usercompletion = ($usercompletion / count($relevantitems)) * 100;
-        } else {
-            $usercompletion = 0;
-        }
-        if ($usercompletion >= $completionpercentage) {
-            return COMPLETION_COMPLETE;
-        }
-        return COMPLETION_INCOMPLETE;
     }
 
     /**
@@ -97,7 +133,15 @@ class custom_completion extends activity_custom_completion {
      * @return array
      */
     public static function get_defined_custom_rules(): array {
-        return ['completionpercentage'];
+        $rules = ['completionpercentage'];
+        $allsubplugins = explode(',', get_config('mod_interactivevideo', 'enablecontenttypes'));
+        foreach ($allsubplugins as $subplugin) {
+            $class = $subplugin . '\\ivcompletion';
+            if (class_exists($class)) {
+                $rules = $class::get_defined_custom_rules($rules);
+            }
+        }
+        return $rules;
     }
 
     /**
@@ -107,9 +151,15 @@ class custom_completion extends activity_custom_completion {
      */
     public function get_custom_rule_descriptions(): array {
         $completionpercentage = $this->cm->customdata['customcompletionrules']['completionpercentage'];
-        return [
+        $description = [
             'completionpercentage' => get_string('completiondetail:percentage', 'interactivevideo', $completionpercentage),
         ];
+        $extendedcompletion = $this->cm->customdata['extendedcompletion'];
+        $extendedcompletion = json_decode($extendedcompletion, true);
+        foreach ($this->subplugins as $class) {
+            $description = $class::get_descriptions($description, $extendedcompletion);
+        }
+        return $description;
     }
 
     /**
@@ -118,11 +168,11 @@ class custom_completion extends activity_custom_completion {
      * @return array
      */
     public function get_sort_order(): array {
-        return [
-            'completionview',
-            'completionpercentage',
-            'completionusegrade',
-            'completionpassgrade',
-        ];
+        $customrules = $this->get_defined_custom_rules();
+        // Add completionview as the first element.
+        array_unshift($customrules, 'completionview');
+        $customrules[] = 'completionusegrade';
+        $customrules[] = 'completionpassgrade';
+        return $customrules;
     }
 }
