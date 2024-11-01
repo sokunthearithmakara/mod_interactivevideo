@@ -168,6 +168,7 @@ class interactivevideo_util {
      * @param int $gradeiteminstance The grade item instance (optional, default is 0).
      * @param int $xp The experience points earned (optional, default is 0).
      * @param bool $updatestate Whether to update the completion state (optional, default is true).
+     * @param int $courseid The ID of the course (optional, default is 0).
      * @return stdClass The updated progress record.
      */
     public static function save_progress(

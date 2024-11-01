@@ -36,6 +36,10 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
 
     /**
      * Constructor for the mod_interactivevideo_mod_form class.
+     * @param stdClass $current
+     * @param stdClass $section
+     * @param stdClass $cm
+     * @param stdClass $course
      */
     public function __construct($current, $section, $cm, $course) {
         $allsubplugins = explode(',', get_config('mod_interactivevideo', 'enablecontenttypes'));
