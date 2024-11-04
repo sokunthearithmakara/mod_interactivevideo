@@ -250,7 +250,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
 
         $mform->addElement(
             'advcheckbox',
-            'showdescription',
+            'showdescriptiononheader',
             '',
             get_string('displaydescriptiononactivityheader', 'mod_interactivevideo'),
             ['group' => 1],
@@ -833,7 +833,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
 
             // Handle display options.
             $displayoptions = [
-                'showdescription',
+                'showdescriptiononheader',
                 'darkmode',
                 'usefixedratio',
                 'disablechapternavigation',

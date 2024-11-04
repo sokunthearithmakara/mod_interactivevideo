@@ -40,7 +40,6 @@ class main extends \ivplugin_richtext\main {
             'hasreport' => true,
             'description' => get_string('iframedescription', 'ivplugin_iframe'),
             'author' => 'tsmakara',
-            'authorlink' => 'mailto:sokunthearithmakara@gmail.com',
         ];
     }
 

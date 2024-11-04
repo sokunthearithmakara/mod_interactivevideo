@@ -79,7 +79,7 @@ const init = (cmid, groupid, grademax, itemids, completionpercentage, videourl, 
 
     let contentTypes;
     let tabledata;
-    $.when(getContentTypes, getReportData).done(async (ct, data) => {
+    $.when(getContentTypes, getReportData).done(async(ct, data) => {
         contentTypes = JSON.parse(ct[0]);
         data = data[0];
 
@@ -382,7 +382,6 @@ const init = (cmid, groupid, grademax, itemids, completionpercentage, videourl, 
                         sesskey: M.cfg.sesskey,
                     },
                     success: function(response) {
-                        window.console.log(response);
                         if (response == 'deleted') {
                             let targetdata = tabledata.row($this.closest('tr')).data();
                             targetdata.completionpercentage = 0;
@@ -398,8 +397,7 @@ const init = (cmid, groupid, grademax, itemids, completionpercentage, videourl, 
                             });
                         }
                     },
-                    error: function(e) {
-                        window.console.log(e);
+                    error: function() {
                         addToast(M.util.get_string('completionreseterror', 'mod_interactivevideo'), {
                             type: 'error'
                         });

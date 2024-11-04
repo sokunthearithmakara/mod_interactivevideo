@@ -1959,7 +1959,7 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
     overflow: visible;
 }
 
-.path-course-view .modtype_interactivevideo .image-container a {
+.path-course-view .modtype_interactivevideo .image-container a.overlay {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -1973,17 +1973,17 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
     border-radius: 0.5rem;
 }
 
-.path-course-view .modtype_interactivevideo .image-container:hover a,
-.path-course-view .modtype_interactivevideo .image-container.hovered a {
+.path-course-view .modtype_interactivevideo .image-container:hover a.overlay,
+.path-course-view .modtype_interactivevideo .image-container.hovered a.overlay {
     background: rgba(0, 0, 0, 0.15);
 }
 
-.path-course-view .modtype_interactivevideo .image-container:hover i,
-.path-course-view .modtype_interactivevideo .image-container.hovered i {
+.path-course-view .modtype_interactivevideo .image-container:hover a.overlay i,
+.path-course-view .modtype_interactivevideo .image-container.hovered a.overlay i {
     display: block;
 }
 
-.path-course-view .modtype_interactivevideo .image-container a i {
+.path-course-view .modtype_interactivevideo .image-container a.overlay i {
     font-size: 1.5rem;
     color: #fff;
     transition: all ease-in-out 300ms;
@@ -2039,7 +2039,7 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
         font-size: small;
         justify-content: center;
 
-        .title {
+        a.title {
             font-size: 1rem;
             font-weight: bold;
             display: -webkit-box;
@@ -2399,6 +2399,20 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
     }
 }
 
+.path-course-view .modtype_interactivevideo:has(.interactivevideo-card) .clamp-2,
+.path-course-view .modtype_interactivevideo:has(.interactivevideo-card) .clamp-7 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.path-course-view .modtype_interactivevideo:has(.interactivevideo-card) .clamp-7 {
+    -webkit-line-clamp: 7;
+    line-clamp: 7;
+}
+
 .path-course-view.editing .modtype_interactivevideo:has(.interactivevideo-card) .activity-instance {
     display: none !important;
 }
@@ -2474,4 +2488,12 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
 
 .path-course-view #playermodal {
     overflow: hidden;
+}
+
+.path-mod-interactivevideo [data-action="toggle-manual-completion"] i {
+    margin-right: 0.25rem;
+}
+
+.path-course-view:not(.editing) .section .activity:has(.interactivevideo-card):hover {
+    z-index: 3;
 }

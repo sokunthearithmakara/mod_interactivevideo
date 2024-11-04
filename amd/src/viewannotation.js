@@ -503,6 +503,7 @@ define([
                     }
                 }
                 activityType = ctRenderer[annotation.type];
+                replaceProgressBars(((annotation.timestamp - start) / totaltime) * 100);
                 activityType.runInteraction(annotation);
                 dispatchEvent('interactionrun', {'annotation': annotation});
             };
@@ -570,7 +571,21 @@ define([
                     $('#changequality').removeClass('d-none');
                 }
 
+                // Get watchedpoint from storage to resume.
+                if (!moment) {
+                    const lastwatched = localStorage.getItem(`watchedpoint-${userid}-${interaction}`);
+                    if (lastwatched) {
+                        if (lastwatched > start + 60 || lastwatched < end - 60) {
+                            player.seek(lastwatched);
+                        }
+                    }
+                }
+
                 $(".video-block").css('background', 'transparent');
+                $("#annotation-canvas").removeClass('d-none');
+                // Explanation: YT shows annoying related videos if the player is large enough when the script is loading.
+                // So we're tricking it by hiding the canvas which also hides the #player first
+                // and only shows it when player is ready.
                 const duration = await player.getDuration();
                 end = !end ? duration : Math.min(end, duration);
                 start = start > end ? 0 : start;
@@ -659,6 +674,9 @@ define([
                 resizeObserver.observe(vwrapper);
 
                 // Scroll into view #video-wrapper
+                if ($('body').hasClass('embed-mode')) {
+                    return;
+                }
                 vwrapper.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"});
             };
 
@@ -677,6 +695,8 @@ define([
                 }
                 $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
                 $('#playpause').attr('data-original-title', M.util.get_string('play', 'mod_interactivevideo'));
+                // Save watched point to cache.
+                localStorage.setItem(`watchedpoint-${userid}-${interaction}`, player.getCurrentTime());
             };
 
 
@@ -1032,7 +1052,6 @@ define([
                     return;
                 }
                 const timestamp = $(this).data('timestamp');
-                replaceProgressBars(((timestamp - start) / totaltime) * 100);
                 if (await player.getCurrentTime() == timestamp && lastrun) {
                     $loader.fadeOut(300);
                     return;
@@ -1042,10 +1061,8 @@ define([
                 await player.seek(Number(timestamp));
                 const id = $(this).data('id');
                 const theAnnotation = releventAnnotations.find(x => x.id == id);
-                setTimeout(() => {
-                    runInteraction(theAnnotation);
-                    $loader.fadeOut(300);
-                }, 500);
+                runInteraction(theAnnotation);
+                $loader.fadeOut(300);
                 // Clear the viewed annotations that are after this timestamp.
                 const preceedingAnno = releventAnnotations.filter(x => x.timestamp < timestamp).map(x => Number(x.id));
                 viewedAnno = preceedingAnno;

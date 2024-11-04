@@ -108,6 +108,12 @@ class base_form extends \core_form\dynamic_form {
      * @return \stdClass
      */
     public function pre_processing_data($data) {
+        if (!isset($data->completiontracking) || $data->completiontracking == 'none') {
+            $data->xp = 0;
+            $data->hascompletion = 0;
+        } else {
+            $data->hascompletion = 1;
+        }
         return $data;
     }
 

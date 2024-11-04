@@ -111,7 +111,12 @@ const defaultDisplayContent = async function(annotation, player) {
     }
 
     if ($('body').hasClass('embed-mode')) {
-        displayoptions = 'inline';
+        // Check the size of the body. If it is less than 800px, display the message as inline.
+        if ($(window).width() < 1000 || $(window).height() < 500) {
+            displayoptions = 'inline';
+        } else {
+            displayoptions = displayoptions == 'inline' ? 'inline' : 'popup';
+        }
     }
 
     // If the wrapper is in fullscreen mode, display the message inline (on top of the video).

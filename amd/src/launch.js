@@ -51,13 +51,18 @@ define(['jquery'], function($) {
                        <div class="modal-header border-0 text-white align-items-center py-0 h-0
                         position-absolute w-100 z-index-1 rounded-0">
                          <div class="modal-background w-100 position-absolute"></div>
-                               <span class="modal-title text-truncate position-relative z-index-1" id="playermodalLabel">
-                               <span class="h5 text-truncate mb-0">
-                               <button type="button" class="btn border-0 m-1 p-1 h5" data-dismiss="modal" aria-label="Close">
-                                   <i class="fa fa-arrow-left text-white m-0 fa-2x" aria-hidden="true"></i>
-                               </button></span>
-                               <div class="d-sm-none d-block small ml-2" data-region="activity-completion">
-                               </div></span>
+                               <span class="modal-title position-relative z-index-1 d-flex align-items-center overflow-hidden"
+                                id="playermodalLabel">
+                                <span class="h5 mb-0">
+                                    <button type="button" class="btn border-0 m-1 p-1 h5" data-dismiss="modal" aria-label="Close">
+                                        <i class="fa fa-arrow-left text-white m-0 fa-2x" aria-hidden="true"></i>
+                                    </button>
+                                </span>
+
+                                <div class="d-sm-none d-block small ml-2" data-region="activity-completion">
+                                </div>
+                               </span>
+
                                <div class="modal-action d-flex align-items-center position-relative z-index-1">
                                <div class="d-none d-sm-block small" data-region="activity-completion">
                                </div>

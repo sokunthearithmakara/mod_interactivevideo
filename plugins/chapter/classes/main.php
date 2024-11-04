@@ -40,7 +40,6 @@ class main extends \ivplugin_richtext\main {
             'hasreport' => false,
             'description' => get_string('chapterdescription', 'ivplugin_chapter'),
             'author' => 'tsmakara',
-            'authorlink' => 'mailto:sokunthearithmakara@gmail.com',
         ];
     }
 

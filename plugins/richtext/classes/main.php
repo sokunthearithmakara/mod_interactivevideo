@@ -66,7 +66,6 @@ class main {
             'hasreport' => true,
             'description' => get_string('richtextdescription', 'ivplugin_richtext'),
             'author' => 'tsmakara',
-            'authorlink' => 'mailto:sokunthearithmakara@gmail.com',
         ];
     }
 

@@ -80,25 +80,79 @@ class DailyMotion {
             // So, to deal with this, we have to start the video as soon as the player is ready.
             // Let it plays on mute which sometimes include ads. When the ad is done, the VIDEO_START event will fire.
             // That's when we let user know, player is ready.
+            const playerEvents = () => {
+                player.on(dailymotion.events.VIDEO_SEEKEND, function(e) {
+                    dispatchEvent('iv:playerSeek', e.videoTime);
+                });
+
+                player.on(dailymotion.events.VIDEO_END, function() {
+                    player.seek(start);
+                    player.pause();
+                    dispatchEvent('iv:playerEnded');
+                });
+
+                player.off(dailymotion.events.VIDEO_TIMECHANGE);
+                player.on(dailymotion.events.VIDEO_TIMECHANGE, function(e) {
+                    if (!ready) {
+                        return;
+                    }
+
+                    if (e.videoTime >= end) {
+                        dispatchEvent('iv:playerEnded');
+                        player.pause();
+                    } else if (e.playerIsPlaying === false) {
+                        dispatchEvent('iv:playerPaused');
+                    } else if (e.playerIsPlaying === true) {
+                        dispatchEvent('iv:playerPlaying');
+                    }
+                });
+
+                player.on(dailymotion.events.VIDEO_PLAY, function() {
+                    dispatchEvent('iv:playerPlaying');
+                });
+
+                player.on(dailymotion.events.VIDEO_PAUSE, function() {
+                    dispatchEvent('iv:playerPaused');
+                });
+
+                player.on(dailymotion.events.VIDEO_END, function() {
+                    dispatchEvent('iv:playerEnded');
+                });
+
+                player.on(dailymotion.events.PLAYER_ERROR, function(e) {
+                    dispatchEvent('iv:playerError', {error: e});
+                });
+
+                player.on(dailymotion.events.PLAYER_PLAYBACKSPEEDCHANGE, function(e) {
+                    dispatchEvent('iv:playerRateChange', {rate: e.playerPlaybackSpeed});
+                });
+
+                player.on(dailymotion.events.VIDEO_QUALITYCHANGE, function(e) {
+                    dispatchEvent('iv:playerQualityChange', {quality: e.videoQuality});
+                });
+            };
+
             if (customStart) {
                 player.setMute(true);
-                player.play();
-                player.on(dailymotion.events.VIDEO_START, function() {
+                player.play(); // Start the video to get the ad out of the way.
+                player.on(dailymotion.events.VIDEO_TIMECHANGE, function() {
                     $("#start-screen").removeClass('bg-transparent');
                     if (ready == true) { // When the video is replayed, it will fire VIDEO_START event again.
                         player.setMute(true);
                     }
-                    setTimeout(() => {
+                    setTimeout(async () => {
                         player.seek(start);
                         player.setMute(false);
                         if (!ready) {
-                            player.pause();
+                            await self.pause();
+                            playerEvents();
                             ready = true;
                             dispatchEvent('iv:playerReady');
                         }
                     }, 1000);
                 });
             } else {
+                playerEvents();
                 ready = true;
                 dispatchEvent('iv:playerReady');
             }
@@ -107,55 +161,7 @@ class DailyMotion {
             player.on(dailymotion.events.AD_START, function() {
                 $(".video-block").css('background', 'transparent');
                 $("#start-screen").addClass('bg-transparent');
-            });
-
-            player.on(dailymotion.events.VIDEO_SEEKEND, function(e) {
-                dispatchEvent('iv:playerSeek', e.videoTime);
-            });
-
-            player.on(dailymotion.events.VIDEO_END, function() {
-                player.seek(start);
-                player.pause();
-                dispatchEvent('iv:playerEnded');
-            });
-
-            player.on(dailymotion.events.VIDEO_TIMECHANGE, function(e) {
-                if (!ready) {
-                    return;
-                }
-
-                if (e.videoTime >= end) {
-                    dispatchEvent('iv:playerEnded');
-                    player.pause();
-                } else if (e.playerIsPlaying === false) {
-                    dispatchEvent('iv:playerPaused');
-                } else if (e.playerIsPlaying === true) {
-                    dispatchEvent('iv:playerPlaying');
-                }
-            });
-
-            player.on(dailymotion.events.VIDEO_PLAY, function() {
-                dispatchEvent('iv:playerPlaying');
-            });
-
-            player.on(dailymotion.events.VIDEO_PAUSE, function() {
-                dispatchEvent('iv:playerPaused');
-            });
-
-            player.on(dailymotion.events.VIDEO_END, function() {
-                dispatchEvent('iv:playerEnded');
-            });
-
-            player.on(dailymotion.events.PLAYER_ERROR, function(e) {
-                dispatchEvent('iv:playerError', {error: e});
-            });
-
-            player.on(dailymotion.events.PLAYER_PLAYBACKSPEEDCHANGE, function(e) {
-                dispatchEvent('iv:playerRateChange', {rate: e.playerPlaybackSpeed});
-            });
-
-            player.on(dailymotion.events.VIDEO_QUALITYCHANGE, function(e) {
-                dispatchEvent('iv:playerQualityChange', {quality: e.videoQuality});
+                $('#annotation-canvas').removeClass('d-none');
             });
         };
 

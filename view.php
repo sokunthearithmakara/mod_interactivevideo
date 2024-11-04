@@ -85,12 +85,11 @@ if ($preview && has_capability('mod/interactivevideo:edit', $modulecontext)) {
 }
 
 // Prepare strings for js files using string manager.
-$subplugins = interactivevideo_util::get_all_activitytypes();
+$subplugins = explode(',', get_config('mod_interactivevideo', 'enablecontenttypes'));
 $stringman = get_string_manager();
 foreach ($subplugins as $subplugin) {
-    $stringcomponent = $subplugin['stringcomponent'];
-    $strings = $stringman->load_component_strings($stringcomponent, current_language());
-    $PAGE->requires->strings_for_js(array_keys($strings), $stringcomponent);
+    $strings = $stringman->load_component_strings($subplugin, current_language());
+    $PAGE->requires->strings_for_js(array_keys($strings), $subplugin);
 }
 $strings = $stringman->load_component_strings('mod_interactivevideo', current_language());
 $PAGE->requires->strings_for_js(array_keys($strings), 'mod_interactivevideo');
@@ -164,7 +163,7 @@ if ($moduleinstance->displayoptions['distractionfreemode']) {
     $PAGE->add_body_class('distraction-free');
 } else {
     $PAGE->add_body_class('default-mode');
-    if ($moduleinstance->displayasstartscreen == 1 || $moduleinstance->displayoptions['showdescription'] == 0) {
+    if ($moduleinstance->displayasstartscreen == 1 || $moduleinstance->displayoptions['showdescriptiononheader'] == 0) {
         // Don't show description in the header.
         $PAGE->activityheader->set_attrs(['description' => '']);
     }
@@ -274,9 +273,10 @@ if ($rendernav) {
         "interactionsurl" => has_capability('mod/interactivevideo:edit', $modulecontext)
             ? new moodle_url('/mod/interactivevideo/interactions.php', ['id' => $cm->id]) : '',
         "useravatar" => $primarymenu['user'],
-        "completed" => $completionstate > COMPLETION_INCOMPLETE,
-        "completedpass" => $completionstate == COMPLETION_COMPLETE_PASS || $completionstate == COMPLETION_COMPLETE,
-        "completedfail" => $completionstate == COMPLETION_COMPLETE_FAIL,
+        "completed" => isset($completionstate) && $completionstate > COMPLETION_INCOMPLETE,
+        "completedpass" => isset($completionstate)
+            && ($completionstate == COMPLETION_COMPLETE_PASS || $completionstate == COMPLETION_COMPLETE),
+        "completedfail" => isset($completionstate) && $completionstate == COMPLETION_COMPLETE_FAIL,
         "viewurl" => '',
         "backupurl" => has_capability('moodle/backup:backupactivity', $modulecontext) ? new moodle_url(
             '/backup/backup.php',

@@ -42,7 +42,6 @@ class main extends \ivplugin_richtext\main {
             'hasreport' => true,
             'description' => get_string('contentbankdescription', 'ivplugin_contentbank'),
             'author' => 'tsmakara',
-            'authorlink' => 'mailto:sokunthearithmakara@gmail.com',
         ];
     }
 

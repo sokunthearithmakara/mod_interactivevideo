@@ -1,5 +1,3 @@
-# Interactive Video #
-
 Transform your video/audio content into an interactive learning adventure! Add dynamic annotations and interactions like H5P activities, PDFs, HTML games/simulations, rich text, and more. Track every learner’s journey with detailed reports.
 
 ## Main Features: ##

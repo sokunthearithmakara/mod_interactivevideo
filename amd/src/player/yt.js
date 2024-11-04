@@ -93,6 +93,7 @@ class Yt {
                 controls: showControls ? 1 : 0,
                 showinfo: 0,
                 fs: 0,
+                modestbranding: 1,
                 iv_load_policy: 3,
                 cc_load_policy: 0,
                 autohide: 1,
@@ -135,7 +136,9 @@ class Yt {
                         return;
                     }
                     switch (e.data) {
-
+                        case YT.PlayerState.BUFFERING:
+                            dispatchEvent('iv:playerBuffering');
+                            break;
                         case YT.PlayerState.ENDED:
                             dispatchEvent('iv:playerEnded');
                             break;
@@ -171,6 +174,9 @@ class Yt {
         if (!window.YT) {
             var tag = document.createElement('script');
             tag.src = "https://www.youtube.com/iframe_api";
+            tag.async = true;
+            tag.as = "script";
+            tag.rel = "preload";
             var firstScriptTag = document.getElementsByTagName('script')[0];
             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
             // Replace the 'player' element with an <iframe> and YouTube player

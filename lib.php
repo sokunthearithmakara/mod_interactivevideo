@@ -108,7 +108,7 @@ function interactivevideo_display_options($moduleinstance) {
     $options['showname'] = $moduleinstance->showname;
     $options['autoplay'] = $moduleinstance->autoplay;
     $options['columnlayout'] = $moduleinstance->columnlayout;
-    $options['showdescription'] = $moduleinstance->showdescription;
+    $options['showdescriptiononheader'] = $moduleinstance->showdescriptiononheader;
     return $options;
 }
 
@@ -550,7 +550,7 @@ function interactivevideo_get_coursemodule_info($coursemodule) {
  */
 function interactivevideo_cm_info_dynamic(cm_info $cm) {
     global $PAGE;
-    if (strpos($PAGE->bodyclasses, 'path-course-view') === false) {
+    if (strpos($PAGE->bodyclasses, 'path-course-view') === false) { // MUST be in course view only.
         return;
     }
     // Set after link.
@@ -594,7 +594,8 @@ function interactivevideo_cm_info_dynamic(cm_info $cm) {
 
     $customdata = $cm->customdata;
     $displayoptions = json_decode($customdata['displayoptions']);
-    if (isset($displayoptions->displayinline) && $displayoptions->displayinline == INTERACTIVEVIDEO_DISPLAY_INLINE) {
+    $isivformat = strpos($PAGE->bodyclasses, 'format-test') !== false && !$PAGE->user_is_editing();
+    if ((isset($displayoptions->displayinline) && $displayoptions->displayinline == INTERACTIVEVIDEO_DISPLAY_INLINE) || $isivformat) {
         $cm->set_no_view_link();
     }
 }
@@ -607,10 +608,12 @@ function interactivevideo_cm_info_dynamic(cm_info $cm) {
  * @param cm_info $cm The course module information object.
  */
 function interactivevideo_cm_info_view(cm_info $cm) {
+    global $PAGE;
     $customdata = $cm->customdata;
+    $isivformat = strpos($PAGE->bodyclasses, 'format-test') !== false && !$PAGE->user_is_editing();
     $displayoptions = json_decode($customdata['displayoptions']);
     $displayinline = isset($displayoptions->displayinline) && $displayoptions->displayinline == INTERACTIVEVIDEO_DISPLAY_INLINE;
-    if ($displayinline) {
+    if ($displayinline || $isivformat) {
         $cm->set_content(interactivevideo_displayinline($cm));
     }
 }
@@ -622,7 +625,6 @@ function interactivevideo_cm_info_view(cm_info $cm) {
  */
 function interactivevideo_displayinline(cm_info $cm) {
     global $DB, $USER, $CFG, $OUTPUT, $PAGE;
-
     // Get data from interactivevideo and interactivevideo_items and interactivevideo_completion for current user.
     $interactivevideo = $DB->get_record(
         'interactivevideo',
@@ -633,6 +635,10 @@ function interactivevideo_displayinline(cm_info $cm) {
     if (!$interactivevideo) {
         return '';
     }
+
+    // Support for format_iv.
+    // Get course format.
+    $isivformat = strpos($PAGE->bodyclasses, 'format-test') !== false && !$PAGE->user_is_editing();
 
     $displayoptions = json_decode($cm->customdata['displayoptions']);
     if (isset($displayoptions->usecustomposterimage) && $displayoptions->usecustomposterimage) {
@@ -671,6 +677,7 @@ function interactivevideo_displayinline(cm_info $cm) {
         'formattedname' => format_string($cm->name),
         'showdescription' => $cm->showdescription,
         'formattedintro' => format_module_intro('interactivevideo', $interactivevideo, $cm->id, false),
+        'originalintro' => htmlentities($interactivevideo->intro),
         'size' => isset($displayoptions->cardsize) ? $displayoptions->cardsize : 'large',
         'issmall' => isset($displayoptions->cardsize)
             && ($displayoptions->cardsize == 'small' || $displayoptions->cardsize == 'medium'
@@ -700,7 +707,21 @@ function interactivevideo_displayinline(cm_info $cm) {
         if ($datafortemplate['usecustomdesc']) {
             $datafortemplate['showdescription'] = true;
             $datafortemplate['formattedintro'] = $datafortemplate['customdesc'];
+            $datafortemplate['originalintro'] = $datafortemplate['customdesc'];
         }
+    }
+
+    if ($isivformat) {
+        $datafortemplate['showdescription'] = false;
+        $datafortemplate['showposterimage'] = true;
+        $datafortemplate['showprogressbar'] = true;
+        $datafortemplate['showcompletion'] = true;
+        $datafortemplate['showname'] = true;
+        $datafortemplate['size'] = 'large';
+        $datafortemplate['columnlayout'] = true;
+        $datafortemplate['launchinpopup'] = false;
+        $datafortemplate['formativ'] = true;
+        $datafortemplate['cardonly'] = false;
     }
 
     if (!$cm->uservisible) {

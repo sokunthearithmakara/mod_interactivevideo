@@ -387,6 +387,7 @@ define(['jquery',
                 $("#video-wrapper").css('padding-bottom', (1 / ratio) * 100 + '%');
 
                 playerReady = true;
+                $('#annotation-canvas').removeClass('d-none');
 
                 // Handle timeline block.
                 $("#timeline-wrapper #video-timeline").css({
@@ -580,6 +581,7 @@ define(['jquery',
                         'customStart': true,
                     }
                 );
+                window.IVPLAYER = player;
             });
 
             $(document).on('iv:playerReady', function() {

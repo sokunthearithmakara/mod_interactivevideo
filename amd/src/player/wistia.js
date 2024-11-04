@@ -142,6 +142,9 @@ class Wistia {
             // Add wistia script
             var tag = document.createElement('script');
             tag.src = "https://fast.wistia.com/assets/external/E-v1.js";
+            tag.async = true;
+            tag.as = "script";
+            tag.rel = "preload";
             var firstScriptTag = document.getElementsByTagName('script')[0];
             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
