@@ -341,8 +341,8 @@ $PAGE->requires->js_call_amd('mod_interactivevideo/viewannotation', 'init', [
     $moduleinstance->start,
     $moduleinstance->end,
     $moduleinstance->completionpercentage, // Completion condition percentage.
-    $gradeitem->iteminstance, // Grade item instance from grade_items table.
-    $gradeitem->grademax, // Grade item maximum grade, which is set in mod_form.
+    $gradeitem ? $gradeitem->iteminstance : 0, // Grade item instance from grade_items table.
+    $gradeitem ? $gradeitem->grademax : 0, // Grade item maximum grade, which is set in mod_form.
     $moduleinstance->type, // Interactive video type (e.g. vimeo, wistia, etc.).
     $moduleinstance->displayoptions['preventskipping'] && !has_capability('mod/interactivevideo:edit', $modulecontext)
         ? true : false, // Prevent skipping, applicable to student only.

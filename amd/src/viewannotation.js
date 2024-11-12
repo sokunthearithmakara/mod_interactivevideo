@@ -59,7 +59,7 @@ define([
         return string;
     };
 
-    const renderAnnotationItems = async (annos, start, totaltime) => {
+    const renderAnnotationItems = async(annos, start, totaltime) => {
         releventAnnotations = annos;
         window.IVANNO = annos;
         let actualduration = totaltime;
@@ -211,12 +211,15 @@ define([
             /**
              * Function to replace the progress bars on the video navigation.
              * @param {number} percentage
-             * @returns {void}
+             * @returns {Promise<boolean>}
              */
             const replaceProgressBars = (percentage) => {
-                percentage = percentage > 100 ? 100 : percentage;
-                $videoNav.find('#progress').css('width', percentage + '%');
-                $videoNav.find('#seekhead').css('left', percentage + '%');
+                return new Promise((resolve) => {
+                    percentage = percentage > 100 ? 100 : percentage;
+                    $videoNav.find('#progress').css('width', percentage + '%');
+                    $videoNav.find('#seekhead').css('left', percentage + '%');
+                    resolve(true);
+                });
             };
 
             /**
@@ -478,7 +481,7 @@ define([
              * @param {object} annotation annotation object
              * @returns {void}
              */
-            const runInteraction = async (annotation) => {
+            const runInteraction = async(annotation) => {
                 lastrun = annotation.id;
                 $('#video-wrapper').data('timestamp', new Date().getTime());
                 viewedAnno.push(Number(annotation.id));
@@ -503,7 +506,7 @@ define([
                     }
                 }
                 activityType = ctRenderer[annotation.type];
-                replaceProgressBars(((annotation.timestamp - start) / totaltime) * 100);
+
                 activityType.runInteraction(annotation);
                 dispatchEvent('interactionrun', {'annotation': annotation});
             };
@@ -518,7 +521,7 @@ define([
              * @function shareMoment
              * @returns {Promise<void>} A promise that resolves when the video has been successfully sought and played.
              */
-            const shareMoment = async () => {
+            const shareMoment = async() => {
                 if (!moment) {
                     return;
                 }
@@ -528,7 +531,7 @@ define([
                 if (time && !isNaN(time) && time >= start && time <= end) {
                     // Hide the start screen.
                     $('#video-wrapper #start-screen').hide(0);
-                    replaceProgressBars(((time - start) / totaltime) * 100);
+                    await replaceProgressBars(((time - start) / totaltime) * 100);
                     await player.seek(time);
                     player.play();
                 }
@@ -536,6 +539,34 @@ define([
                 const newurl = window.location.protocol
                     + '//' + window.location.host + window.location.pathname + '?' + urlParams.toString();
                 window.history.replaceState(null, null, newurl);
+            };
+
+            const updateTime = async(duration) => {
+                let toUpdatetime = false;
+                if (!end || end == 0 || end > duration) {
+                    toUpdatetime = true;
+                }
+                end = !end ? duration : Math.min(end, duration);
+                if (!start || start >= duration || start < 0 || start >= end) {
+                    toUpdatetime = true;
+                }
+                start = start > end ? 0 : start;
+                if (toUpdatetime) {
+                    await $.ajax({
+                        url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                        method: "POST",
+                        dataType: "text",
+                        data: {
+                            action: 'update_videotime',
+                            sesskey: M.cfg.sesskey,
+                            id: interaction,
+                            start: start,
+                            end: end,
+                            contextid: M.cfg.contextid
+                        }
+                    });
+                }
+                return {start, end};
             };
 
             /**
@@ -555,7 +586,7 @@ define([
              * @function onReady
              * @returns {Promise<void>} A promise that resolves when the player is fully initialized and ready.
              */
-            const onReady = async () => {
+            const onReady = async() => {
                 // Add player to Window object.
                 window.IVPLAYER = player;
                 // Check if the player supports playback rate and quality adjustments.
@@ -574,10 +605,8 @@ define([
                 // Get watchedpoint from storage to resume.
                 if (!moment) {
                     const lastwatched = localStorage.getItem(`watchedpoint-${userid}-${interaction}`);
-                    if (lastwatched) {
-                        if (lastwatched > start + 60 || lastwatched < end - 60) {
-                            player.seek(lastwatched);
-                        }
+                    if (lastwatched && (lastwatched > start + 60 || lastwatched < end - 60)) {
+                        player.seek(lastwatched);
                     }
                 }
 
@@ -587,8 +616,7 @@ define([
                 // So we're tricking it by hiding the canvas which also hides the #player first
                 // and only shows it when player is ready.
                 const duration = await player.getDuration();
-                end = !end ? duration : Math.min(end, duration);
-                start = start > end ? 0 : start;
+                ({start, end} = await updateTime(duration));
                 totaltime = end - start;
                 await getAnnotations(shareMoment);
                 $('#duration').text(convertSecondsToHMS(totaltime));
@@ -640,7 +668,7 @@ define([
                     'drag': async function(event, ui) {
                         let timestamp = ((ui.position.left) / $('#video-nav').width()) * totaltime + start;
                         let percentage = ui.position.left / $('#video-nav').width();
-                        replaceProgressBars(percentage * 100);
+                        await replaceProgressBars(percentage * 100);
                         $('#seek #position').css('left', ui.position.left + 'px');
                         $('#seek #position #timelabel').text(convertSecondsToHMS(timestamp - start));
                         await player.seek(timestamp);
@@ -689,14 +717,14 @@ define([
              * - Updates the play/pause button icon to indicate 'play'.
              * - Sets the tooltip of the play/pause button to 'play'.
              */
-            const onPaused = () => {
+            const onPaused = async() => {
                 if (!playerReady) {
                     return;
                 }
                 $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
                 $('#playpause').attr('data-original-title', M.util.get_string('play', 'mod_interactivevideo'));
                 // Save watched point to cache.
-                localStorage.setItem(`watchedpoint-${userid}-${interaction}`, player.getCurrentTime());
+                localStorage.setItem(`watchedpoint-${userid}-${interaction}`, await player.getCurrentTime());
             };
 
 
@@ -712,7 +740,7 @@ define([
              * - Clears the interval and pauses the player.
              * - Updates the play/pause button to show the play icon.
              */
-            const onEnded = async () => {
+            const onEnded = async() => {
                 if (!playerReady) {
                     return;
                 }
@@ -725,6 +753,9 @@ define([
                 dispatchEvent('timeupdate', {'time': end});
                 $('#playpause').find('i').removeClass('bi-pause-fill').addClass('bi-play-fill');
                 $('#playpause').attr('data-original-title', M.util.get_string('play', 'mod_interactivevideo'));
+                dispatchEvent('ended', {'time': end});
+                // Remove watched point from cache.
+                localStorage.removeItem(`watchedpoint-${userid}-${interaction}`);
             };
 
             /**
@@ -733,7 +764,7 @@ define([
              * @param {number} t - The time to seek to. If not provided, the current time of the player will be used.
              * @returns {Promise<void>} - A promise that resolves when the seek operation is complete.
              */
-            const onSeek = async (t) => {
+            const onSeek = async(t) => {
                 if (!playerReady) {
                     return;
                 }
@@ -845,7 +876,7 @@ define([
                 };
 
                 if (player.type == 'yt' || player.type == 'wistia') {
-                    const animate = async () => {
+                    const animate = async() => {
                         intervalFunction();
                         if (await player.isPlaying()) {
                             requestAnimationFrame(animate);
@@ -895,7 +926,7 @@ define([
             });
 
             // Handle the refresh button:: allowing user to refresh the content
-            $(document).on('click', '#refresh', function(e) {
+            $(document).on('click', '#message #refresh', function(e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 const id = $(this).data('id');
@@ -1057,8 +1088,9 @@ define([
                     return;
                 }
                 lastrun = null;
-                await player.pause();
+                await replaceProgressBars((timestamp - start) / totaltime * 100);
                 await player.seek(Number(timestamp));
+                player.pause();
                 const id = $(this).data('id');
                 const theAnnotation = releventAnnotations.find(x => x.id == id);
                 runInteraction(theAnnotation);
@@ -1090,11 +1122,12 @@ define([
                 const parentOffset = $(this).offset();
                 const relX = e.pageX - parentOffset.left;
                 const percentage = relX / $(this).width();
-                replaceProgressBars(percentage * 100);
+                await replaceProgressBars(percentage * 100);
                 $loader.fadeIn(300);
-                await player.pause(); // Especially for vimeo.
+                // Await player.pause(); // Especially for vimeo.
                 await player.seek((percentage * totaltime) + start);
                 player.play();
+                lastrun = null;
                 setTimeout(() => {
                     // Remove the position.
                     $('#position').remove();
@@ -1222,6 +1255,21 @@ define([
                 $(this).find('i').addClass('bi-check');
             });
 
+            $(document).on('click', '#changecaption .changecaption', function(e) {
+                e.preventDefault();
+                const lang = $(this).data('lang');
+                player.setCaption(lang);
+                $('#changecaption .changecaption').find('i').removeClass('bi-check');
+                $(this).find('i').addClass('bi-check');
+                if (lang == '') {
+                    $('#changecaption .btn i').removeClass('bi-badge-cc-fill').addClass('bi-badge-cc');
+                } else {
+                    $('#changecaption .btn i').removeClass('bi-badge-cc').addClass('bi-badge-cc-fill');
+                }
+                // Save the caption language to local storage.
+                localStorage.setItem(`caption-${userid}`, lang);
+            });
+
             $(document).on('iv:playerReady', function() {
                 onReady();
             });
@@ -1243,6 +1291,25 @@ define([
 
             $(document).on('iv:playerSeek', function(e) {
                 onSeek(e.detail.time);
+            });
+
+            $(document).on('iv:captionsReady', function(e) {
+                const captions = e.detail.captions;
+                $('#changecaption').removeClass('d-none');
+                $('#changecaption .dropdown-menu')
+                    .html(`<a class="dropdown-item text-white changecaption"
+                     data-lang="" href="#">
+                     <i class="bi fa-fw bi-check ml-n3"></i>${M.util.get_string('off', 'mod_interactivevideo')}</a>`);
+                captions.forEach(caption => {
+                    $('#changecaption .dropdown-menu')
+                        .append(`<a class="dropdown-item text-white changecaption"
+                         data-lang="${caption.code}" href="#"><i class="bi fa-fw ml-n3"></i>${caption.label}</a>`);
+                });
+
+                const lang = localStorage.getItem(`caption-${userid}`);
+                if (lang && lang.length) {
+                    $('#changecaption .changecaption[data-lang="' + lang + '"]').trigger('click');
+                }
             });
 
             $(document).on('iv:playerError', function() {
@@ -1283,11 +1350,14 @@ define([
                     $('#taskinfo').removeClass('border-0');
                 }
                 // Autoplay if enabled.
+
                 if (displayoptions.autoplay == 1 && !firstPlay && !$('body').hasClass('preview-mode')) {
-                    $('#play').trigger('click');
-                    firstPlay = true;
-                    // Make sure to unmute.
-                    player.unMute();
+                    setTimeout(function() {
+                        $('#play').trigger('click');
+                        // Make sure to unmute.
+                        player.unMute();
+                        firstPlay = true;
+                    }, 1000);
                 }
             });
 

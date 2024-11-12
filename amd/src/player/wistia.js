@@ -47,7 +47,7 @@ class Wistia {
         if (!showControls) {
             $('body').addClass('no-original-controls');
         }
-        const regex = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^\/]+)/g;
+        const regex = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^/]+)/g;
         const match = regex.exec(url);
         const videoId = match[1];
         this.videoId = videoId;

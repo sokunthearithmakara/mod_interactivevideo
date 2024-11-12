@@ -30,7 +30,7 @@ class Html5Video {
      * @param {string} url - The URL of the video to be played.
      * @param {number} start - The start time of the video in seconds.
      * @param {number} [end] - The end time of the video in seconds. If not provided, defaults to the video's duration.
-    * @param {object} opts - The options for the player.
+     * @param {object} opts - The options for the player.
      */
     constructor(url, start, end, opts = {}) {
         const showControls = opts.showControls || false;

@@ -79,6 +79,7 @@ class Yt {
         videoId = videoId.split("&")[0];
         this.videoId = videoId;
         this.posterImage = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        let loadedcaption = false;
         var ready = false;
         var self = this;
         var options = {
@@ -100,7 +101,7 @@ class Yt {
                 rel: 0,
                 playsinline: 1,
                 disablekb: 1,
-                mute: 1,
+                mute: 0,
             },
             events: {
                 onError: function(e) {
@@ -163,7 +164,35 @@ class Yt {
 
                 onPlaybackRateChange: function(e) {
                     dispatchEvent('iv:playerRateChange', {rate: e.data});
-                }
+                },
+
+                onApiChange: function() {
+                    // Always load captions
+                    if (!loadedcaption) {
+                        player.loadModule('captions');
+                        loadedcaption = true;
+                    }
+                    player.setOption('captions', 'track', {});
+
+                    let tracks;
+                    try {
+                        tracks = player.getOption('captions', 'tracklist');
+                    } catch (e) {
+                        tracks = [];
+                    }
+                    if (tracks && tracks.length > 0) {
+                        // Set the first track as active.
+                        tracks = tracks.map((track) => {
+                            return {
+                                label: track.displayName,
+                                code: track.languageCode,
+                            };
+                        });
+                        self.captions = tracks;
+                        dispatchEvent('iv:captionsReady', {captions: tracks});
+                    }
+                    loadedcaption = true;
+                },
             }
         };
 
@@ -312,23 +341,13 @@ class Yt {
     originalPlayer() {
         return player;
     }
+
     /**
-     * Set quality of the video
-     * @param {String} quality
+     * Set subtitle
+     * @param {string} track language code
      */
-    setQuality(quality) {
-        player.setPlaybackQuality(quality);
-        return quality;
-    }
-    /**
-     * Get the available qualities of the video
-     */
-    getQualities() {
-        return {
-            qualities: ['auto', 'medium', 'large', 'hd720', 'hd1080', 'hd2160'],
-            qualitiesLabel: ['Auto', '360p', '540p', '720p', '1080p', '4k'],
-            currentQuality: null,
-        };
+    setCaption(track) {
+        player.setOption('captions', 'track', track ? {languageCode: track} : {});
     }
 }
 

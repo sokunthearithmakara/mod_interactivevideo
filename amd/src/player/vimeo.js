@@ -40,9 +40,9 @@ class Vimeo {
         this.frequency = 0.27;
         this.support = {
             playbackrate: true,
-            quality: false,
+            quality: true,
         };
-        // Documented at https://developer.vimeo.com/player/sdk/reference
+        // Documented at https://developer.vimeo.com/player/sdk/reference or https://github.com/vimeo/player.js
         let VimeoPlayer;
         var regex = /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(?:video\/)?([^/]+)/g;
         this.videoId = regex.exec(url)[1];
@@ -93,6 +93,22 @@ class Vimeo {
                 self.aspectratio = await self.ratio();
                 self.end = end;
                 dispatchEvent('iv:playerReady');
+
+                // Get track list.
+                let tracks = await player.getTextTracks();
+                if (tracks && tracks.length > 0) {
+                    tracks = tracks.map((track) => {
+                        return {
+                            label: track.label,
+                            code: track.language
+                        };
+                    });
+                    dispatchEvent('iv:captionsReady', {captions: tracks});
+                }
+
+                // Get qualities.
+                let quality = await player.getQualities();
+                window.console.log(quality);
             });
 
             player.on('timeupdate', async function() {
@@ -126,6 +142,11 @@ class Vimeo {
 
             player.on('ended', function() {
                 dispatchEvent('iv:playerEnded');
+            });
+
+            player.on('qualitychange', function(e) {
+                window.console.log(e);
+                dispatchEvent('iv:playerQualityChange', {quality: e.quality});
             });
         };
         if (!VimeoPlayer) {
@@ -275,6 +296,43 @@ class Vimeo {
     unMute() {
         player.setVolume(1);
     }
+
+    /**
+     * Set quality of the video
+     * @param {String} quality
+     */
+    setQuality(quality) {
+        player.setQuality(quality);
+        return quality;
+    }
+    /**
+     * Get the available qualities of the video
+     */
+    async getQualities() {
+        let qualities = await player.getQualities();
+        let keys = qualities.map(x => x.id);
+        let values = qualities.map(x => x.label);
+        let current = qualities.find(x => x.active).id;
+        return {
+            qualities: keys,
+            qualitiesLabel: values,
+            currentQuality: current,
+        };
+    }
+
+    /**
+     * Set subtitle
+     *
+     * @param {string} track language code
+     */
+    setCaption(track) {
+        if (track != '') {
+            player.enableTextTrack(track);
+        } else {
+            player.disableTextTrack();
+        }
+    }
+
     /**
      * Returns the original Vimeo player instance.
      *

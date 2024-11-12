@@ -283,6 +283,35 @@ html:has(.path-mod-interactivevideo) {
     justify-content: center;
 }
 
+#page-mod-interactivevideo-view #toolbar {
+    right: 0;
+    width: 0;
+    overflow: visible;
+    z-index: 1032;
+    height: 100dvh;
+    width: 0;
+    margin-right: 0px;
+    bottom: 0;
+    top: 0;
+    align-content: center;
+
+    .btn {
+        left: -25px;
+        width: 25px;
+        text-align: center;
+        padding: 0.5rem 0;
+        position: relative;
+        background: #fff;
+        border-radius: 0.5rem 0 0 0.5rem;
+        margin-bottom: 0.25rem;
+        opacity: 0.5;
+    }
+
+    .btn:hover {
+        opacity: 1;
+    }
+}
+
 #page-mod-interactivevideo-interactions {
     background: #edf0f2;
 }
@@ -1410,6 +1439,22 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo #interactivevideo-container {
     top: 70px;
+    width: calc(100% - 1rem);
+}
+
+.path-mod-interactivevideo:has(#toolbar:empty) #interactivevideo-container {
+    width: 100%;
+}
+
+.path-mod-interactivevideo.hassidebar #interactivevideo-container {
+    width: calc(100% - 475px);
+    margin-left: 0;
+}
+
+@media (max-width: 992px) {
+    .path-mod-interactivevideo.hassidebar #interactivevideo-container {
+        width: 100%;
+    }
 }
 
 .path-mod-interactivevideo.iframe #interactivevideo-container,
@@ -1445,6 +1490,15 @@ html:has(.path-mod-interactivevideo) {
     .path-mod-interactivevideo #interactivevideo-container #controller {
         border-radius: 0 !important;
         border: 0 !important;
+    }
+
+    #page-mod-interactivevideo-view #toolbar {
+        align-content: end;
+        padding-bottom: 60px;
+    }
+
+    .path-mod-interactivevideo #interactivevideo-container {
+        width: 100%;
     }
 }
 
@@ -2143,8 +2197,9 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
     display: none !important;
 }
 
-.path-course-view:not(.editing) .modtype_interactivevideo:has(.interactivevideo-card) .activity-item .activity-altcontent.activity-description {
+.path-course-view .modtype_interactivevideo:has(.interactivevideo-card) .activity-item .activity-altcontent.activity-description {
     border-top: 0;
+    font-size: unset;
 }
 
 .path-course-view:not(.editing) .modtype_interactivevideo:has(.interactivevideo-card) .completion-info .badge {
@@ -2158,9 +2213,13 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
     display: inline-flex;
 }
 
-.path-course-view:not(.editing) .modtype_interactivevideo:has(.interactivevideo-card).highlighted {
+.path-course-view .modtype_interactivevideo:has(.interactivevideo-card).highlighted {
     border-radius: 0.5rem;
-    background: var(--ivprimaryalt);
+    background: rgb(0 128 255 / 11%)!important;
+
+    .progress {
+        background-color: var(--ivsecondary)!important;
+    }
 }
 
 .path-course-view .activity.modtype_interactivevideo {
@@ -2312,7 +2371,7 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
 }
 
 .path-course-view:not(.editing) .modtype_interactivevideo:has(.interactivevideo-card):not(:has(.card-only)):hover {
-    background-color: var(--ivlight);
+    background-color: rgba(155,155,155,0.1);
     border-radius: 0.5rem;
     border-color: var(--ivlight) !important;
     transition: background-color ease-in-out 300ms;
@@ -2496,4 +2555,13 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
 
 .path-course-view:not(.editing) .section .activity:has(.interactivevideo-card):hover {
     z-index: 3;
+}
+
+.path-course-view .section .activity:has(.interactivevideo-card) .activity-item .activity-grid.noname-grid {
+    grid-template-areas:
+    "groupmode groupmode completion actions"
+    "altcontent altcontent altcontent altcontent"
+    "afterlink afterlink afterlink afterlink"
+    "availability availability availability availability"
+    "visibility visibility visibility visibility";
 }

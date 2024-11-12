@@ -46,6 +46,15 @@ require_sesskey();
 require_login();
 
 switch ($action) {
+    case 'update_videotime':
+        require_capability('mod/interactivevideo:view', $context);
+        $id = required_param('id', PARAM_INT);
+        $start = required_param('start', PARAM_FLOAT);
+        $end = required_param('end', PARAM_FLOAT);
+        $DB->set_field('interactivevideo', 'start', $start, ['id' => $id]);
+        $DB->set_field('interactivevideo', 'end', $end, ['id' => $id]);
+        echo json_encode(['id' => $id, 'start' => $start, 'end' => $end]);
+        break;
     case 'get_items':
         require_capability('mod/interactivevideo:view', $context);
         $id = required_param('id', PARAM_INT);
@@ -218,6 +227,6 @@ switch ($action) {
         $userid = required_param('userid', PARAM_INT);
         $courseid = required_param('courseid', PARAM_INT);
         $completion = interactivevideo_util::get_cm_completion($cmid, $userid, $courseid, $contextid);
-        echo $completion;
+        echo json_encode($completion);
         break;
 }

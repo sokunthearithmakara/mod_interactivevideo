@@ -168,7 +168,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
                 if (videotypes.includes('vimeo') || currenttype == 'vimeo') {
                     // VIMEO:: Extract id from the URL.
-                    let regex = /(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com)\/(?:channels\/[A-Za-z0-9]+\/|)([^\/]+)/g;
+                    let regex = /(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com)\/(?:channels\/[A-Za-z0-9]+\/|)([^/]+)/g;
                     let match = regex.exec(url);
                     let vid = match ? match[1] : null;
                     if (vid) {
@@ -187,7 +187,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
                 // DAILYMOTION:: Check if the video is from daily motion.
                 if (videotypes.includes('dailymotion') || currenttype == 'dailymotion') {
-                    let regex = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^\/]+)/g;
+                    let regex = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^/]+)/g;
                     let match = regex.exec(url);
                     if (match) {
                         videowrapper.show();
@@ -328,7 +328,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
                 form.show();
 
-                form.addEventListener(form.events.FORM_SUBMITTED, async (e) => {
+                form.addEventListener(form.events.FORM_SUBMITTED, async(e) => {
                     const url = e.detail.url;
                     let name = e.detail.name;
                     if ($(`[name="name"]`).val() == '') {

@@ -44,7 +44,7 @@ class DailyMotion {
             quality: true,
         };
 
-        const reg = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^\/]+)/g;
+        const reg = /(?:https?:\/\/)?(?:www\.)?(?:dai\.ly|dailymotion\.com)\/(?:embed\/video\/|video\/|)([^/]+)/g;
         const match = reg.exec(url);
         const videoId = match[1];
         this.videoId = videoId;
@@ -66,7 +66,7 @@ class DailyMotion {
             },
         };
         let dailymotion;
-        const dailymotionEvents = async (player) => {
+        const dailymotionEvents = async(player) => {
             self.aspectratio = await self.ratio();
             if (showControls) {
                 player.setQuality(480);
@@ -75,6 +75,27 @@ class DailyMotion {
             end = !end ? state.videoDuration : Math.min(end, state.videoDuration);
             self.end = end;
             self.title = state.videoTitle;
+            let tracks = state.videoSubtitlesList;
+            if (tracks && tracks.length > 0) {
+                window.console.log(tracks);
+                tracks = tracks.map(track => {
+                    const locale = track.split('-')[0];
+                    const country = track.split('-')[1];
+                    const displayNames = new Intl.DisplayNames([`${M.cfg.language}`], {type: 'language'});
+                    let label;
+                    if (country == 'auto') {
+                        label = displayNames.of(locale) + ' (Auto)';
+                    } else {
+                        label = displayNames.of(track) ?? track.toUpperCase();
+                    }
+                    return {
+                        label,
+                        code: track,
+                    };
+                });
+                self.captions = tracks;
+                dispatchEvent('iv:captionsReady', {captions: tracks});
+            }
             // Handle Dailymotion behavior. Video always start from the start time,
             // So if you seek before starting the video, it will just start from the beginning.
             // So, to deal with this, we have to start the video as soon as the player is ready.
@@ -120,6 +141,7 @@ class DailyMotion {
                 });
 
                 player.on(dailymotion.events.PLAYER_ERROR, function(e) {
+                    window.console.log(e);
                     dispatchEvent('iv:playerError', {error: e});
                 });
 
@@ -140,7 +162,7 @@ class DailyMotion {
                     if (ready == true) { // When the video is replayed, it will fire VIDEO_START event again.
                         player.setMute(true);
                     }
-                    setTimeout(async () => {
+                    setTimeout(async() => {
                         player.seek(start);
                         player.setMute(false);
                         if (!ready) {
@@ -157,6 +179,7 @@ class DailyMotion {
                 dispatchEvent('iv:playerReady');
             }
 
+
             // Show ads to user so they know ad is playing, not because something is wrong.
             player.on(dailymotion.events.AD_START, function() {
                 $(".video-block").css('background', 'transparent');
@@ -169,8 +192,10 @@ class DailyMotion {
             // Add dailymotion script.
             var tag = document.createElement('script');
             if (showControls) {
+                // If you fork this, change this to your own dailymotion player.
                 tag.src = "https://geo.dailymotion.com/libs/player/xsyje.js";
             } else {
+                // If you fork this, change this to your own dailymotion player.
                 tag.src = "https://geo.dailymotion.com/libs/player/xsyj8.js";
             }
             var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -363,6 +388,14 @@ class DailyMotion {
             qualitiesLabel: ['Auto', ...states.videoQualitiesList],
             currentQuality: states.videoQuality == 'Auto' ? 'default' : states.videoQuality,
         };
+    }
+
+    /**
+     * Sets the caption track for the video player.
+     * @param {string} track - The caption track to set.
+     */
+    setCaption(track) {
+        player.setSubtitles(track);
     }
 }
 

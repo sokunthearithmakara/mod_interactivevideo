@@ -81,34 +81,34 @@ function interactivevideo_get_subplugins($classname) {
  */
 function interactivevideo_display_options($moduleinstance) {
     $options = [];
-    $options['disablechapternavigation'] = $moduleinstance->disablechapternavigation;
-    $options['preventskipping'] = $moduleinstance->preventskipping;
-    $options['useoriginalvideocontrols'] = $moduleinstance->useoriginalvideocontrols;
-    $options['hidemainvideocontrols'] = $moduleinstance->hidemainvideocontrols;
-    $options['preventseeking'] = $moduleinstance->preventseeking;
-    $options['disableinteractionclick'] = $moduleinstance->disableinteractionclick;
-    $options['disableinteractionclickuntilcompleted'] = $moduleinstance->disableinteractionclickuntilcompleted;
-    $options['hideinteractions'] = $moduleinstance->hideinteractions;
-    $options['theme'] = $moduleinstance->theme;
-    $options['distractionfreemode'] = $moduleinstance->distractionfreemode;
+    $options['disablechapternavigation'] = $moduleinstance->disablechapternavigation ?? 0;
+    $options['preventskipping'] = $moduleinstance->preventskipping ?? 0;
+    $options['useoriginalvideocontrols'] = $moduleinstance->useoriginalvideocontrols ?? 0;
+    $options['hidemainvideocontrols'] = $moduleinstance->hidemainvideocontrols ?? 0;
+    $options['preventseeking'] = $moduleinstance->preventseeking ?? 0;
+    $options['disableinteractionclick'] = $moduleinstance->disableinteractionclick ?? 0;
+    $options['disableinteractionclickuntilcompleted'] = $moduleinstance->disableinteractionclickuntilcompleted ?? 0;
+    $options['hideinteractions'] = $moduleinstance->hideinteractions ?? 0;
+    $options['theme'] = $moduleinstance->theme ?? '';
+    $options['distractionfreemode'] = $moduleinstance->distractionfreemode ?? 0;
     $options['darkmode'] = $moduleinstance->distractionfreemode == 1 ? $moduleinstance->darkmode : 0;
     $options['usefixedratio'] = $moduleinstance->distractionfreemode == 1 ? $moduleinstance->usefixedratio : 1;
-    $options['pauseonblur'] = $moduleinstance->pauseonblur;
-    $options['usecustomposterimage'] = $moduleinstance->usecustomposterimage;
-    $options['displayinline'] = $moduleinstance->displayinline;
-    $options['cardsize'] = $moduleinstance->cardsize;
-    $options['cardonly'] = $moduleinstance->cardonly;
-    $options['showposterimageright'] = $moduleinstance->showposterimageright;
-    $options['usecustomdescription'] = $moduleinstance->usecustomdescription;
+    $options['pauseonblur'] = $moduleinstance->pauseonblur ?? 0;
+    $options['usecustomposterimage'] = $moduleinstance->usecustomposterimage ?? 0;
+    $options['displayinline'] = $moduleinstance->displayinline ?? 0;
+    $options['cardsize'] = $moduleinstance->cardsize ?? 'large';
+    $options['cardonly'] = $moduleinstance->cardonly ?? 0;
+    $options['showposterimageright'] = $moduleinstance->showposterimageright ?? 0;
+    $options['usecustomdescription'] = $moduleinstance->usecustomdescription ?? 0;
     $options['customdescription'] = $moduleinstance->customdescription ?? '';
-    $options['launchinpopup'] = $moduleinstance->launchinpopup;
-    $options['showprogressbar'] = $moduleinstance->showprogressbar;
-    $options['showcompletionrequirements'] = $moduleinstance->showcompletionrequirements;
-    $options['showposterimage'] = $moduleinstance->showposterimage;
-    $options['showname'] = $moduleinstance->showname;
-    $options['autoplay'] = $moduleinstance->autoplay;
-    $options['columnlayout'] = $moduleinstance->columnlayout;
-    $options['showdescriptiononheader'] = $moduleinstance->showdescriptiononheader;
+    $options['launchinpopup'] = $moduleinstance->launchinpopup ?? 0;
+    $options['showprogressbar'] = $moduleinstance->showprogressbar ?? 0;
+    $options['showcompletionrequirements'] = $moduleinstance->showcompletionrequirements ?? 0;
+    $options['showposterimage'] = $moduleinstance->showposterimage ?? 0;
+    $options['showname'] = $moduleinstance->showname ?? 0;
+    $options['autoplay'] = $moduleinstance->autoplay ?? 0;
+    $options['columnlayout'] = $moduleinstance->columnlayout ?? 0;
+    $options['showdescriptiononheader'] = $moduleinstance->showdescriptiononheader ?? 0;
     return $options;
 }
 
@@ -121,9 +121,10 @@ function interactivevideo_display_options($moduleinstance) {
  *
  * @param object $moduleinstance An object from the form.
  * @param mod_interactivevideo_mod_form $mform The form.
+ * @param bool $batch True if the function is called from bulk insert.
  * @return int The id of the newly inserted record.
  */
-function interactivevideo_add_instance($moduleinstance, $mform = null) {
+function interactivevideo_add_instance($moduleinstance, $mform = null, $batch = false) {
     global $DB, $USER;
 
     $cmid = $moduleinstance->coursemodule;
@@ -143,75 +144,84 @@ function interactivevideo_add_instance($moduleinstance, $mform = null) {
 
     $moduleinstance->id = $DB->insert_record('interactivevideo', $moduleinstance);
 
-    if (!empty($moduleinstance->completionexpected)) {
-        \core_completion\api::update_completion_date_event(
-            $moduleinstance->coursemodule,
-            'interactivevideo',
-            $moduleinstance->id,
-            $moduleinstance->completionexpected
-        );
-    }
-
-    $DB->set_field('course_modules', 'instance', $moduleinstance->id, ['id' => $cmid]);
     $context = context_module::instance($cmid);
 
-    if ($mform && !empty($moduleinstance->text['itemid'])) {
-        $draftitemid = $moduleinstance->text['itemid'];
-        $moduleinstance->endscreentext = file_save_draft_area_files(
-            $draftitemid,
-            $context->id,
-            'mod_interactivevideo',
-            'endscreentext',
-            0,
-            ['subdirs' => 0],
-            $moduleinstance->text['text']
-        );
-        $DB->update_record('interactivevideo', $moduleinstance);
-    }
-
-    // Handle the file upload for video.
-    if ($moduleinstance->source == 'url') {
-        // Make sure the video field is empty.
-        $DB->set_field('interactivevideo', 'video', '', ['id' => $moduleinstance->id]);
-
-        // Delete the draft area files. This is normally done by the cron job, but we might as well do it now.
-        if (!empty($moduleinstance->video)) {
-            $fs = get_file_storage();
-            $usercontext = context_user::instance($USER->id);
-            $fs->delete_area_files($usercontext->id, 'user', 'draft', $moduleinstance->video);
+    if (!$batch) {
+        // Update the completion expected date.
+        if (!empty($moduleinstance->completionexpected)) {
+            \core_completion\api::update_completion_date_event(
+                $moduleinstance->coursemodule,
+                'interactivevideo',
+                $moduleinstance->id,
+                $moduleinstance->completionexpected
+            );
         }
-    } else {
-        $draftitemid = $moduleinstance->video;
-        // Move the file from draft area to the correct area.
-        file_save_draft_area_files(
-            $draftitemid,
-            $context->id,
-            'mod_interactivevideo',
-            'video',
-            0,
-        );
 
-        // Clear the videourl field.
-        $DB->set_field('interactivevideo', 'videourl', '', ['id' => $moduleinstance->id]);
+        $cmexist = $DB->record_exists('course_modules', [
+            'module' => $moduleinstance->module,
+            'instance' => $moduleinstance->id,
+        ]);
+        if (!$cmexist) {
+            $DB->set_field('course_modules', 'instance', $moduleinstance->id, ['id' => $cmid]);
+        }
 
-        // Delete the draft area files. This is normally done by the cron job, but we might as well do it now.
-        $usercontext = context_user::instance($USER->id);
-        $fs = get_file_storage();
-        $fs->delete_area_files($usercontext->id, 'user', 'draft', $draftitemid);
+        if ($mform && !empty($moduleinstance->text['itemid'])) {
+            $draftitemid = $moduleinstance->text['itemid'];
+            $moduleinstance->endscreentext = file_save_draft_area_files(
+                $draftitemid,
+                $context->id,
+                'mod_interactivevideo',
+                'endscreentext',
+                0,
+                ['subdirs' => 0],
+                $moduleinstance->text['text']
+            );
+            $DB->update_record('interactivevideo', $moduleinstance);
+        }
+
+        // Handle the file upload for video.
+        if ($moduleinstance->source == 'url') {
+            // Make sure the video field is empty.
+            $DB->set_field('interactivevideo', 'video', '', ['id' => $moduleinstance->id]);
+
+            // Delete the draft area files. This is normally done by the cron job, but we might as well do it now.
+            if (!empty($moduleinstance->video)) {
+                $fs = get_file_storage();
+                $usercontext = context_user::instance($USER->id);
+                $fs->delete_area_files($usercontext->id, 'user', 'draft', $moduleinstance->video);
+            }
+        } else {
+            $draftitemid = $moduleinstance->video;
+            // Move the file from draft area to the correct area.
+            file_save_draft_area_files(
+                $draftitemid,
+                $context->id,
+                'mod_interactivevideo',
+                'video',
+                0,
+            );
+
+            // Clear the videourl field.
+            $DB->set_field('interactivevideo', 'videourl', '', ['id' => $moduleinstance->id]);
+
+            // Delete the draft area files. This is normally done by the cron job, but we might as well do it now.
+            $usercontext = context_user::instance($USER->id);
+            $fs = get_file_storage();
+            $fs->delete_area_files($usercontext->id, 'user', 'draft', $draftitemid);
+        }
+
+        // Save poster image file from draft area.
+        $draftitemid = isset($moduleinstance->posterimagefile) ? $moduleinstance->posterimagefile : null;
+        if ($draftitemid) {
+            $moduleinstance->posterimage = file_save_draft_area_files(
+                $draftitemid,
+                $context->id,
+                'mod_interactivevideo',
+                'posterimage',
+                0
+            );
+        }
     }
-
-    // Save poster image file from draft area.
-    $draftitemid = isset($moduleinstance->posterimagefile) ? $moduleinstance->posterimagefile : null;
-    if ($draftitemid) {
-        $moduleinstance->posterimage = file_save_draft_area_files(
-            $draftitemid,
-            $context->id,
-            'mod_interactivevideo',
-            'posterimage',
-            0
-        );
-    }
-
     interactivevideo_grade_item_update($moduleinstance);
 
     // Handle external plugins.
@@ -590,13 +600,15 @@ function interactivevideo_cm_info_dynamic(cm_info $cm) {
         );
     }
 
-    $cm->set_after_link($afterlink);
-
     $customdata = $cm->customdata;
     $displayoptions = json_decode($customdata['displayoptions']);
     $isivformat = strpos($PAGE->bodyclasses, 'format-test') !== false && !$PAGE->user_is_editing();
-    if ((isset($displayoptions->displayinline) && $displayoptions->displayinline == INTERACTIVEVIDEO_DISPLAY_INLINE) || $isivformat) {
+    if ((isset($displayoptions->displayinline) && $displayoptions->displayinline == INTERACTIVEVIDEO_DISPLAY_INLINE)
+        || $isivformat
+    ) {
         $cm->set_no_view_link();
+    } else {
+        $cm->set_after_link($afterlink);
     }
 }
 
@@ -636,6 +648,43 @@ function interactivevideo_displayinline(cm_info $cm) {
         return '';
     }
 
+    // Set after link.
+    $afterlink = '';
+
+    $context = context_module::instance($cm->id);
+    if (has_capability('mod/interactivevideo:edit', $context)) {
+        $afterlink .= html_writer::link(
+            new moodle_url('/course/modedit.php?', ['update' => $cm->id]),
+            '<i class="fa fa-edit" aria-hidden="true"></i>',
+            [
+                'class' => 'p-1 mr-1',
+                'title' => get_string('edit', 'mod_interactivevideo'),
+                'aria-label' => get_string('edit', 'mod_interactivevideo'),
+            ]
+        );
+
+        $afterlink .= html_writer::link(
+            new moodle_url('/mod/interactivevideo/interactions.php', ['id' => $cm->id]),
+            '<i class="fa fa-bullseye" aria-hidden="true"></i>',
+            [
+                'class' => 'p-1 mr-1',
+                'title' => get_string('interactions', 'mod_interactivevideo'),
+                'aria-label' => get_string('interactions', 'mod_interactivevideo'),
+            ]
+        );
+    }
+    if (has_capability('mod/interactivevideo:viewreport', $context)) {
+        $afterlink .= html_writer::link(
+            new moodle_url('/mod/interactivevideo/report.php', ['id' => $cm->id, 'group' => 0]),
+            '<i class="fa fa-table" aria-hidden="true"></i>',
+            [
+                'class' => 'p-1 mr-1',
+                'title' => get_string('report', 'mod_interactivevideo'),
+                'aria-label' => get_string('report', 'mod_interactivevideo'),
+            ]
+        );
+    }
+
     // Support for format_iv.
     // Get course format.
     $isivformat = strpos($PAGE->bodyclasses, 'format-test') !== false && !$PAGE->user_is_editing();
@@ -671,6 +720,9 @@ function interactivevideo_displayinline(cm_info $cm) {
     $datafortemplate = [
         'interactivevideo' => $interactivevideo,
         'cm' => $cm,
+        'hascompletion' => isset($displayoptions->hascompletion),
+        'overallcomplete' => isset($displayoptions->hascompletion)
+            && isset($displayoptions->overallcompletion) && $displayoptions->overallcompletion == 1,
         'launchinpopup' => isset($displayoptions->launchinpopup) && $displayoptions->launchinpopup,
         'baseurl' => $CFG->wwwroot,
         'duration' => $duration,
@@ -683,6 +735,7 @@ function interactivevideo_displayinline(cm_info $cm) {
             && ($displayoptions->cardsize == 'small' || $displayoptions->cardsize == 'medium'
                 || $displayoptions->cardsize == 'mediumlarge'),
         'columnlayout' => isset($displayoptions->columnlayout) ? $displayoptions->columnlayout : '1',
+        'afterlink' => $afterlink,
     ];
 
     if (isset($displayoptions->cardsize)) {
@@ -986,7 +1039,8 @@ function interactivevideo_update_grades($moduleinstance, $userid = 0) {
     global $CFG;
     require_once($CFG->libdir . '/gradelib.php');
     if ($moduleinstance->grade == 0) {
-        interactivevideo_update_grades($moduleinstance);
+        $moduleinstance->{'grade[modgrade_type]'} = GRADE_TYPE_NONE;
+        interactivevideo_grade_item_update($moduleinstance);
     } else if ($grades = interactivevideo_get_user_grades($moduleinstance, $userid)) {
         interactivevideo_grade_item_update($moduleinstance, $grades);
     } else {
@@ -1117,4 +1171,299 @@ function interactivevideo_output_fragment_getcontent($arg) {
     }
     $contenttype = new $class($arg);
     return $contenttype->get_content($arg);
+}
+
+/**
+ * Register the ability to handle drag and drop csv file which contains list of videos and details.
+ * @return array containing details of the files / types the mod can handle
+ */
+function interactivevideo_dndupload_register() {
+    return ['files' => [
+        ['extension' => 'csv', 'message' => get_string('createinteractivevideofromlist', 'mod_interactivevideo')],
+    ]];
+}
+
+/**
+ * Handle a file that has been uploaded
+ * @param object $uploadinfo details of the file / content that has been uploaded
+ * @return int instance id of the newly created mod
+ */
+function interactivevideo_dndupload_handle($uploadinfo) {
+    global $USER, $DB, $CFG;
+    // First get the file content.
+    $usercontextid = context_user::instance($USER->id)->id;
+    $fs = get_file_storage();
+    $files = $fs->get_area_files($usercontextid, 'user', 'draft', $uploadinfo->draftitemid, 'filesize DESC');
+    if (!$files) {
+        throw new moodle_exception('nofile', 'error');
+    }
+    $file = reset($files);
+
+    $content = $file->get_content();
+
+    $csv = str_getcsv($content, "\n");
+    // Verify the first row contains the correct headers.
+    $requiredfields = [
+        'videourl',
+    ];
+    $headers = array_map('trim', str_getcsv(array_shift($csv)));
+    foreach ($requiredfields as $field) {
+        if (!in_array($field, $headers)) {
+            throw new moodle_exception('invalidcolumn', 'mod_interactivevideo');
+        }
+    }
+
+    $videoinfo = [];
+    foreach ($csv as $row) {
+        $row = array_map('trim', str_getcsv($row));
+        $video = new stdClass();
+        foreach ($headers as $key => $header) {
+            $video->$header = $row[$key];
+        }
+
+        if (!isset($video->start) || $video->start < 0 || $video->start == '') {
+            $video->start = 0;
+        }
+
+        if (!isset($video->end) || $video->end < 0 || $video->end == '') {
+            $video->end = 0;
+        }
+
+        if (empty($video->videourl) || !filter_var($video->videourl, FILTER_VALIDATE_URL)) {
+            throw new moodle_exception('invalidvideourl' . $video->videourl, 'mod_interactivevideo');
+            continue;
+        }
+
+        // Check if it is a youtube url using regex.
+        $ytregex = '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be|youtube-nocookie\.com)\/';
+        $ytregex .= '(?:embed\/|watch\?v=|v\/|.+\?v=)?([^&\/\?]+)(?:[&\/\?].*)?/i';
+        if (preg_match($ytregex, $video->videourl, $matches)) {
+            $videoid = explode(',', $matches[1])[0];
+            $video->videourl = 'https://www.youtube.com/watch?v=' . $videoid;
+            $video->type = 'yt';
+            $video->posterimage = 'https://img.youtube.com/vi/' . $matches[1] . '/maxresdefault.jpg';
+            if (!isset($video->name) || empty($video->name)) {
+                // Call oembed.
+                $response = file_get_contents('https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=' . $videoid);
+                $response = json_decode($response);
+                $video->name = $response->title ?? 'Untitled';
+            }
+            $videoinfo[] = $video;
+            continue;
+        }
+
+        // Check if it is a vimeo url using regex.
+        $vimeoregex = '/(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com\/(?:channels\/[a-zA-Z0-9]+\/)?([0-9]+))/i';
+        if (preg_match($vimeoregex, $video->videourl, $matches)) {
+            $videoid = explode(',', $matches[1])[0];
+            $video->videourl = 'https://vimeo.com/' . $videoid;
+            $video->type = 'vimeo';
+            // Make request to oembed api to get the thumbnail.
+            $response = file_get_contents('https://vimeo.com/api/oembed.json?url=https%3A//vimeo.com/' . $videoid);
+            $response = json_decode($response);
+            $video->posterimage = $response->thumbnail_url;
+            if (!isset($video->name) || empty($video->name)) {
+                $video->name = $response->title ?? 'Untitled';
+            }
+            if ($video->end == 0 || $video->end > $response->duration) {
+                $video->end = $response->duration;
+            }
+            $videoinfo[] = $video;
+            continue;
+        }
+
+        // Check if it is a dailymotion video:
+        // https://www.dailymotion.com/video/x989i3q
+        // https://dai.ly/x989i3q.
+        $dailymotionregex = '/(?:https?:\/\/)?(?:www\.)?(?:dailymotion\.com|dai\.ly)\/video\/([a-zA-Z0-9]+)/i';
+        if (preg_match($dailymotionregex, $video->videourl, $matches)) {
+            $videoid = explode(',', $matches[1])[0];
+            $video->videourl = 'https://www.dailymotion.com/video/' . $videoid;
+            $video->type = 'dailymotion';
+            $response = file_get_contents('https://api.dailymotion.com/video/' . $videoid
+                . '?fields=thumbnail_720_url,title,duration');
+            $response = json_decode($response);
+            $video->posterimage = $response->thumbnail_720_url;
+            if (!isset($video->name) || empty($video->name)) {
+                $video->name = $response->title ?? 'Untitled';
+            }
+            if ($video->end == 0 || $video->end > $response->duration) {
+                $video->end = (int)$response->duration;
+            }
+            $videoinfo[] = $video;
+            continue;
+        }
+
+        // Check if the video is from wistia e.g. https://sokunthearithmakara.wistia.com/medias/kojs3bi9bf.
+        $wistiaregex = '/(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([a-zA-Z0-9]+)/i';
+        if (preg_match($wistiaregex, $video->videourl, $matches)) {
+            $video->type = 'wistia';
+            $response = file_get_contents('https://fast.wistia.com/oembed?url=' . $video->videourl);
+            $response = json_decode($response);
+            $video->posterimage = $response->thumbnail_url;
+            if (!isset($video->name) || empty($video->name)) {
+                $video->name = $response->title ?? 'Untitled';
+            }
+            if ($video->end == 0 || $video->end > $response->duration) {
+                $video->end = (int)$response->duration;
+            }
+            $videoinfo[] = $video;
+            continue;
+        }
+
+        // Check if it is a direct video/audio file using mime type.
+        $fileinfo = pathinfo($video->videourl);
+        $fileextension = $fileinfo['extension'];
+        if (!isset($fileextension) || empty($fileextension)) {
+            continue;
+        }
+        $acceptedextensions = ['mp4', 'webm', 'ogg', 'mp3', 'wav', 'm4a', 'flac', 'aac', 'wma', 'aiff', 'alac'];
+        if (in_array($fileextension, $acceptedextensions)) {
+            $video->type = 'html5video';
+            $video->posterimage = '';
+            if (!isset($video->name) || empty($video->name)) {
+                $video->name = basename($video->videourl);
+                // Remove the extension.
+                $video->name = str_replace('.' . $fileextension, '', $video->name);
+            }
+            $videoinfo[] = $video;
+            continue;
+        }
+    }
+
+    if (empty($videoinfo)) {
+        throw new moodle_exception('novalidvideoinfo', 'mod_interactivevideo');
+    }
+
+    require_once($CFG->dirroot . '/course/modlib.php');
+    // Get section number from course_modules table.
+    $sectionid = $DB->get_field('course_modules', 'section', ['id' => $uploadinfo->coursemodule]);
+    // Put the defaults from site settings.
+    $appearancesettings = get_config('mod_interactivevideo', 'defaultappearance');
+    $appearancesettings = explode(',', $appearancesettings);
+    $cardsize = get_config('mod_interactivevideo', 'cardsize');
+    $behaviorsettings = get_config('mod_interactivevideo', 'defaultbehavior');
+    $behaviorsettings = explode(',', $behaviorsettings);
+
+    // Prepare moduleinstance data for each video.
+    $count = 0;
+    $id = 0;
+    foreach ($videoinfo as $video) {
+        $data = (array)$video;
+        $data['course'] = $uploadinfo->course->id;
+        $data['source'] = 'url';
+        $data['section'] = $sectionid;
+        $data['introformat'] = FORMAT_HTML;
+        $data['completionpercentage'] = is_numeric($video->completionpercentage) ? $video->completionpercentage : 0;
+        $data['completionpercentage'] = $data['completionpercentage'] > 100 ? 100 : $data['completionpercentage'];
+        $data['grade'] = $video->grade && is_numeric($video->grade) && !empty($video->grade) ? $video->grade : 0;
+        $data['grade[modgrade_point]'] = $video->grade && is_numeric($video->grade) && !empty($video->grade) ? $video->grade : 0;
+
+        // Handle endscreentext in case it is in the file.
+        if (!empty($video->endscreentext)) {
+            $data['endscreentext'] = json_encode(['text' => $video->endscreentext]);
+        }
+        // For the first row, we're using the cm that was created by dndupload. The rest, we're creating new ones.
+        if ($count == 0) {
+            $data['first'] = true; // We need to return the id of the first video.
+            $cmid = $uploadinfo->coursemodule;
+            $data['coursemodule'] = $cmid;
+            // If the completion percentage is greater than 0, set the completion to 2 (tracking_automatic).
+            if ($data['completionpercentage'] > 0) {
+                $data['completion'] = 2;
+                $DB->set_field('course_modules', 'completion', 2, ['id' => $cmid]);
+            }
+        } else {
+            list($module, $context, $cw, $cm, $d) = prepare_new_moduleinfo_data(
+                $uploadinfo->course,
+                'interactivevideo',
+                $sectionid
+            );
+
+            // Here we want to add completion to $d so that it is added to the course_modules table.
+            if ($data['completionpercentage'] > 0) {
+                $data['completion'] = 2;
+                $d->completion = 2;
+            }
+
+            $data['coursemodule'] = $cmid = add_course_module($d);
+        }
+
+        $count++;
+
+        // Default appearance settings.
+        foreach ($appearancesettings as $key) {
+            if (!empty($video->{$key})) { // If setting is overridden in the csv file, use that.
+                $data[$key] = $video->{$key};
+            } else {
+                $data[$key] = 1;
+            }
+        }
+
+        // Default card size.
+        $data['cardsize'] = $video->cardsize != '' ? $video->cardsize : $cardsize;
+
+        // Default behavior settings.
+        foreach ($behaviorsettings as $key) {
+            if (!empty($video->{$key})) { // If setting is overridden in the csv file, use that.
+                $data[$key] = $video->{$key};
+            } else {
+                $data[$key] = 1;
+            }
+        }
+
+        $data = (object)$data;
+
+        try {
+            $instanceid = interactivevideo_add_instance($data, null, true);
+            if (!$instanceid) {
+                // Something has gone wrong - undo everything we can.
+                course_delete_module($cmid);
+                throw new moodle_exception('errorcreatingactivity', 'moodle', '', 'interactivevideo');
+            }
+
+            if ($data->first) {
+                $id = $instanceid;
+            }
+            $DB->set_field('course_modules', 'section', $sectionid, ['id' => $cmid]);
+            $DB->set_field('course_modules', 'instance', $instanceid, ['id' => $cmid]);
+
+            // Note the section visibility.
+            $visible = get_fast_modinfo($data->course)->get_section_info($sectionid)->visible;
+
+            \course_modinfo::purge_course_module_cache($data->course, $cmid);
+
+            // Rebuild the course cache after update action.
+            rebuild_course_cache($data->course, true, true);
+
+            course_add_cm_to_section($uploadinfo->course, $cmid, $sectionid);
+
+            set_coursemodule_visible($cmid, $visible);
+            if (!$visible) {
+                $DB->set_field('course_modules', 'visibleold', 1, ['id' => $cmid]);
+            }
+
+            // Retrieve the final info about this module.
+            $info = get_fast_modinfo($data->course);
+            if (!isset($info->cms[$cmid])) {
+                // The course module has not been properly created in the course - undo everything.
+                course_delete_module($cmid);
+                throw new moodle_exception('errorcreatingactivity', 'moodle', '', 'interactivevideo');
+            }
+            $mod = $info->get_cm($cmid);
+
+            // Trigger course module created event.
+            $event = \core\event\course_module_created::create_from_cm($mod);
+            $event->trigger();
+        } catch (Exception $e) {
+            // Something has gone wrong - undo everything we can.
+            course_delete_module($cmid);
+            throw new moodle_exception('errorcreatingactivity', 'moodle', '', 'interactivevideo');
+        }
+    }
+
+    if ($id) {
+        return $id;
+    }
+    return false;
 }

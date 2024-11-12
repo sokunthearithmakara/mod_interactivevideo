@@ -57,7 +57,7 @@ define(['jquery',
 
         $("#video-nav ul").empty();
         $("#video-timeline-wrapper .skipsegment").remove();
-        annos.forEach(async (x) => {
+        annos.forEach(async(x) => {
             const render = ctRenderer[x.type];
             await render.renderItemOnVideoNavigation(x);
         });
@@ -355,9 +355,42 @@ define(['jquery',
             };
 
             /**
+             * Correct the start and end time.
+             * @param {Number} duration Total duration of the video.
+             * @returns {Object} Object containing start and end time.
+             */
+            const updateTime = async(duration) => {
+                let toUpdatetime = false;
+                if (!end || end == 0 || end > duration) {
+                    toUpdatetime = true;
+                }
+                end = !end ? duration : Math.min(end, duration);
+                if (!start || start >= duration || start < 0 || start >= end) {
+                    toUpdatetime = true;
+                }
+                start = start > end ? 0 : start;
+                if (toUpdatetime) {
+                await $.ajax({
+                        url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
+                        method: "POST",
+                        dataType: "text",
+                        data: {
+                            action: 'update_videotime',
+                            sesskey: M.cfg.sesskey,
+                            id: interaction,
+                            start: start,
+                            end: end,
+                            contextid: M.cfg.contextid,
+                        }
+                    });
+                }
+                return {start, end};
+            };
+
+            /**
              * Set of events to run after the video player is ready.
              */
-            const onReady = async () => {
+            const onReady = async() => {
                 if (player.type != 'vimeo' && player.type != 'html5video') { // Vimeo/HTML5 does not pause/play on click.
                     $('#video-block').addClass('no-pointer');
                 }
@@ -367,16 +400,10 @@ define(['jquery',
                 } else {
                     $('#changerate').removeClass('d-none');
                 }
-                let t = await player.getDuration();
-                if (!end) {
-                    end = t;
-                } else {
-                    end = Math.min(end, t);
-                }
 
-                if (start > end) {
-                    start = 0;
-                }
+                let t = await player.getDuration();
+
+                ({start, end} = await updateTime(t));
 
                 totaltime = end - start;
                 // Recalculate the ratio of the video.
@@ -553,7 +580,7 @@ define(['jquery',
                     }
                 };
                 if (player.type == 'yt' || player.type == 'wistia') {
-                    const animate = async () => {
+                    const animate = async() => {
                         intervalFunction();
                         onPlayingInterval = requestAnimationFrame(animate);
                     };

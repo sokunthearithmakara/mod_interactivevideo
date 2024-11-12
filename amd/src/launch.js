@@ -221,8 +221,9 @@ define(['jquery'], function($) {
                         });
 
                         if (completion) {
+                            const completiondata = JSON.parse(completion);
                             $card.find('[data-region=activity-information]')
-                                .html($(completion).html());
+                                .html($(completiondata.completion).html());
                         }
                     }
 

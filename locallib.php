@@ -270,16 +270,18 @@ class interactivevideo_util {
         }
 
         // Update grade.
-        require_once($CFG->libdir . '/gradelib.php');
-        $gradeitem = new stdClass();
-        $gradeitem->userid = $userid;
-        $gradeitem->rawgrade = $grade;
+        if ($grade > 0) {
+            require_once($CFG->libdir . '/gradelib.php');
+            $gradeitem = new stdClass();
+            $gradeitem->userid = $userid;
+            $gradeitem->rawgrade = $grade;
 
-        grade_update('mod/interactivevideo', $courseid, 'mod', 'interactivevideo', $gradeiteminstance, 0, $gradeitem);
+            grade_update('mod/interactivevideo', $courseid, 'mod', 'interactivevideo', $gradeiteminstance, 0, $gradeitem);
 
-        $record->grade = $grade;
-        $record->gradeiteminstance = $gradeiteminstance;
-        $record->gradeitem = $gradeitem;
+            $record->grade = $grade;
+            $record->gradeiteminstance = $gradeiteminstance;
+            $record->gradeitem = $gradeitem;
+        }
         return $record;
     }
 
@@ -754,18 +756,24 @@ class interactivevideo_util {
         $cminfo = get_fast_modinfo($courseid);
         $cm = $cminfo->get_cm($cmid);
         $completiondetails = \core_completion\cm_completion_details::get_instance($cm, $userid);
+        $response = [
+            'overallcompletion' => $completiondetails->is_overall_complete(),
+        ];
+
         // If moodle version is 4.4 or below, use new completion information.
         if ($CFG->branch < 404) {
             $completion = $OUTPUT->activity_information($cm, $completiondetails, []);
+            $response['completion'] = $completion;
         } else {
             $activitycompletion = new \core_course\output\activity_completion($cm, $completiondetails);
             $output = $PAGE->get_renderer('core');
             $activitycompletiondata = (array) $activitycompletion->export_for_template($output);
             if ($activitycompletiondata["hascompletion"]) {
                 $completion = $OUTPUT->render_from_template('core_course/activity_info', $activitycompletiondata);
+                $response['completion'] = $completion;
             }
         }
-        return $completion;
+        return $response;
     }
 
     /**

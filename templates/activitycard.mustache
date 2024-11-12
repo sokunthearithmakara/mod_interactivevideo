@@ -25,7 +25,7 @@
 }}
 <div class="{{#formativ}}formativ{{/formativ}}">
 <div id="interactivevideo-{{cm.instance}}" class="interactivevideo-card{{^columnlayout}} columnlayout{{/columnlayout}}{{#showposterimageright}} poster-right{{/showposterimageright}}{{#showdescription}}{{#formattedintro}} hasdescription{{/formattedintro}}{{/showdescription}} card-{{size}}{{^cm.uservisible}} iv-invisible no-pointer{{/cm.uservisible}}"
-     data-id="{{cm.instance}}" data-title="{{formattedname}}" data-contextid="{{cm.context.id}}" data-instance="{{cm.instance}}" data-courseid="{{cm.course}}">
+     data-id="{{cm.id}}" data-title="{{formattedname}}" data-contextid="{{cm.context.id}}" data-instance="{{cm.instance}}" data-courseid="{{cm.course}}" data-original-intro="{{originalintro}}">
      {{^cardonly}}
      {{#showposterimage}}
     <div class="image-container position-relative {{#hasanalytics}}hasanalytics{{/hasanalytics}}">
@@ -48,8 +48,13 @@
     {{/showposterimage}}
     <div class="description-container d-flex justify-content-between flex-column">
     <div class="top-section small">
-        <div class="w-100 d-flex align-items-center">
-        {{#showname}}{{#cm.uservisible}}<a href="{{baseurl}}/mod/interactivevideo/view.php?i={{cm.instance}}" class="clamp-2 text-dark h5 text-decoration-none mb-0">{{formattedname}}</a>
+        <div class="w-100 d-flex align-items-start">
+        {{#showname}}{{#cm.uservisible}}<a href="{{baseurl}}/mod/interactivevideo/view.php?i={{cm.instance}}" class="clamp-2 text-dark h5 text-decoration-none mb-0">{{formattedname}}
+        </a>
+        {{#hascompletion}}
+            {{#overallcomplete}}<i class="bi bi-check-circle-fill text-success ml-2"></i>{{/overallcomplete}}
+            {{^overallcomplete}}<i class="bi bi-circle ml-2"></i>{{/overallcomplete}}
+        {{/hascompletion}}
         {{/cm.uservisible}}
         {{^cm.uservisible}}
         <a href="javascript:void()" class="text-dark h5 text-decoration-none mb-0">{{formattedname}}</a>
@@ -89,16 +94,10 @@
             {{{completion}}}
             </div>
         {{/completion}}
-
         </div>
         {{/cm.uservisible}}
     </div>
     {{#formativ}}
-    {{#formattedintro}}
-        <div class="iv-description d-none">
-            {{{formattedintro}}}
-        </div>
-        {{/formattedintro}}
     {{/formativ}}
     {{/cardonly}}
     {{#cardonly}}
@@ -168,4 +167,7 @@
     </div>
     {{/cardonly}}
     </div>
+{{#afterlink}}
+{{{afterlink}}}
+{{/afterlink}}
 </div>
