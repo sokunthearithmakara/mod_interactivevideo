@@ -270,6 +270,7 @@ class base_form extends \core_form\dynamic_form {
                 'inline' => get_string('displayoptionsinline', 'mod_interactivevideo'),
                 'popup' => get_string('displayoptionspopup', 'mod_interactivevideo'),
                 'bottom' => get_string('displayoptionsbottom', 'mod_interactivevideo'),
+                'side' => get_string('displayoptionsside', 'mod_interactivevideo'),
             ]
         );
         $mform->setType('displayoptions', PARAM_TEXT);

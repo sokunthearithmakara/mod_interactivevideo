@@ -78,7 +78,7 @@ class Yt {
         var videoId = match[1];
         videoId = videoId.split("&")[0];
         this.videoId = videoId;
-        this.posterImage = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        this.posterImage = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         let loadedcaption = false;
         var ready = false;
         var self = this;
@@ -94,7 +94,6 @@ class Yt {
                 controls: showControls ? 1 : 0,
                 showinfo: 0,
                 fs: 0,
-                modestbranding: 1,
                 iv_load_policy: 3,
                 cc_load_policy: 0,
                 autohide: 1,
@@ -189,9 +188,9 @@ class Yt {
                             };
                         });
                         self.captions = tracks;
-                        dispatchEvent('iv:captionsReady', {captions: tracks});
                     }
                     loadedcaption = true;
+                    dispatchEvent('iv:playerLoaded', {tracks});
                 },
             }
         };

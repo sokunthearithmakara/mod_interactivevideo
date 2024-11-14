@@ -569,24 +569,7 @@ define([
                 return {start, end};
             };
 
-            /**
-             * Initializes the video player and its controls when the player is ready.
-             *
-             * This function performs the following tasks:
-             * - Checks if the player supports playback rate and quality adjustments, and updates the UI accordingly.
-             * - Sets the background image of the start screen if a poster image is available.
-             * - Adjusts the background of the video block to be transparent.
-             * - Retrieves the video duration and updates the end time if necessary.
-             * - Calculates the total playback time and updates the duration display.
-             * - Recalculates the aspect ratio of the video and updates the video wrapper's padding.
-             * - Sets the player as ready and focuses on the start button.
-             * - Initializes the seek head draggable functionality, allowing users to seek through the video.
-             *
-             * @async
-             * @function onReady
-             * @returns {Promise<void>} A promise that resolves when the player is fully initialized and ready.
-             */
-            const onReady = async() => {
+            const onLoaded = async() => {
                 // Add player to Window object.
                 window.IVPLAYER = player;
                 // Check if the player supports playback rate and quality adjustments.
@@ -602,23 +585,13 @@ define([
                     $('#changequality').removeClass('d-none');
                 }
 
-                // Get watchedpoint from storage to resume.
-                if (!moment) {
-                    const lastwatched = localStorage.getItem(`watchedpoint-${userid}-${interaction}`);
-                    if (lastwatched && (lastwatched > start + 60 || lastwatched < end - 60)) {
-                        player.seek(lastwatched);
-                    }
-                }
-
-                $(".video-block").css('background', 'transparent');
-                $("#annotation-canvas").removeClass('d-none');
                 // Explanation: YT shows annoying related videos if the player is large enough when the script is loading.
                 // So we're tricking it by hiding the canvas which also hides the #player first
                 // and only shows it when player is ready.
                 const duration = await player.getDuration();
                 ({start, end} = await updateTime(duration));
                 totaltime = end - start;
-                await getAnnotations(shareMoment);
+
                 $('#duration').text(convertSecondsToHMS(totaltime));
 
                 // Recalculate the ratio of the video
@@ -643,9 +616,13 @@ define([
                         gap = '55px';
                     }
                     $("#wrapper").css({
-                        'width': 'calc((100dvh - ' + gap + ' - 3rem) * ' + ratio + ')'
+                        'width': 'calc((100dvh - ' + gap + ' - 2rem) * ' + ratio + ')'
                     });
                 }
+
+                $('#wrapper').attr('data-ratio', ratio);
+                $('#wrapper').attr('data-gap', gap);
+
                 $('#start-screen #start').focus();
 
                 $('#seekhead').draggable({
@@ -686,8 +663,6 @@ define([
                     }
                 });
 
-                dispatchEvent('timeupdate', {'time': start});
-
                 // Resize observer
                 let vwrapper = document.querySelector('#video-wrapper');
                 const resizeObserver = new ResizeObserver(() => {
@@ -706,6 +681,38 @@ define([
                     return;
                 }
                 vwrapper.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"});
+            };
+
+            /**
+             * Initializes the video player and its controls when the player is ready.
+             *
+             * This function performs the following tasks:
+             * - Checks if the player supports playback rate and quality adjustments, and updates the UI accordingly.
+             * - Sets the background image of the start screen if a poster image is available.
+             * - Adjusts the background of the video block to be transparent.
+             * - Retrieves the video duration and updates the end time if necessary.
+             * - Calculates the total playback time and updates the duration display.
+             * - Recalculates the aspect ratio of the video and updates the video wrapper's padding.
+             * - Sets the player as ready and focuses on the start button.
+             * - Initializes the seek head draggable functionality, allowing users to seek through the video.
+             *
+             * @async
+             * @function onReady
+             * @returns {Promise<void>} A promise that resolves when the player is fully initialized and ready.
+             */
+            const onReady = async() => {
+                // Get watchedpoint from storage to resume.
+                if (!moment) {
+                    const lastwatched = localStorage.getItem(`watchedpoint-${userid}-${interaction}`);
+                    if (lastwatched && (lastwatched > start + 60 || lastwatched < end - 60)) {
+                        player.seek(lastwatched);
+                    }
+                }
+
+                $(".video-block").css('background', 'transparent');
+                $("#annotation-canvas").removeClass('d-none');
+                await getAnnotations(shareMoment);
+                dispatchEvent('timeupdate', {'time': start});
             };
 
             /**
@@ -1205,6 +1212,12 @@ define([
                 }
             });
 
+            $(document).on('click', '#toolbar #annotation-toggle', function(e) {
+                e.preventDefault();
+                $('body').addClass('hassidebar');
+                $('#annotation-sidebar').removeClass('hide');
+            });
+
             // Handle video control events:: mute/unmute
             $(document).on('click', '#mute', function(e) {
                 e.preventDefault();
@@ -1293,8 +1306,13 @@ define([
                 onSeek(e.detail.time);
             });
 
-            $(document).on('iv:captionsReady', function(e) {
-                const captions = e.detail.captions;
+            $(document).on('iv:playerLoaded', function(e) {
+                onLoaded(e.detail);
+                const captions = e.detail.tracks;
+                window.console.log(captions);
+                if (!captions || captions.length == 0) {
+                    return;
+                }
                 $('#changecaption').removeClass('d-none');
                 $('#changecaption .dropdown-menu')
                     .html(`<a class="dropdown-item text-white changecaption"

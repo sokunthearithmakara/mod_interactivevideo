@@ -65,11 +65,11 @@ class Vimeo {
             url: url,
             width: 1080,
             height: 720,
-            autoplay: false,
+            autoplay: !showControls,
             quality: 'auto', // Reduce quality in editor.
             controls: showControls,
             loop: false,
-            muted: false,
+            muted: true,
             playsinline: true,
             background: false,
             byline: false,
@@ -86,13 +86,13 @@ class Vimeo {
             dnt: true,
         };
 
+        let ready = false;
         const vimeoEvents = (player) => {
             player.on('loaded', async function() {
                 let duration = await player.getDuration();
                 end = !end ? duration - 0.1 : Math.min(end, duration - 0.1);
                 self.aspectratio = await self.ratio();
                 self.end = end;
-                dispatchEvent('iv:playerReady');
 
                 // Get track list.
                 let tracks = await player.getTextTracks();
@@ -103,15 +103,37 @@ class Vimeo {
                             code: track.language
                         };
                     });
-                    dispatchEvent('iv:captionsReady', {captions: tracks});
                 }
 
-                // Get qualities.
-                let quality = await player.getQualities();
-                window.console.log(quality);
+                dispatchEvent('iv:playerLoaded', {
+                    tracks: tracks,
+                    qualities: self.getQualities(),
+                });
+
+                if (showControls) {
+                    ready = true;
+                    dispatchEvent('iv:playerReady');
+                }
             });
 
+            if (!showControls) {
+                player.on('play', async function() {
+                    if (!ready) {
+                        // Pause the video if it is not ready.
+                        await player.pause();
+                        player.setCurrentTime(start);
+                        // Unmute the video.
+                        player.setVolume(1);
+                        ready = true;
+                        dispatchEvent('iv:playerReady');
+                    }
+                });
+            }
+
             player.on('timeupdate', async function() {
+                if (!ready) {
+                    return;
+                }
                 let isEnded = await player.getEnded();
                 let currentTime = await player.getCurrentTime();
                 if (isEnded || (end && currentTime >= end)) {
@@ -125,27 +147,44 @@ class Vimeo {
             });
 
             player.on('seeked', function(e) {
+                if (!ready) {
+                    return;
+                }
                 dispatchEvent('iv:playerSeek', {time: e.seconds});
             });
 
             player.on('playbackratechange', function(e) {
+                if (!ready) {
+                    return;
+                }
                 dispatchEvent('iv:playerRateChange', {rate: e.playbackRate});
             });
 
             player.on('bufferstart', function() {
+                if (!ready) {
+                    return;
+                }
                 dispatchEvent('iv:playerPaused');
             });
 
             player.on('bufferend', function() {
+                if (!ready) {
+                    return;
+                }
                 dispatchEvent('iv:playerPlaying');
             });
 
             player.on('ended', function() {
+                if (!ready) {
+                    return;
+                }
                 dispatchEvent('iv:playerEnded');
             });
 
             player.on('qualitychange', function(e) {
-                window.console.log(e);
+                if (!ready) {
+                    return;
+                }
                 dispatchEvent('iv:playerQualityChange', {quality: e.quality});
             });
         };

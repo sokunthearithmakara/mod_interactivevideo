@@ -105,24 +105,33 @@ const defaultDisplayContent = async function(annotation, player) {
 
     let displayoptions = annotation.displayoptions;
 
-    // If the theme is mobile, display the message as a popup.
-    if ($('body').hasClass('mobiletheme') && displayoptions == 'inline') {
-        displayoptions = 'popup';
-    }
-
-    if ($('body').hasClass('embed-mode')) {
-        // Check the size of the body. If it is less than 800px, display the message as inline.
-        if ($(window).width() < 1000 || $(window).height() < 500) {
-            displayoptions = 'inline';
-        } else {
-            displayoptions = displayoptions == 'inline' ? 'inline' : 'popup';
+    const responsiveDisplay = (displayoptions) => {
+        if (displayoptions == 'side') {
+            return displayoptions;
         }
-    }
 
-    // If the wrapper is in fullscreen mode, display the message inline (on top of the video).
-    if ($('#wrapper').hasClass('fullscreen')) {
-        displayoptions = 'inline';
-    }
+        // If the theme is mobile, display the message as a popup.
+        if ($('body').hasClass('mobiletheme') && displayoptions == 'inline') {
+            displayoptions = 'popup';
+        }
+
+        if ($('body').hasClass('embed-mode')) {
+            // Check the size of the body. If it is less than 800px, display the message as inline.
+            if ($(window).width() < 1000 || $(window).height() < 500) {
+                displayoptions = 'inline';
+            } else {
+                displayoptions = displayoptions == 'inline' ? 'inline' : 'popup';
+            }
+        }
+
+        // If the wrapper is in fullscreen mode, display the message inline (on top of the video).
+        if ($('#wrapper').hasClass('fullscreen')) {
+            displayoptions = 'inline';
+        }
+        return displayoptions;
+    };
+
+    displayoptions = responsiveDisplay(displayoptions);
 
     // Add completion button if the annotation has completion criteria.
     let completionbutton = "";
@@ -133,18 +142,16 @@ const defaultDisplayContent = async function(annotation, player) {
         ${annotation.completed ? earned : Number(annotation.xp)} XP</span>`;
     }
     // Display the completion button conditionally.
-    if (annotation.hascompletion == 1) {
-        if (annotation.completed) {
-            completionbutton += `<button id="completiontoggle" class="btn mark-undone btn-success btn-sm border-0"
+    if (annotation.hascompletion == 1 && annotation.completed) {
+        completionbutton += `<button id="completiontoggle" class="btn mark-undone btn-success btn-sm border-0"
              data-id="${annotation.id}"><i class="bi bi-check2"></i>
              <span class="ml-2 d-none d-sm-block">
              ${M.util.get_string('completionmarkincomplete', 'mod_interactivevideo')}</span></button>`;
-        } else {
-            completionbutton += `<button  id="completiontoggle" class="btn mark-done btn-secondary btn-sm border-0"
+    } else if (annotation.hascompletion == 1 && annotation.completed == false) {
+        completionbutton += `<button  id="completiontoggle" class="btn mark-done btn-secondary btn-sm border-0"
              data-id="${annotation.id}"><i class="bi bi-circle"></i>
              <span class="ml-2 d-none d-sm-block">
              ${M.util.get_string('completionmarkcomplete', 'mod_interactivevideo')}</span></button>`;
-        }
     }
 
     // Append refresh button after the completion button.
@@ -157,8 +164,9 @@ const defaultDisplayContent = async function(annotation, player) {
     }
 
     // Message title.
+    let prop = JSON.parse(annotation.prop);
     let messageTitle = `<h5 class="modal-title text-truncate mb-0">
-    <i class="${JSON.parse(annotation.prop).icon} mr-2 d-none d-md-inline"></i>${annotation.formattedtitle}</h5>
+    <i class="${prop.icon} mr-2 d-none d-md-inline"></i>${annotation.formattedtitle}</h5>
                             <div class="btns d-flex align-items-center">
                             ${completionbutton}
                             <button class="btn mx-2 p-0 border-0" id="close-${annotation.id}" aria-label="Close">
@@ -172,6 +180,17 @@ const defaultDisplayContent = async function(annotation, player) {
     // Handle annotation close event:: when user click on the close button of the annotation.
     $(document).off('click', `#close-${annotation.id}`).on('click', `#close-${annotation.id}`, async function(e) {
         e.preventDefault();
+        if (!$('body').hasClass('page-interactions')) { // Do not auto resume if on interactions page.
+            if (player.end != await player.getCurrentTime()) {
+                player.play();
+            }
+        }
+
+        if (displayoptions == 'side') {
+            $('body').removeClass('hassidebar');
+            $('#annotation-sidebar').addClass('hide');
+            return;
+        }
         $(this).closest("#annotation-modal").modal('hide');
         const targetMessage = $(this).closest("#message");
         targetMessage.addClass('bottom-0');
@@ -182,11 +201,7 @@ const defaultDisplayContent = async function(annotation, player) {
             });
         }, 100);
 
-        if (!$('body').hasClass('page-interactions')) { // Do not auto resume if on interactions page.
-            if (player.end != await player.getCurrentTime()) {
-                player.play();
-            }
-        }
+
     });
 
     const handlePopupDisplay = (annotation, messageTitle) => {
@@ -219,7 +234,7 @@ const defaultDisplayContent = async function(annotation, player) {
     const handleInlineDisplay = (annotation, messageTitle) => {
         $('#video-wrapper').append(`<div id="message" style="z-index:105;top:100%" data-placement="inline"
          data-id="${annotation.id}" class="${annotation.type}">
-        <div id="title" class="modal-header shadow-sm pr-0">${messageTitle}</div><div class="modal-body" id="content">
+        <div id="title" class="modal-header shadow-sm pr-0 rounded-0">${messageTitle}</div><div class="modal-body" id="content">
         </div></div>`);
         $(`#message[data-id='${annotation.id}']`).animate({
             top: '0',
@@ -241,6 +256,51 @@ const defaultDisplayContent = async function(annotation, player) {
         });
     };
 
+    const handleSideDisplay = (annotation, messageTitle) => {
+        $('body').addClass('hassidebar');
+        // Make sure all sidebar are hidden.
+        $('#wrapper .iv-sidebar').addClass('hide');
+        // Create sidebar if it does not exist.
+        if ($('#wrapper #annotation-sidebar').length == 0) {
+            $('#wrapper').append(`<div id="annotation-sidebar" class="iv-sidebar p-0 hide">
+                <div id="sidebar-nav" class="d-flex w-100"></div>
+                <div id="sidebar-content" class="p-0"></div>
+                </div>`);
+            $(document).on('click', '#sidebar-nav .sidebar-nav-item', function() {
+                const target = $(this).data('id');
+                $(this).addClass('active').siblings().removeClass('active');
+                $('#sidebar-content #message').fadeOut(300);
+                $(`#sidebar-content #message[data-id='${target}']`).fadeIn(300);
+            });
+        }
+        // Add annotation toggle button if it does not exist.
+        if ($('#wrapper #toolbar #annotation-toggle').length == 0) {
+            $('#wrapper #toolbar')
+                .append(`<button id="annotation-toggle" class="btn btn-secondary btn-sm border-0">
+                    <i class="bi bi-chevron-left"></i></button>`);
+        }
+        // Show the sidebar.
+        $('#annotation-sidebar').removeClass('hide');
+        // Remove the message if it exists.
+        $(`#sidebar-content #message[data-id='${annotation.id}']`).remove();
+        // Replace the navigation item if it exists.
+        if ($(`#sidebar-nav .sidebar-nav-item[data-id='${annotation.id}']`).length == 0) {
+            // Add a navigation item.
+            $('#annotation-sidebar #sidebar-nav').append(`<div class="sidebar-nav-item active w-100" data-toggle="tooltip"
+            data-html="true" title="<i class='${prop.icon} mr-2'></i>${annotation.formattedtitle}"
+            data-id="${annotation.id}"></div>`);
+        }
+        // Hide other messages on the sidebar.
+        $('#annotation-sidebar #message').fadeOut(300);
+        $('#annotation-sidebar #sidebar-nav .sidebar-nav-item:not([data-id="' + annotation.id + '"])').removeClass('active');
+        // Append the message to the sidebar.
+        $('#annotation-sidebar #sidebar-content').append(`<div id="message" data-placement="side"
+                    data-id="${annotation.id}" class="${annotation.type} sticky">
+                    <div id="title" class="modal-header shadow-sm pr-0">${messageTitle}</div>
+                    <div class="modal-body" id="content"></div>
+                    </div>`);
+    };
+
     switch (displayoptions) {
         case 'popup':
             handlePopupDisplay(annotation, messageTitle);
@@ -250,6 +310,9 @@ const defaultDisplayContent = async function(annotation, player) {
             break;
         case 'bottom':
             handleBottomDisplay(annotation, messageTitle, isDarkMode);
+            break;
+        case 'side':
+            handleSideDisplay(annotation, messageTitle, isDarkMode);
             break;
     }
 };

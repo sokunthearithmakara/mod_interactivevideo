@@ -105,6 +105,7 @@ $string['displayoptions'] = 'Display options';
 $string['displayoptionsbottom'] = 'Below the video';
 $string['displayoptionsinline'] = 'Inline';
 $string['displayoptionspopup'] = 'Popup';
+$string['displayoptionsside'] = 'Drawer';
 $string['distractionfreemode'] = 'Use distraction-free mode';
 $string['draftsaved'] = 'Changes saved';
 $string['edit'] = 'Edit';

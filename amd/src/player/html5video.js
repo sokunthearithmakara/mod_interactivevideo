@@ -86,6 +86,9 @@ class Html5Video {
             self.aspectratio = self.ratio();
             end = !end ? player.duration : Math.min(end, player.duration);
             player.pause();
+            dispatchEvent('iv:playerLoaded', {
+                tracks: null
+            });
             dispatchEvent('iv:playerReady');
         });
 

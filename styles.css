@@ -16,6 +16,10 @@
     --ivblack: #000;
     --ivdarker: #263238;
     --ivprimaryalt: #e7f0f9;
+    --ivdangeralt: #f8d7da;
+    --ivwarningalt: #fdf3e7;
+    --ivinfoalt: #e6f7f9;
+    --ivsuccessalt: #eaf4ea;
 }
 
 html:has(.path-mod-interactivevideo) {
@@ -68,6 +72,15 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo.darkmode .navbar .btn-outline-secondary {
     color: #fff;
     border: 1px solid #fff;
+}
+
+.path-mod-interactivevideo.darkmode #user-action-menu {
+    color: #fff;
+    background-color: var(--ivdarker);
+
+    .dropdown-item {
+        color: #fff;
+    }
 }
 
 .path-mod-interactivevideo .bg-dark {
@@ -888,6 +901,30 @@ html:has(.path-mod-interactivevideo) {
     max-width: 100%;
 }
 
+.path-mod-interactivevideo #message[data-placement=side] {
+    #title {
+        height: 70px;
+        align-items: center;
+    }
+
+    #content {
+        overflow: auto;
+        height: calc(100dvh - 80px);
+        max-height: calc(100dvh - 80px);
+    }
+}
+
+.path-mod-interactivevideo #annotation-sidebar .sidebar-nav-item.active {
+    background-color: var(--ivdanger);
+}
+
+.path-mod-interactivevideo #annotation-sidebar .sidebar-nav-item {
+    background-color: var(--ivdangeralt);
+    height: 10px;
+    cursor: pointer;
+    border-right: 1px solid var(--ivdanger);
+}
+
 #page-mod-interactivevideo-report th.rotate {
     height: 140px;
     white-space: nowrap;
@@ -1110,6 +1147,7 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo.default-mode #wrapper #controller,
 .path-mod-interactivevideo.iframe #wrapper #controller {
     position: relative;
+    z-index: 1029;
 }
 
 .path-mod-interactivevideo #wrapper.fullscreen #controller {
@@ -1258,7 +1296,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo #page-wrapper {
-    overflow: unset;
+    overflow: auto;
 }
 
 .path-mod-interactivevideo .btn-rounded {
@@ -1442,6 +1480,18 @@ html:has(.path-mod-interactivevideo) {
     width: calc(100% - 1rem);
 }
 
+.path-mod-interactivevideo:not(.embed-mode) #interactivevideo-container:has(#annotation-content:empty) {
+    height: calc(100% - 70px);
+    align-content: center;
+}
+
+@media (max-width: 576px) {
+    .path-mod-interactivevideo:not(.embed-mode) #interactivevideo-container:has(#annotation-content:empty) {
+        height: unset;
+        align-items: start;
+    }
+}
+
 .path-mod-interactivevideo:has(#toolbar:empty) #interactivevideo-container {
     width: 100%;
 }
@@ -1451,20 +1501,79 @@ html:has(.path-mod-interactivevideo) {
     margin-left: 0;
 }
 
+.path-mod-interactivevideo.hassidebar #wrapper.fullscreen #video-wrapper {
+    margin-right: 475px;
+    width: calc(100% - 475px);
+    transform: width ease-in-out 300ms;
+}
+
+.path-mod-interactivevideo.hassidebar.distraction-free #controller {
+    width: calc(100% - 475px);
+    transition: width ease-in-out 300ms;
+}
+
+.path-mod-interactivevideo.hassidebar.default-mode #page {
+    margin-right: 475px;
+}
+
+.path-mod-interactivevideo.hassidebar.default-mode #interactivevideo-container {
+    width: 100%;
+}
+
 @media (max-width: 992px) {
-    .path-mod-interactivevideo.hassidebar #interactivevideo-container {
+
+    .path-mod-interactivevideo.hassidebar #interactivevideo-container,
+    .path-mod-interactivevideo.hassidebar #wrapper.fullscreen #video-wrapper {
         width: 100%;
     }
+
+    .path-mod-interactivevideo.hassidebar.distraction-free #controller {
+        width: 100%;
+        transition: width ease-in-out 300ms;
+    }
+
+    .path-mod-interactivevideo.hassidebar.default-mode #page {
+        margin-right: 0;
+    }
+
+}
+
+.path-mod-interactivevideo .iv-sidebar {
+    width: 475px;
+    max-width: 100%;
+    height: 100dvh;
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1032;
+    padding: 1rem;
+    background-color: #fff;
+    overflow: visible;
+    transition: right ease-in-out 0.3s;
+    display: block;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.path-mod-interactivevideo.hassidebar .iv-sidebar {
+    right: 0;
+    transition: right ease-in-out 0.3s;
+}
+
+.path-mod-interactivevideo .iv-sidebar.hide,
+.path-mod-interactivevideo.hassidebar .iv-sidebar.hide {
+    right: -475px;
+    transition: right ease-in-out 0.3s;
 }
 
 .path-mod-interactivevideo.iframe #interactivevideo-container,
 .path-mod-interactivevideo.embed-mode #interactivevideo-container {
     top: 0;
+    padding: 0 !important;
 }
 
-.path-mod-interactivevideo.iframe #interactivevideo-container,
-.path-mod-interactivevideo.embed-mode #interactivevideo-container {
-    padding: 0 !important;
+.path-mod-interactivevideo.darkmode #interactivevideo-container {
+    padding-top: 0!important;
 }
 
 .path-mod-interactivevideo.iframe #video-wrapper,
@@ -1481,9 +1590,6 @@ html:has(.path-mod-interactivevideo) {
 }
 
 @media (max-width: 767.98px) {
-    .path-mod-interactivevideo #interactivevideo-container {
-        padding: 0 !important;
-    }
 
     .path-mod-interactivevideo #interactivevideo-container #video-wrapper,
     .path-mod-interactivevideo #interactivevideo-container #player,
@@ -1497,14 +1603,25 @@ html:has(.path-mod-interactivevideo) {
         padding-bottom: 60px;
     }
 
-    .path-mod-interactivevideo #interactivevideo-container {
+    .path-mod-interactivevideo #interactivevideo-container,
+    .path-mod-interactivevideo:not(.embed-mode) #interactivevideo-container:has(#annotation-content:empty) {
+        height: unset;
+        align-items: start;
         width: 100%;
+        padding: 0 !important;
     }
 }
 
 .path-mod-interactivevideo #seek {
     height: 10px;
     transition: all ease-in-out 300ms;
+}
+
+#page-mod-interactivevideo-view #caption-dropdown {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(0, 0%, 67%) rgba(0, 0, 0, 0.1);
 }
 
 .path-mod-interactivevideo .alternative #wrapper #taskinfo {
@@ -1921,13 +2038,6 @@ html:has(.path-mod-interactivevideo) {
 #page-mod-interactivevideo-view.embed-mode #interactivevideo-container {
     display: flex;
     align-items: center;
-    background-color: #000;
-    height: calc(100% - 55px);
-}
-
-#page-mod-interactivevideo-view.embed-mode #interactivevideo-container {
-    display: flex;
-    align-items: center;
     justify-content: center;
     background-color: #000;
     height: calc(100% - 55px);
@@ -2153,6 +2263,12 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
 .path-course-view .modtype_interactivevideo .description-container {
     flex-grow: 1;
     width: 100%;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.path-course-view .modtype_interactivevideo .description-container:has(.bottom-section div) {
+    margin-top: 0;
 }
 
 .path-course-view .modtype_interactivevideo .description-container .cursor-pointer {
@@ -2215,10 +2331,10 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
 
 .path-course-view .modtype_interactivevideo:has(.interactivevideo-card).highlighted {
     border-radius: 0.5rem;
-    background: rgb(0 128 255 / 11%)!important;
+    background: rgb(0 128 255 / 11%) !important;
 
-    .progress {
-        background-color: var(--ivsecondary)!important;
+    .tasks.progress {
+        background-color: var(--ivsecondary) !important;
     }
 }
 
@@ -2278,6 +2394,7 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
             .image-container, .description-container {
                 margin-right: 0;
                 margin-left: 0;
+                margin-top: 0;
             }
 
         }
@@ -2371,7 +2488,7 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
 }
 
 .path-course-view:not(.editing) .modtype_interactivevideo:has(.interactivevideo-card):not(:has(.card-only)):hover {
-    background-color: rgba(155,155,155,0.1);
+    background-color: rgba(155, 155, 155, 0.1);
     border-radius: 0.5rem;
     border-color: var(--ivlight) !important;
     transition: background-color ease-in-out 300ms;
@@ -2559,9 +2676,9 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
 
 .path-course-view .section .activity:has(.interactivevideo-card) .activity-item .activity-grid.noname-grid {
     grid-template-areas:
-    "groupmode groupmode completion actions"
-    "altcontent altcontent altcontent altcontent"
-    "afterlink afterlink afterlink afterlink"
-    "availability availability availability availability"
-    "visibility visibility visibility visibility";
+        "groupmode groupmode completion actions"
+        "altcontent altcontent altcontent altcontent"
+        "afterlink afterlink afterlink afterlink"
+        "availability availability availability availability"
+        "visibility visibility visibility visibility";
 }

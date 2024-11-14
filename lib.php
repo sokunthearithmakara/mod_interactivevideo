@@ -138,7 +138,9 @@ function interactivevideo_add_instance($moduleinstance, $mform = null, $batch = 
 
     $moduleinstance->text = $moduleinstance->endscreentext;
 
-    $moduleinstance->endscreentext = json_encode($moduleinstance->endscreentext);
+    if (!$batch) {
+        $moduleinstance->endscreentext = json_encode($moduleinstance->endscreentext);
+    }
 
     $moduleinstance->displayoptions = json_encode(interactivevideo_display_options($moduleinstance));
 
@@ -1230,7 +1232,6 @@ function interactivevideo_dndupload_handle($uploadinfo) {
         }
 
         if (empty($video->videourl) || !filter_var($video->videourl, FILTER_VALIDATE_URL)) {
-            throw new moodle_exception('invalidvideourl' . $video->videourl, 'mod_interactivevideo');
             continue;
         }
 
@@ -1241,7 +1242,7 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             $videoid = explode(',', $matches[1])[0];
             $video->videourl = 'https://www.youtube.com/watch?v=' . $videoid;
             $video->type = 'yt';
-            $video->posterimage = 'https://img.youtube.com/vi/' . $matches[1] . '/maxresdefault.jpg';
+            $video->posterimage = 'https://img.youtube.com/vi/' . $matches[1] . '/hqdefault.jpg';
             if (!isset($video->name) || empty($video->name)) {
                 // Call oembed.
                 $response = file_get_contents('https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=' . $videoid);
@@ -1268,6 +1269,9 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             if ($video->end == 0 || $video->end > $response->duration) {
                 $video->end = $response->duration;
             }
+            if ($video->start >= $video->end) {
+                $video->start = 0;
+            }
             $videoinfo[] = $video;
             continue;
         }
@@ -1281,7 +1285,7 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             $video->videourl = 'https://www.dailymotion.com/video/' . $videoid;
             $video->type = 'dailymotion';
             $response = file_get_contents('https://api.dailymotion.com/video/' . $videoid
-                . '?fields=thumbnail_720_url,title,duration');
+                . '?fields=thumbnail_480_url,title,duration');
             $response = json_decode($response);
             $video->posterimage = $response->thumbnail_720_url;
             if (!isset($video->name) || empty($video->name)) {
@@ -1289,6 +1293,9 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             }
             if ($video->end == 0 || $video->end > $response->duration) {
                 $video->end = (int)$response->duration;
+            }
+            if ($video->start >= $video->end) {
+                $video->start = 0;
             }
             $videoinfo[] = $video;
             continue;
@@ -1306,6 +1313,9 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             }
             if ($video->end == 0 || $video->end > $response->duration) {
                 $video->end = (int)$response->duration;
+            }
+            if ($video->start >= $video->end) {
+                $video->start = 0;
             }
             $videoinfo[] = $video;
             continue;
@@ -1347,7 +1357,7 @@ function interactivevideo_dndupload_handle($uploadinfo) {
 
     // Prepare moduleinstance data for each video.
     $count = 0;
-    $id = 0;
+    $id = false;
     foreach ($videoinfo as $video) {
         $data = (array)$video;
         $data['course'] = $uploadinfo->course->id;
@@ -1359,10 +1369,6 @@ function interactivevideo_dndupload_handle($uploadinfo) {
         $data['grade'] = $video->grade && is_numeric($video->grade) && !empty($video->grade) ? $video->grade : 0;
         $data['grade[modgrade_point]'] = $video->grade && is_numeric($video->grade) && !empty($video->grade) ? $video->grade : 0;
 
-        // Handle endscreentext in case it is in the file.
-        if (!empty($video->endscreentext)) {
-            $data['endscreentext'] = json_encode(['text' => $video->endscreentext]);
-        }
         // For the first row, we're using the cm that was created by dndupload. The rest, we're creating new ones.
         if ($count == 0) {
             $data['first'] = true; // We need to return the id of the first video.
@@ -1462,8 +1468,5 @@ function interactivevideo_dndupload_handle($uploadinfo) {
         }
     }
 
-    if ($id) {
-        return $id;
-    }
-    return false;
+    return $id;
 }

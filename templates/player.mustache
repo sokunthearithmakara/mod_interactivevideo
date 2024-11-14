@@ -28,7 +28,7 @@ Example context (json):
                     {{! start of toolbar}}
                     <div id="toolbar" class="bg-transparent pt-5 position-fixed"></div>
                     {{! end of toolbar }}
-                    <div class="position-fixed w-100 h-100 no-pointer bg-transparent"
+                    <div class="position-absolute w-100 h-100 no-pointer bg-transparent"
                          id="background-loading"
                          style="display:none">
                         <div class="d-flex h-100 align-items-center justify-content-center">
@@ -155,7 +155,7 @@ Example context (json):
 </div>
 </div>
 {{^displayoptions.hidemainvideocontrols}}
-<div class="mt-0 mt-md-2 bg-dark d-flex flex-column p-0 justify-content-center w-100"
+<div class="mt-0 mt-md-2 bg-dark d-flex flex-column p-0 justify-content-center"
      id="controller">
     <div id="taskinfo"
          class="border-0 flex-column align-items-center justify-content-end w-100 px-3 bg-transparent">
@@ -216,7 +216,7 @@ Example context (json):
                    data-trigger="focus"
                    title="{{#str}}subtitle,mod_interactivevideo{{/str}}"></i>
             </span>
-            <div class="dropdown-menu dropdown-menu-right bg-black text-white"></div>
+            <div id="caption-dropdown" class="dropdown-menu dropdown-menu-right bg-black text-white"></div>
         </div>
         <div class="btn-group dropup d-none" id="changerate">
             <span role="button"

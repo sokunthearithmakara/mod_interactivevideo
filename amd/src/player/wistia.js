@@ -47,6 +47,8 @@ class Wistia {
         if (!showControls) {
             $('body').addClass('no-original-controls');
         }
+        // Wistia does not load the video if the player is not visible, so we need to make sure the node parent is visible.
+        $(`#${node}`).parent().removeClass('d-none');
         const regex = /(?:https?:\/\/)?(?:www\.)?(?:wistia\.com)\/medias\/([^/]+)/g;
         const match = regex.exec(url);
         const videoId = match[1];
@@ -71,6 +73,10 @@ class Wistia {
                 end = !end ? video.duration() : Math.min(end, video.duration());
                 self.aspectratio = self.ratio();
                 self.end = end;
+                dispatchEvent('iv:playerLoaded', {
+                    tracks: null,
+                    qualities: self.getQualities(),
+                });
                 if (start > 0) {
                     video.play();
                     await video.time(start);

@@ -75,9 +75,10 @@ class DailyMotion {
             end = !end ? state.videoDuration : Math.min(end, state.videoDuration);
             self.end = end;
             self.title = state.videoTitle;
+
+            // Get the available captions.
             let tracks = state.videoSubtitlesList;
             if (tracks && tracks.length > 0) {
-                window.console.log(tracks);
                 tracks = tracks.map(track => {
                     const locale = track.split('-')[0];
                     const country = track.split('-')[1];
@@ -94,8 +95,13 @@ class DailyMotion {
                     };
                 });
                 self.captions = tracks;
-                dispatchEvent('iv:captionsReady', {captions: tracks});
             }
+
+            // Fire iv:playerLoaded event
+            dispatchEvent('iv:playerLoaded', {
+                tracks: tracks, qualities: self.getQualities(),
+            });
+
             // Handle Dailymotion behavior. Video always start from the start time,
             // So if you seek before starting the video, it will just start from the beginning.
             // So, to deal with this, we have to start the video as soon as the player is ready.
@@ -178,7 +184,6 @@ class DailyMotion {
                 ready = true;
                 dispatchEvent('iv:playerReady');
             }
-
 
             // Show ads to user so they know ad is playing, not because something is wrong.
             player.on(dailymotion.events.AD_START, function() {

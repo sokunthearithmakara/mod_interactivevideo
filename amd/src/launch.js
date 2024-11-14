@@ -148,7 +148,7 @@ define(['jquery'], function($) {
                             });
 
                             $(iframeDoc).on('mousemove', '#video-wrapper', function() {
-                                let $message = iframeDoc.querySelector('#message');
+                                let $message = iframeDoc.querySelector('#message:not(.sticky)');
                                 let $activestart = iframeDoc.querySelector('#start-screen:not(.d-none) .hasintro');
                                 if ($message || $activestart) {
                                     $('#playermodal .modal-header').removeClass('show');
