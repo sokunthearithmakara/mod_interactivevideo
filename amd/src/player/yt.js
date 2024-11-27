@@ -108,7 +108,12 @@ class Yt {
                 },
                 onReady: function(e) {
                     self.title = e.target.videoTitle;
-                    self.end = !self.end ? e.target.getDuration() : Math.min(self.end, e.target.getDuration());
+                    let totaltime = Number(e.target.getDuration().toFixed(2));
+                    end = !end ? totaltime : Math.min(end, totaltime);
+                    end = Number(end.toFixed(2));
+                    self.end = end;
+                    self.totaltime = totaltime;
+                    self.duration = self.end - self.start;
                     self.aspectratio = self.ratio();
                     // It's always good idea to play the video at the beginning to download some data.
                     // Otherwise, if user seek before start, they're gonna get blackscreen.
@@ -243,12 +248,14 @@ class Yt {
     /**
      * Seek the video to a specific time
      * @param {Number} time
-     * @return {Boolean}
+     * @return {Promise<Boolean>}
      */
     async seek(time) {
-        player.seekTo(time, true);
-        dispatchEvent('iv:playerSeek', {time: time});
-        return true;
+        return new Promise((resolve) => {
+            player.seekTo(time, true);
+            dispatchEvent('iv:playerSeek', {time: time});
+            resolve(true);
+        });
     }
     /**
      * Get the current time of the video
@@ -275,14 +282,14 @@ class Yt {
      * Check if the video is playing
      * @return {Boolean}
      */
-    isPlaying() {
+    async isPlaying() {
         return player.getPlayerState() === 1;
     }
     /**
      * Check if the video is ended
      * @return {Boolean}
      */
-    isEnded() {
+    async isEnded() {
         if (player.getPlayerState() === 0) {
             return true;
         } else {

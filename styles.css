@@ -501,6 +501,7 @@ html:has(.path-mod-interactivevideo) {
     padding: 0;
     justify-content: center;
     margin: 10px 0;
+    border-radius: 5px;
 }
 
 .path-mod-interactivevideo #interactions-nav {
@@ -529,6 +530,7 @@ html:has(.path-mod-interactivevideo) {
     height: 4px;
     background-color: var(--ivdanger);
     display: flex;
+    border-radius: 5px;
 }
 
 .path-mod-interactivevideo #video-nav .annotation.skipsegment {
@@ -1562,7 +1564,7 @@ html:has(.path-mod-interactivevideo) {
 
 .path-mod-interactivevideo .iv-sidebar.hide,
 .path-mod-interactivevideo.hassidebar .iv-sidebar.hide {
-    right: -475px;
+    right: -100%;
     transition: right ease-in-out 0.3s;
 }
 
@@ -1573,7 +1575,7 @@ html:has(.path-mod-interactivevideo) {
 }
 
 .path-mod-interactivevideo.darkmode #interactivevideo-container {
-    padding-top: 0!important;
+    padding-top: 0 !important;
 }
 
 .path-mod-interactivevideo.iframe #video-wrapper,
@@ -2051,6 +2053,18 @@ html:has(.path-mod-interactivevideo) {
     height: 100%;
 }
 
+.path-mod-interactivevideo #video-wrapper.audio {
+    background: var(--ivdark);
+
+    #player {
+        height: 30px;
+        bottom: 1rem;
+        top: unset;
+        max-width: calc(100% - 2rem);
+        left: 1rem;
+    }
+}
+
 .path-mod-interactivevideo #visualizer {
     position: absolute;
     width: 100%;
@@ -2204,7 +2218,7 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
         justify-content: center;
 
         a.title {
-            font-size: 1rem;
+            font-size: 1em;
             font-weight: bold;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -2456,8 +2470,18 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
 
     .path-course-view .activity.modtype_interactivevideo:has(.interactivevideo-card.card-medium),
     .path-course-view .activity.modtype_interactivevideo:has(.interactivevideo-card.card-mediumlarge),
+    .path-course-view .activity.modtype_interactivevideo:has(.interactivevideo-card.card-largemedium) {
+        width: calc(50% - 0.5rem);
+
+        .interactivevideo-card {
+            flex-direction: column;
+        }
+    }
+}
+
+@container section (width < 650px) {
+
     .path-course-view .activity.modtype_interactivevideo:has(.interactivevideo-card.card-small),
-    .path-course-view .activity.modtype_interactivevideo:has(.interactivevideo-card.card-largemedium),
     .path-course-view .activity.modtype_interactivevideo:has(.interactivevideo-card.card-tiny) {
         width: calc(50% - 0.5rem);
 

@@ -259,16 +259,6 @@ class interactivevideo_util {
             }
         }
 
-        // Update completion state.
-        if ($updatestate) {
-            $cm = get_coursemodule_from_instance('interactivevideo', $interactivevideo);
-            require_once($CFG->libdir . '/completionlib.php');
-            $course = new stdClass();
-            $course->id = $courseid;
-            $completion = new completion_info($course);
-            $completion->update_state($cm);
-        }
-
         // Update grade.
         if ($grade > 0) {
             require_once($CFG->libdir . '/gradelib.php');
@@ -282,6 +272,20 @@ class interactivevideo_util {
             $record->gradeiteminstance = $gradeiteminstance;
             $record->gradeitem = $gradeitem;
         }
+
+        // Update completion state.
+        if ($updatestate) {
+            $cm = get_coursemodule_from_instance('interactivevideo', $interactivevideo);
+            if ($cm->completion > 1) {
+                require_once($CFG->libdir . '/completionlib.php');
+                $course = new stdClass();
+                $course->id = $courseid;
+                $completion = new completion_info($course);
+                $completion->update_state($cm);
+                $record->overallcomplete = $completion->internal_get_state($cm, $userid, null);
+            }
+        }
+
         return $record;
     }
 

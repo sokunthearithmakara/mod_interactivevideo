@@ -569,7 +569,9 @@ define([
                 return {start, end};
             };
 
+            let loaded = false;
             const onLoaded = async() => {
+                loaded = true;
                 // Add player to Window object.
                 window.IVPLAYER = player;
                 // Check if the player supports playback rate and quality adjustments.
@@ -588,7 +590,7 @@ define([
                 // Explanation: YT shows annoying related videos if the player is large enough when the script is loading.
                 // So we're tricking it by hiding the canvas which also hides the #player first
                 // and only shows it when player is ready.
-                const duration = await player.getDuration();
+                const duration = player.totaltime;
                 ({start, end} = await updateTime(duration));
                 totaltime = end - start;
 
@@ -701,6 +703,9 @@ define([
              * @returns {Promise<void>} A promise that resolves when the player is fully initialized and ready.
              */
             const onReady = async() => {
+                if (!loaded) {
+                    onLoaded();
+                }
                 // Get watchedpoint from storage to resume.
                 if (!moment) {
                     const lastwatched = localStorage.getItem(`watchedpoint-${userid}-${interaction}`);
@@ -1095,9 +1100,9 @@ define([
                     return;
                 }
                 lastrun = null;
+                player.pause();
                 await replaceProgressBars((timestamp - start) / totaltime * 100);
                 await player.seek(Number(timestamp));
-                player.pause();
                 const id = $(this).data('id');
                 const theAnnotation = releventAnnotations.find(x => x.id == id);
                 runInteraction(theAnnotation);
@@ -1131,7 +1136,6 @@ define([
                 const percentage = relX / $(this).width();
                 await replaceProgressBars(percentage * 100);
                 $loader.fadeIn(300);
-                // Await player.pause(); // Especially for vimeo.
                 await player.seek((percentage * totaltime) + start);
                 player.play();
                 lastrun = null;
@@ -1309,7 +1313,6 @@ define([
             $(document).on('iv:playerLoaded', function(e) {
                 onLoaded(e.detail);
                 const captions = e.detail.tracks;
-                window.console.log(captions);
                 if (!captions || captions.length == 0) {
                     return;
                 }

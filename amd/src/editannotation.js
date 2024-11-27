@@ -347,7 +347,7 @@ define(['jquery',
             const runInteraction = (annotation) => {
                 // Remove the previous message but keep the one below the video.
                 $('#annotation-modal').modal('hide');
-                $('#message').not('[data-placement=bottom]').remove();
+                $('#message').not('[data-placement=bottom]').not('.sticky').remove();
                 $('#end-screen').remove();
                 player.pause();
                 const activityType = ctRenderer[annotation.type];
@@ -401,7 +401,7 @@ define(['jquery',
                     $('#changerate').removeClass('d-none');
                 }
 
-                let t = await player.getDuration();
+                let t = player.totaltime;
 
                 ({start, end} = await updateTime(t));
 
@@ -515,7 +515,7 @@ define(['jquery',
              * Excute when video plays (i.e. start or resume)
              */
             const onPlaying = () => {
-                $('#message, #end-screen').remove();
+                $('#message, #end-screen').not('.sticky').remove();
                 $('#playpause').find('i').removeClass('bi-play-fill').addClass('bi-pause-fill');
                 if (player.audio && !visualized) {
                     player.visualizer();
@@ -786,7 +786,10 @@ define(['jquery',
                 // Update the progress bar.
                 const percentage = (timestamp - start) / totaltime * 100;
                 replaceProgressBars(percentage);
-                await player.seek(timestamp, true);
+                let currentTime = await player.getCurrentTime();
+                if (currentTime != timestamp) {
+                    await player.seek(timestamp, true);
+                }
                 player.pause();
                 const id = $(this).closest('.annotation').data('id');
                 const theAnnotation = annotations.find(annotation => annotation.id == id);

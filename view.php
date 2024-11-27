@@ -154,17 +154,23 @@ if ($getcompletion) {
             $completion = $OUTPUT->render_from_template('core_course/activity_info', $activitycompletiondata);
         }
     }
+    // Check if this activity is associated with other activities' availability.
+    $withavailability = !empty($CFG->enableavailability) && core_availability\info::completion_value_used($course, $cm->id);
+    if ($withavailability == 1) {
+        $PAGE->add_body_class('withavailability');
+    }
+    $completed = $completiondetails->get_overall_completion();
 }
 
 // Toggle distraction-free mode.
 if ($moduleinstance->displayoptions['distractionfreemode']) {
-    $PAGE->activityheader->disable();
+    $PAGE->activityheader->disable(); // Disable activity header.
     $PAGE->set_pagelayout('embedded');
     $PAGE->add_body_class('distraction-free');
 } else {
     $PAGE->add_body_class('default-mode');
     if ($moduleinstance->displayasstartscreen == 1 || $moduleinstance->displayoptions['showdescriptiononheader'] == 0) {
-        // Don't show description in the header.
+        // Don't repeat the description in the header unless it is specifically requested.
         $PAGE->activityheader->set_attrs(['description' => '']);
     }
 }
@@ -273,7 +279,7 @@ if ($rendernav) {
         "interactionsurl" => has_capability('mod/interactivevideo:edit', $modulecontext)
             ? new moodle_url('/mod/interactivevideo/interactions.php', ['id' => $cm->id]) : '',
         "useravatar" => $primarymenu['user'],
-        "completed" => isset($completionstate) && $completionstate > COMPLETION_INCOMPLETE,
+        "completed" => isset($completed) && $completed,
         "completedpass" => isset($completionstate)
             && ($completionstate == COMPLETION_COMPLETE_PASS || $completionstate == COMPLETION_COMPLETE),
         "completedfail" => isset($completionstate) && $completionstate == COMPLETION_COMPLETE_FAIL,
@@ -328,8 +334,8 @@ $datafortemplate = [
     "title" => format_string($moduleinstance->name),
     "displayoptions" => $moduleinstance->displayoptions,
     "posterimage" => $moduleinstance->posterimage,
+    "completed" => isset($completed) && $completed,
 ];
-
 echo $OUTPUT->render_from_template('mod_interactivevideo/player', $datafortemplate);
 
 $PAGE->requires->js_call_amd('mod_interactivevideo/viewannotation', 'init', [

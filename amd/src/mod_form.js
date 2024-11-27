@@ -65,6 +65,9 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
              * Scripts to run when the player is ready.
              */
             const whenPlayerReady = async function() {
+                if (player.audio) {
+                    videowrapper.addClass('audio');
+                }
                 videowrapper.show();
                 // Recalculate the ratio of the video.
                 let ratio = player.aspectratio;
@@ -77,8 +80,8 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     $(`[name="name"]`).val(player.title);
                 }
 
-                const duration = await player.getDuration();
-                totaltime = Number(duration.toFixed(2));
+                const duration = player.totaltime;
+                totaltime = duration;
                 totaltimeinput.val(totaltime);
                 if (Number(endinput.val()) > 0 && Number(endinput.val()) > totaltime) {
                     endinput.val(totaltime);
@@ -259,9 +262,10 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                 ]);
                 const parts = startassistinput.val().split(':');
                 let time = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-                startinput.val(time);
+                startinput.val(time.toFixed(2));
                 if (Number(startinput.val()) > totaltime) {
                     startassistinput.addClass('is-invalid');
+                    startassistinput.next('.form-control-feedback').remove();
                     startassistinput.after('<div class="form-control-feedback invalid-feedback d-inline">'
                         + strings[0] + '</div>');
                     startassistinput.val(convertSecondsToHMS(totaltime));
@@ -269,6 +273,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     if (Number(endinput.val()) && Number(endinput.val()) != 0
                         && Number(startinput.val()) > Number(endinput.val())) {
                         startassistinput.addClass('is-invalid');
+                        startassistinput.next('.form-control-feedback').remove();
                         startassistinput.after('<div class="form-control-feedback invalid-feedback d-inline">'
                             + strings[1] + '</div>');
                         startassistinput.val(convertSecondsToHMS(endinput.val()));
@@ -280,7 +285,7 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
             endassistinput.on('change blur', async function() {
                 endassistinput.removeClass('is-invalid');
-                endassistinput.next('.form-control-feedback').remove();
+                endassistinput.next('.invalid-feedback').remove();
                 if (endassistinput.val() == '') {
                     return;
                 }
@@ -290,16 +295,18 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                     {key: 'invalidtimestampformat', component: 'mod_interactivevideo'},
                 ]);
                 const parts = endassistinput.val().split(':');
-                const time = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
-                endinput.val(time);
+                let time = Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+                endinput.val(time.toFixed(2));
                 if (Number(endinput.val()) > totaltime) {
                     endassistinput.addClass('is-invalid');
+                    endassistinput.next('.invalid-feedback').remove();
                     endassistinput.after('<div class="form-control-feedback invalid-feedback d-inline">'
                         + strings[0] + '</div>');
                     endassistinput.val(convertSecondsToHMS(totaltime));
                 } else {
                     if (Number(startinput.val()) && Number(endinput.val()) < Number(startinput.val())) {
                         endassistinput.addClass('is-invalid');
+                        endassistinput.next('.invalid-feedback').remove();
                         endassistinput.after('<div class="form-control-feedback invalid-feedback d-inline">'
                             + strings[1] + '</div>');
                         endassistinput.val(convertSecondsToHMS(startinput.val()));
@@ -330,13 +337,16 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
 
                 form.addEventListener(form.events.FORM_SUBMITTED, async(e) => {
                     const url = e.detail.url;
+                    videofile.val(url);
                     let name = e.detail.name;
                     if ($(`[name="name"]`).val() == '') {
                         $(`[name="name"]`).val(name.split('.').slice(0, -1).join('.'));
                     }
                     videowrapper.html('<video id="player" class="w-100"></video>');
                     require(['mod_interactivevideo/player/html5video'], function(VP) {
-                        player = new VP(url, 0, null, true);
+                        player = new VP(url, 0, null, {
+                            'showControls': true
+                        });
                     });
                     videoinput.val(e.detail.video);
                     uploadfield.hide();
@@ -410,7 +420,9 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
                         const url = videofile.val();
                         videowrapper.html('<video id="player" class="w-100"></video>');
                         require(['mod_interactivevideo/player/html5video'], function(VP) {
-                            player = new VP(url, 0, null, true);
+                            player = new VP(url, 0, null, {
+                                'showControls': true
+                            });
                         });
                     } else {
                         uploadfield.show();

@@ -70,6 +70,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         // Allow link if $videotypes length is greater than 1 after removing html5video.
         $allowlink = count(array_diff($videotypes, ['html5video'])) > 1;
 
+        $url = '';
         if (isset($current->source) && $current->source == 'file') {
             $modulecontext = context_module::instance($current->update);
             $fs = get_file_storage();
@@ -90,10 +91,13 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                     $file->get_filepath(),
                     $file->get_filename()
                 )->out();
-                $mform->addElement('hidden', 'videofile', $url);
-                $mform->setType('videofile', PARAM_URL);
+            } else {
+                $url = '';
             }
         }
+
+        $mform->addElement('hidden', 'videofile', $url);
+        $mform->setType('videofile', PARAM_URL);
 
         $mform->addElement('html', '<div class="mx-auto w-100" style="max-width: 800px;">
             <div id="video-wrapper" class="mt-2 mb-3" style="display: none;">
@@ -756,14 +760,20 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         }
 
         $endtime = explode(':', $data['endassist']);
-        $endtime = $endtime[0] * 3600 + $endtime[1] * 60 + $endtime[2] * 1;
-        if ($endtime != $data['end']) {
+        $endtime = (int)$endtime[0] * 3600 + (int)$endtime[1] * 60 + (float)$endtime[2] * 1;
+        // Roundend to 2 decimal places.
+        $endtime = round($endtime, 2, PHP_ROUND_HALF_DOWN);
+        $data['end'] = round($data['end'], 2, PHP_ROUND_HALF_DOWN);
+        if ($endtime - $data['end'] != 0) {
             $errors['endassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
         }
 
         $starttime = explode(':', $data['startassist']);
-        $starttime = $starttime[0] * 3600 + $starttime[1] * 60 + $starttime[2] * 1;
-        if ($starttime != $data['start']) {
+        $starttime = (int)$starttime[0] * 3600 + (int)$starttime[1] * 60 + (float)$starttime[2] * 1;
+        // Roundend to 2 decimal places.
+        $starttime = round($starttime, 2, PHP_ROUND_HALF_DOWN);
+        $data['start'] = round($data['start'], 2, PHP_ROUND_HALF_DOWN);
+        if ($starttime - $data['start'] != 0) {
             $errors['startassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
         }
 

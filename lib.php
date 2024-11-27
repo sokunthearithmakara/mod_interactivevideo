@@ -714,6 +714,9 @@ function interactivevideo_displayinline(cm_info $cm) {
             $interactivevideo->posterimage = $posterimage->out();
         }
     }
+
+    $interactivevideo->posterimage = $interactivevideo->posterimage == '' ?
+        $OUTPUT->get_generated_image_for_id($cm->id) : $interactivevideo->posterimage; // Fallback to default image.
     $duration = $interactivevideo->end - $interactivevideo->start;
     // Convert to hh:mm:ss format.
     $duration = gmdate($duration > 3600 * 60 ? 'H:i:s' : 'i:s', (int) $duration);
@@ -731,7 +734,7 @@ function interactivevideo_displayinline(cm_info $cm) {
         'formattedname' => format_string($cm->name),
         'showdescription' => $cm->showdescription,
         'formattedintro' => format_module_intro('interactivevideo', $interactivevideo, $cm->id, false),
-        'originalintro' => htmlentities($interactivevideo->intro),
+        'originalintro' => htmlentities($interactivevideo->intro ?? ''),
         'size' => isset($displayoptions->cardsize) ? $displayoptions->cardsize : 'large',
         'issmall' => isset($displayoptions->cardsize)
             && ($displayoptions->cardsize == 'small' || $displayoptions->cardsize == 'medium'
@@ -1220,7 +1223,7 @@ function interactivevideo_dndupload_handle($uploadinfo) {
         $row = array_map('trim', str_getcsv($row));
         $video = new stdClass();
         foreach ($headers as $key => $header) {
-            $video->$header = $row[$key];
+            $video->{$header} = $row[$key];
         }
 
         if (!isset($video->start) || $video->start < 0 || $video->start == '') {
@@ -1285,7 +1288,7 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             $video->videourl = 'https://www.dailymotion.com/video/' . $videoid;
             $video->type = 'dailymotion';
             $response = file_get_contents('https://api.dailymotion.com/video/' . $videoid
-                . '?fields=thumbnail_480_url,title,duration');
+                . '?fields=thumbnail_720_url,title,duration');
             $response = json_decode($response);
             $video->posterimage = $response->thumbnail_720_url;
             if (!isset($video->name) || empty($video->name)) {
@@ -1333,6 +1336,8 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             $video->posterimage = '';
             if (!isset($video->name) || empty($video->name)) {
                 $video->name = basename($video->videourl);
+                // Take into account the name that was encoded in the url.
+                $video->name = urldecode($video->name);
                 // Remove the extension.
                 $video->name = str_replace('.' . $fileextension, '', $video->name);
             }
@@ -1360,6 +1365,9 @@ function interactivevideo_dndupload_handle($uploadinfo) {
     $id = false;
     foreach ($videoinfo as $video) {
         $data = (array)$video;
+        $data['start'] = round($data['start'], 2, PHP_ROUND_HALF_DOWN);
+        $data['end'] = round($data['end'], 2, PHP_ROUND_HALF_DOWN);
+        $data['completion'] = $video->completion ?? 0;
         $data['course'] = $uploadinfo->course->id;
         $data['source'] = 'url';
         $data['section'] = $sectionid;
@@ -1377,8 +1385,8 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             // If the completion percentage is greater than 0, set the completion to 2 (tracking_automatic).
             if ($data['completionpercentage'] > 0) {
                 $data['completion'] = 2;
-                $DB->set_field('course_modules', 'completion', 2, ['id' => $cmid]);
             }
+            $DB->set_field('course_modules', 'completion', $data['completion'], ['id' => $cmid]);
         } else {
             list($module, $context, $cw, $cm, $d) = prepare_new_moduleinfo_data(
                 $uploadinfo->course,
@@ -1389,8 +1397,9 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             // Here we want to add completion to $d so that it is added to the course_modules table.
             if ($data['completionpercentage'] > 0) {
                 $data['completion'] = 2;
-                $d->completion = 2;
             }
+
+            $d->completion = $data['completion'];
 
             $data['coursemodule'] = $cmid = add_course_module($d);
         }
@@ -1399,9 +1408,7 @@ function interactivevideo_dndupload_handle($uploadinfo) {
 
         // Default appearance settings.
         foreach ($appearancesettings as $key) {
-            if (!empty($video->{$key})) { // If setting is overridden in the csv file, use that.
-                $data[$key] = $video->{$key};
-            } else {
+            if ($data[$key] == '' || !is_numeric($data[$key])) {
                 $data[$key] = 1;
             }
         }
@@ -1411,9 +1418,7 @@ function interactivevideo_dndupload_handle($uploadinfo) {
 
         // Default behavior settings.
         foreach ($behaviorsettings as $key) {
-            if (!empty($video->{$key})) { // If setting is overridden in the csv file, use that.
-                $data[$key] = $video->{$key};
-            } else {
+            if ($data[$key] == '' || !is_numeric($data[$key])) {
                 $data[$key] = 1;
             }
         }

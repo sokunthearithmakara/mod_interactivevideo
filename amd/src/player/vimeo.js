@@ -56,6 +56,7 @@ class Vimeo {
                 poster = poster.replace(/_\d+x\d+/, '_720x405');
                 this.posterImage = poster;
                 this.title = data.title;
+                this.aspectratio = data.width / data.height;
                 return poster;
             }).catch(() => {
                 return;
@@ -66,7 +67,6 @@ class Vimeo {
             width: 1080,
             height: 720,
             autoplay: !showControls,
-            quality: 'auto', // Reduce quality in editor.
             controls: showControls,
             loop: false,
             muted: true,
@@ -91,10 +91,13 @@ class Vimeo {
             player.on('loaded', async function() {
                 let duration = await player.getDuration();
                 end = !end ? duration - 0.1 : Math.min(end, duration - 0.1);
-                self.aspectratio = await self.ratio();
+                end = Number(end.toFixed(2));
                 self.end = end;
-
+                self.duration = self.end - self.start;
+                self.totaltime = Number((duration - 0.1).toFixed(2));
                 // Get track list.
+                // Unset the captions.
+                player.disableTextTrack();
                 let tracks = await player.getTextTracks();
                 if (tracks && tracks.length > 0) {
                     tracks = tracks.map((track) => {
@@ -188,6 +191,7 @@ class Vimeo {
                 dispatchEvent('iv:playerQualityChange', {quality: e.quality});
             });
         };
+
         if (!VimeoPlayer) {
             require(['https://player.vimeo.com/api/player.js'], function(Player) {
                 VimeoPlayer = Player;

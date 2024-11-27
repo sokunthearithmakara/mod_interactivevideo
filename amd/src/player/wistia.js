@@ -70,9 +70,13 @@ class Wistia {
             id: videoId,
             onReady: async function(video) {
                 player = video;
-                end = !end ? video.duration() : Math.min(end, video.duration());
+                let totaltime = video.duration();
+                end = !end ? totaltime : Math.min(end, totaltime);
+                end = Number(end.toFixed(2));
                 self.aspectratio = self.ratio();
                 self.end = end;
+                self.totaltime = Number(totaltime.toFixed(2));
+                self.duration = self.end - self.start;
                 dispatchEvent('iv:playerLoaded', {
                     tracks: null,
                     qualities: self.getQualities(),

@@ -50,12 +50,11 @@ class Html5Video {
         const video = ['fmp4', 'm4v', 'mov', 'mp4', 'ogv', 'webm'];
         const ext = url.split('.').pop();
         if (video.indexOf(ext) === -1) {
+            // Change the player to an audio player.
             this.audio = true;
             // Append a canvas element to the video.
             const canvas = '<canvas id="visualizer"></canvas>';
             player.insertAdjacentHTML('afterend', canvas);
-            this.posterImage = M.cfg.wwwroot + '/mod/interactivevideo/pix/audioposter.jpg';
-            player.poster = this.posterImage;
         }
         player.src = url;
         player.controls = showControls;
@@ -84,7 +83,12 @@ class Html5Video {
 
         player.addEventListener('loadedmetadata', function() {
             self.aspectratio = self.ratio();
-            end = !end ? player.duration : Math.min(end, player.duration);
+            let totaltime = Number((player.duration).toFixed(2));
+            end = !end ? totaltime : Math.min(end, totaltime);
+            end = Number(end.toFixed(2));
+            self.end = end;
+            self.totaltime = totaltime;
+            self.duration = self.end - self.start;
             player.pause();
             dispatchEvent('iv:playerLoaded', {
                 tracks: null

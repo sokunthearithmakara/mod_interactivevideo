@@ -266,6 +266,34 @@ const defaultDisplayContent = async function(annotation, player) {
                 <div id="sidebar-nav" class="d-flex w-100"></div>
                 <div id="sidebar-content" class="p-0"></div>
                 </div>`);
+            // Initialize resizable.
+            $('#annotation-sidebar').resizable({
+                handles: 'w',
+                minWidth: 475,
+                container: 'body',
+                start: function() {
+                    $(this).css('left', 'auto');
+                    $(this).find('.ui-resizable-handle.ui-resizable-w').css({
+                        'width': '100%',
+                        'left': '-50%'
+                    });
+                    $(this).addClass('no-pointer-event');
+                },
+                resize: function(event, ui) {
+                    if (ui.position.left < 0) {
+                        ui.position.left = 0;
+                        ui.position.width = '100%';
+                    }
+                },
+                stop: function() {
+                    $(this).css('left', 'auto');
+                    $(this).find('.ui-resizable-handle.ui-resizable-w').css({
+                        'width': '7px',
+                        'left': '-3px'
+                    });
+                    $(this).removeClass('no-pointer-event');
+                }
+            });
             $(document).on('click', '#sidebar-nav .sidebar-nav-item', function() {
                 const target = $(this).data('id');
                 $(this).addClass('active').siblings().removeClass('active');

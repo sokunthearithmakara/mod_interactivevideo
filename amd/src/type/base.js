@@ -973,7 +973,7 @@ class Base {
                     updatestate: this.completionpercentage > 0 || Object.keys(this.extracompletion).length != 0 ? 1 : 0,
                     courseid: this.course,
                 },
-                success: () => {
+                success: (res) => {
                     // Update the annotations array.
                     const annotations = this.annotations.map(x => {
                         if (x.id == id) {
@@ -986,7 +986,7 @@ class Base {
                     renderAnnotationItems(annotations, this.start, this.totaltime);
                     thisItem.earned = completionDetails.xp || 0;
                     this.completionCallback(annotations, thisItem, action, type);
-                    dispatchEvent('interactionCompletionUpdated', {
+                    dispatchEvent('completionupdated', {
                         annotations,
                         completionpercentage: (completedItems.length / gradableitems.length) * 100,
                         grade: parseFloat((earnedXp / totalXp) * this.grademax).toFixed(2),
@@ -995,7 +995,8 @@ class Base {
                         completeditems: completedItems,
                         target: thisItem,
                         action,
-                        type
+                        type,
+                        response: res,
                     });
                     resolve();
                 }

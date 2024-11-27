@@ -72,11 +72,17 @@ class DailyMotion {
                 player.setQuality(480);
             }
             const state = await player.getState();
-            end = !end ? state.videoDuration : Math.min(end, state.videoDuration);
+            const totaltime = Number(state.videoDuration.toFixed(2));
+            end = !end ? totaltime : Math.min(end, totaltime);
+            end = Number(end.toFixed(2));
             self.end = end;
+            self.totaltime = totaltime;
+            self.duration = self.end - self.start;
             self.title = state.videoTitle;
 
             // Get the available captions.
+            // Unset the captions.
+            player.setSubtitles(null);
             let tracks = state.videoSubtitlesList;
             if (tracks && tracks.length > 0) {
                 tracks = tracks.map(track => {
@@ -195,6 +201,8 @@ class DailyMotion {
 
         if (!window.dailymotion) {
             // Add dailymotion script.
+            // At the time of writing this, the dailymotion player script is not generally available.
+            // Developers must set up the players and get the script from the dailymotion website.
             var tag = document.createElement('script');
             if (showControls) {
                 // If you fork this, change this to your own dailymotion player.

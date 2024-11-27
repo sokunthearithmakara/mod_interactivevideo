@@ -184,8 +184,8 @@ Example context (json):
 {{/completion}}
 </div>
 </div>
+{{#showname}}
 <div class="description-container w-auto">
-    {{#showname}}
     {{#cm.uservisible}}
     <a href="{{baseurl}}/mod/interactivevideo/view.php?i={{cm.instance}}"
        class="clamp-2 text-dark h5 text-decoration-none mb-0">{{formattedname}}</a>
@@ -194,8 +194,8 @@ Example context (json):
 <a href="javascript:void()"
    class="clamp-2 text-dark h5 text-decoration-none mb-0">{{formattedname}}</a>
 {{/cm.uservisible}}
-{{/showname}}
 </div>
+{{/showname}}
 {{/cardonly}}
 </div>
 {{#afterlink}}
