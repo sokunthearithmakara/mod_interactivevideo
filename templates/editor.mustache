@@ -57,7 +57,7 @@ Example context (json):
             <div id="video-action"
                  class="px-3 py-2 bg-light d-flex align-items-center justify-content-between mx-auto w-100 position-sticky">
                 <div class="text-truncate">
-                    <span class="h4 mb-0 text-truncate font-weight-bold">{{title}}</span>
+                    <span class="h4 mb-0 text-truncate font-weight-bold">{{{title}}}</span>
                 </div>
                 <div class="d-flex align-items-center">
                     <div class="btn border-0" id="xp">
@@ -102,7 +102,7 @@ Example context (json):
                                     <i class="fa fa-fw"></i>
                                 </button>
                                 <span data-editable="title"
-                                      class="title font-weight-bold text-primary cursor-pointer">title</span>
+                                      class="title font-weight-bold text-primary cursor-pointer"></span>
                                 <input type="text"
                                        data-field="title"
                                        class="form-control form-control-sm d-none">
@@ -111,7 +111,7 @@ Example context (json):
                                 <span data-editable="xp"
                                       title="{{#str}}xppoint, mod_interactivevideo{{/str}}"
                                       class="border-0 p-1 btn btn-sm xp">
-                                    <span>12</span>
+                                    <span></span>
                                     <i class="bi bi-star ml-1"></i>
                                 </span>
                                 <input type="number"
@@ -146,5 +146,5 @@ Example context (json):
 
 
 
-{{! {a little hack for sites that use classic-based themes} }}
+{{! a little hack for sites that use classic-based themes }}
 {{> mod_interactivevideo/blocksettingshack }}

@@ -43,8 +43,8 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
             'video',
             'endscreentext',
             'displayasstartscreen',
-            'start',
-            'end',
+            'starttime',
+            'endtime',
             'completionpercentage',
             'grade',
             'type',
@@ -104,7 +104,7 @@ class backup_interactivevideo_activity_structure_step extends backup_activity_st
             cc.timemodified as cbtimemodified, f.contenthash as cbfilecontenthash
             FROM {interactivevideo_items} ai
             LEFT JOIN {contentbank_content} cc ON ai.contentid = cc.id
-            LEFT JOIN {files} f ON ai.contentid = f.itemid  AND f.component = "contentbank" AND f.filearea = "public"
+            LEFT JOIN {files} f ON ai.contentid = f.itemid AND f.component = \'contentbank\' AND f.filearea = \'public\'
             AND f.mimetype IS NOT NULL
             WHERE ai.annotationid = :annotationid
             ORDER BY ai.id ASC',

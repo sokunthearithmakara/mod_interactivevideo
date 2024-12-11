@@ -24,6 +24,7 @@ namespace ivplugin_richtext;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class main {
+
     /**
      * Constructor.
      */
@@ -85,7 +86,6 @@ class main {
         $content = file_rewrite_pluginfile_urls($content, 'pluginfile.php', $contextid, 'mod_interactivevideo', 'content', $id);
         $options = new \stdClass();
         $options->para = false;
-        $options->context = $context;
         $options->overflowdiv = true;
         $content = format_text($content, $format, $options);
         return $content;
@@ -108,7 +108,7 @@ class main {
         // Handle related files "content" field.
         require_once($CFG->libdir . '/filelib.php');
         $fs = get_file_storage();
-        $files = $fs->get_area_files($oldcontextid, 'mod_interactivevideo', 'content', (int)$annotation->oldid, 'id ASC', false);
+        $files = $fs->get_area_files($oldcontextid, 'mod_interactivevideo', 'content', (int) $annotation->oldid, 'id ASC', false);
         foreach ($files as $file) {
             $filerecord = [
                 'itemid' => $annotation->id,

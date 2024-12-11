@@ -239,10 +239,10 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
             'client'
         );
 
-        $mform->addElement('hidden', 'start', 0);
-        $mform->setType('start', PARAM_FLOAT);
-        $mform->addElement('hidden', 'end', 0);
-        $mform->setType('end', PARAM_FLOAT);
+        $mform->addElement('hidden', 'starttime', 0);
+        $mform->setType('starttime', PARAM_FLOAT);
+        $mform->addElement('hidden', 'endtime', 0);
+        $mform->setType('endtime', PARAM_FLOAT);
         $mform->addElement('hidden', 'totaltime', 0);
         $mform->setType('totaltime', PARAM_FLOAT);
 
@@ -755,7 +755,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         }
 
         // End time must be greater than 0 & greater than start.
-        if ($data['end'] < $data['start']) {
+        if ($data['endtime'] < $data['starttime']) {
             $errors['endassist'] = get_string('endtimegreaterstarttime', 'mod_interactivevideo');
         }
 
@@ -763,8 +763,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         $endtime = (int)$endtime[0] * 3600 + (int)$endtime[1] * 60 + (float)$endtime[2] * 1;
         // Roundend to 2 decimal places.
         $endtime = round($endtime, 2, PHP_ROUND_HALF_DOWN);
-        $data['end'] = round($data['end'], 2, PHP_ROUND_HALF_DOWN);
-        if ($endtime - $data['end'] != 0) {
+        $data['endtime'] = round($data['endtime'], 2, PHP_ROUND_HALF_DOWN);
+        if ($endtime - $data['endtime'] != 0) {
             $errors['endassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
         }
 
@@ -772,8 +772,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         $starttime = (int)$starttime[0] * 3600 + (int)$starttime[1] * 60 + (float)$starttime[2] * 1;
         // Roundend to 2 decimal places.
         $starttime = round($starttime, 2, PHP_ROUND_HALF_DOWN);
-        $data['start'] = round($data['start'], 2, PHP_ROUND_HALF_DOWN);
-        if ($starttime - $data['start'] != 0) {
+        $data['starttime'] = round($data['starttime'], 2, PHP_ROUND_HALF_DOWN);
+        if ($starttime - $data['starttime'] != 0) {
             $errors['startassist'] = get_string('invalidtimeformat', 'mod_interactivevideo');
         }
 

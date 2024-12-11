@@ -66,5 +66,31 @@ function xmldb_interactivevideo_upgrade($oldversion) {
         // Interactivevideo savepoint reached.
         upgrade_mod_savepoint(true, 2024092214, 'interactivevideo');
     }
+
+    if ($oldversion < 2024092222) {
+
+        // Rename field start on table interactivevideo to starttime.
+        $table = new xmldb_table('interactivevideo');
+        $field = new xmldb_field('start', XMLDB_TYPE_NUMBER, '10, 2', null, null, null, null, 'displayasstartscreen');
+
+        // Launch rename field start.
+        $dbman->rename_field($table, $field, 'starttime');
+
+        // Interactivevideo savepoint reached.
+        upgrade_mod_savepoint(true, 2024092222, 'interactivevideo');
+    }
+
+    if ($oldversion < 2024092223) {
+
+        // Rename field end on table interactivevideo to endtime.
+        $table = new xmldb_table('interactivevideo');
+        $field = new xmldb_field('end', XMLDB_TYPE_NUMBER, '10, 2', null, null, null, null, 'starttime');
+
+        // Launch rename field end.
+        $dbman->rename_field($table, $field, 'endtime');
+
+        // Interactivevideo savepoint reached.
+        upgrade_mod_savepoint(true, 2024092223, 'interactivevideo');
+    }
     return true;
 }

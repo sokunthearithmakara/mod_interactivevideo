@@ -1623,7 +1623,8 @@ html:has(.path-mod-interactivevideo) {
     max-height: 400px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: hsl(0, 0%, 67%) rgba(0, 0, 0, 0.1);
+    scrollbar-color: hsl(0, 0%, 67%) rgba(0, 0, 0, 1);
+    overflow-x: hidden;
 }
 
 .path-mod-interactivevideo .alternative #wrapper #taskinfo {

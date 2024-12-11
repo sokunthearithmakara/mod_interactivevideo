@@ -32,6 +32,9 @@ $cmid = optional_param('cmid', 0, PARAM_INT);
 $contextid = required_param('contextid', PARAM_INT);
 $context = context::instance_by_id($contextid);
 
+require_sesskey();
+require_login();
+
 switch ($action) {
     case 'get_all_contenttypes':
         echo json_encode(interactivevideo_util::get_all_activitytypes());
@@ -40,19 +43,13 @@ switch ($action) {
         $text = required_param('text', PARAM_RAW);
         echo interactivevideo_util::format_content($text, 1, $contextid);
         break;
-}
-
-require_sesskey();
-require_login();
-
-switch ($action) {
     case 'update_videotime':
         require_capability('mod/interactivevideo:view', $context);
         $id = required_param('id', PARAM_INT);
         $start = required_param('start', PARAM_FLOAT);
         $end = required_param('end', PARAM_FLOAT);
-        $DB->set_field('interactivevideo', 'start', $start, ['id' => $id]);
-        $DB->set_field('interactivevideo', 'end', $end, ['id' => $id]);
+        $DB->set_field('interactivevideo', 'starttime', $start, ['id' => $id]);
+        $DB->set_field('interactivevideo', 'endtime', $end, ['id' => $id]);
         echo json_encode(['id' => $id, 'start' => $start, 'end' => $end]);
         break;
     case 'get_items':

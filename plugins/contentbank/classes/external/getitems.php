@@ -63,6 +63,10 @@ class getitems extends external_api {
         $params = self::validate_parameters(self::execute_parameters(), [
             'contextid' => $contextid,
         ]);
+        // Perform security checks.
+        $context = \context::instance_by_id($contextid);
+        self::validate_context($context);
+        require_capability('moodle/contentbank:access', $context);
         $contents = \ivplugin_contentbank\main::get_contentbank_contents($contextid);
         return ['contents' => json_encode($contents)];
     }

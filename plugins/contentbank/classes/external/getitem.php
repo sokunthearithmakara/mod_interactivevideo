@@ -69,6 +69,12 @@ class getitem extends external_api {
         ]);
 
         require_login();
+
+        // Perform security checks.
+        $context = \context::instance_by_id($contextid);
+        self::validate_context($context);
+        require_capability('moodle/contentbank:access', $context);
+
         $item = \ivplugin_contentbank\main::get_contentbank_content($id, $contextid);
         return [
             'item' => $item,

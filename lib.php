@@ -550,7 +550,7 @@ function interactivevideo_get_coursemodule_info($coursemodule) {
             $result->customdata['customcompletionrules'][$rule] = $value;
         }
         // Pass startendtime to be used in the completion tracking.
-        $result->customdata['startendtime'] = $interactive->start . "-" . $interactive->end;
+        $result->customdata['startendtime'] = $interactive->starttime . "-" . $interactive->endtime;
     }
     return $result;
 }
@@ -643,7 +643,7 @@ function interactivevideo_displayinline(cm_info $cm) {
     $interactivevideo = $DB->get_record(
         'interactivevideo',
         ['id' => $cm->instance],
-        'id, name, start, end, type, posterimage, intro, introformat, completionpercentage'
+        'id, name, starttime, endtime, type, posterimage, intro, introformat, completionpercentage'
     );
 
     if (!$interactivevideo) {
@@ -717,7 +717,7 @@ function interactivevideo_displayinline(cm_info $cm) {
 
     $interactivevideo->posterimage = $interactivevideo->posterimage == '' ?
         $OUTPUT->get_generated_image_for_id($cm->id) : $interactivevideo->posterimage; // Fallback to default image.
-    $duration = $interactivevideo->end - $interactivevideo->start;
+    $duration = $interactivevideo->endtime - $interactivevideo->starttime;
     // Convert to hh:mm:ss format.
     $duration = gmdate($duration > 3600 * 60 ? 'H:i:s' : 'i:s', (int) $duration);
 
@@ -824,7 +824,7 @@ function interactivevideo_displayinline(cm_info $cm) {
     $relevantitems = $DB->get_records_select(
         'interactivevideo_items',
         $select,
-        [$cm->instance, $interactivevideo->start, $interactivevideo->end],
+        [$cm->instance, $interactivevideo->starttime, $interactivevideo->endtime],
         '',
         'id, type, xp, timestamp, title, char1, hascompletion'
     );
@@ -1226,12 +1226,12 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             $video->{$header} = $row[$key];
         }
 
-        if (!isset($video->start) || $video->start < 0 || $video->start == '') {
-            $video->start = 0;
+        if (!isset($video->starttime) || $video->starttime < 0 || $video->starttime == '') {
+            $video->starttime = 0;
         }
 
-        if (!isset($video->end) || $video->end < 0 || $video->end == '') {
-            $video->end = 0;
+        if (!isset($video->endtime) || $video->endtime < 0 || $video->endtime == '') {
+            $video->endtime = 0;
         }
 
         if (empty($video->videourl) || !filter_var($video->videourl, FILTER_VALIDATE_URL)) {
@@ -1269,11 +1269,11 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             if (!isset($video->name) || empty($video->name)) {
                 $video->name = $response->title ?? 'Untitled';
             }
-            if ($video->end == 0 || $video->end > $response->duration) {
-                $video->end = $response->duration;
+            if ($video->endtime == 0 || $video->endtime > $response->duration) {
+                $video->endtime = $response->duration;
             }
-            if ($video->start >= $video->end) {
-                $video->start = 0;
+            if ($video->starttime >= $video->endtime) {
+                $video->starttime = 0;
             }
             $videoinfo[] = $video;
             continue;
@@ -1294,11 +1294,11 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             if (!isset($video->name) || empty($video->name)) {
                 $video->name = $response->title ?? 'Untitled';
             }
-            if ($video->end == 0 || $video->end > $response->duration) {
-                $video->end = (int)$response->duration;
+            if ($video->endtime == 0 || $video->endtime > $response->duration) {
+                $video->endtime = (int)$response->duration;
             }
-            if ($video->start >= $video->end) {
-                $video->start = 0;
+            if ($video->starttime >= $video->endtime) {
+                $video->starttime = 0;
             }
             $videoinfo[] = $video;
             continue;
@@ -1314,11 +1314,11 @@ function interactivevideo_dndupload_handle($uploadinfo) {
             if (!isset($video->name) || empty($video->name)) {
                 $video->name = $response->title ?? 'Untitled';
             }
-            if ($video->end == 0 || $video->end > $response->duration) {
-                $video->end = (int)$response->duration;
+            if ($video->endtime == 0 || $video->endtime > $response->duration) {
+                $video->endtime = (int)$response->duration;
             }
-            if ($video->start >= $video->end) {
-                $video->start = 0;
+            if ($video->starttime >= $video->endtime) {
+                $video->starttime = 0;
             }
             $videoinfo[] = $video;
             continue;
@@ -1365,8 +1365,8 @@ function interactivevideo_dndupload_handle($uploadinfo) {
     $id = false;
     foreach ($videoinfo as $video) {
         $data = (array)$video;
-        $data['start'] = round($data['start'], 2, PHP_ROUND_HALF_DOWN);
-        $data['end'] = round($data['end'], 2, PHP_ROUND_HALF_DOWN);
+        $data['starttime'] = round($data['starttime'], 2, PHP_ROUND_HALF_DOWN);
+        $data['endtime'] = round($data['endtime'], 2, PHP_ROUND_HALF_DOWN);
         $data['completion'] = $video->completion ?? 0;
         $data['course'] = $uploadinfo->course->id;
         $data['source'] = 'url';

@@ -31,8 +31,8 @@ define(['jquery', 'core/notification', 'core_form/modalform', 'core/str'], funct
         'init': function(id, usercontextid, videotypes) {
             let totaltime, player;
             let videowrapper = $('#video-wrapper');
-            let endinput = $('input[name=end]');
-            let startinput = $('input[name=start]');
+            let endinput = $('input[name=endtime]');
+            let startinput = $('input[name=starttime]');
             let startassistinput = $('input[name=startassist]');
             let endassistinput = $('input[name=endassist]');
             let totaltimeinput = $('input[name=totaltime]');

@@ -64,7 +64,7 @@ Example context (json):
             {{#showname}}
             {{#cm.uservisible}}
             <a href="{{baseurl}}/mod/interactivevideo/view.php?i={{cm.instance}}"
-               class="clamp-2 text-dark h5 text-decoration-none mb-0">{{formattedname}}</a>
+               class="clamp-2 text-dark h5 text-decoration-none mb-0">{{{formattedname}}}</a>
             {{#hascompletion}}
             {{#overallcomplete}}<i class="bi bi-check-circle-fill text-success ml-2"></i>{{/overallcomplete}}
             {{^overallcomplete}}<i class="bi bi-circle ml-2"></i>{{/overallcomplete}}
@@ -72,7 +72,7 @@ Example context (json):
     {{/cm.uservisible}}
     {{^cm.uservisible}}
     <a href="javascript:void()"
-       class="text-dark h5 text-decoration-none mb-0">{{formattedname}}</a>
+       class="text-dark h5 text-decoration-none mb-0">{{{formattedname}}}</a>
 {{/cm.uservisible}}
 {{/showname}}
 {{#showdescription}}
@@ -146,7 +146,7 @@ Example context (json):
 </div>
 <div class="info p-2 w-100 position-absolute small">
     <a href="{{baseurl}}/mod/interactivevideo/view.php?i={{cm.instance}}"
-       class="title font-weight-bold nolink no-pointer text-decoration-none text-white">{{formattedname}}</a>
+       class="title font-weight-bold nolink no-pointer text-decoration-none text-white">{{{formattedname}}}</a>
     {{#hasanalytics}}
     <div class="analytics progress position-relative mt-2">
         <div class="progress-bar bg-danger"
@@ -188,11 +188,11 @@ Example context (json):
 <div class="description-container w-auto">
     {{#cm.uservisible}}
     <a href="{{baseurl}}/mod/interactivevideo/view.php?i={{cm.instance}}"
-       class="clamp-2 text-dark h5 text-decoration-none mb-0">{{formattedname}}</a>
+       class="clamp-2 text-dark h5 text-decoration-none mb-0">{{{formattedname}}}</a>
 {{/cm.uservisible}}
 {{^cm.uservisible}}
 <a href="javascript:void()"
-   class="clamp-2 text-dark h5 text-decoration-none mb-0">{{formattedname}}</a>
+   class="clamp-2 text-dark h5 text-decoration-none mb-0">{{{formattedname}}}</a>
 {{/cm.uservisible}}
 </div>
 {{/showname}}

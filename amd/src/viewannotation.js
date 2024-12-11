@@ -1333,7 +1333,8 @@ define([
                 }
             });
 
-            $(document).on('iv:playerError', function() {
+            $(document).on('iv:playerError', function(e) {
+                window.console.log(e.detail);
                 Toast.add(M.util.get_string('thereisanissueloadingvideo', 'mod_interactivevideo'), {
                     type: 'danger'
                 });

@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core_group\reportbuilder\local\entities\group;
+
 require(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/locallib.php');
 
@@ -135,7 +137,7 @@ $items = array_filter($items, function ($item) use ($moduleinstance, $skip, $con
     }
 
     // Remove items that are not within the time limit.
-    if (($item->timestamp < $moduleinstance->start || $item->timestamp > $moduleinstance->end) && $item->timestamp >= 0) {
+    if (($item->timestamp < $moduleinstance->starttime || $item->timestamp > $moduleinstance->endtime) && $item->timestamp >= 0) {
         return false;
     }
 
@@ -194,37 +196,23 @@ $totalxp = array_reduce($items, function ($carry, $item) {
     return $carry + $item->xp;
 }, 0);
 
-echo '<div id="reporttable" class="p-3" style="margin-top: 70px;">';
-groups_print_activity_menu($cm, $PAGE->url);
-echo html_writer::start_tag('table', [
-    'id' => 'completiontable',
-    'class' => 'table table-sm table-bordered table-striped w-100',
-]);
-echo '<thead class="sticky-top bg-white">';
-echo '<tr>';
-echo '<th id="id">' . get_string('id', 'mod_interactivevideo') . '</th>';
-echo '<th id="participant" class="bg-white sticky-left-0">' . get_string('participant', 'mod_interactivevideo') . '</th>';
-echo '<th id="firstname">' . get_string('firstname') . '</th>';
-echo '<th id="lastname">' . get_string('lastname') . '</th>';
-echo '<th id="email">' . get_string('email') . '</th>';
-echo '<th id="timecreated">' . get_string('timestarted', 'mod_interactivevideo') . '</th>';
-echo '<th id="timecompleted">' . get_string('timecompleted', 'mod_interactivevideo') . '</th>';
-echo '<th id="completionpercentage">' . get_string('completionpercentage', 'mod_interactivevideo') . '</th>';
-echo '<th id="xp">' . get_string('xp', 'mod_interactivevideo') . '<br>/' . $totalxp . '</th>';
-foreach ($items as $item) {
-    $i = $item->icon;
-    echo '<th class="rotate" id="item-' . $item->id . '" data-item="' . $item->id
-        . '" data-type="' . $item->type . '"><div><i title="' . $item->typetitle . '" class="fa-fw fa mx-1 ' . $i
-        . '"></i><a href="javascript:void(0)"
-      data-toggle="tooltip" data-trigger="focus" data-title="' . format_string($item->title)
-        . '">' . format_string($item->title) . '</a></div></th>';
-}
-echo '</tr>';
-echo html_writer::end_tag('thead');
-echo html_writer::start_tag('tbody');
-echo html_writer::end_tag('tbody');
-echo html_writer::end_tag('table');
-echo '</div>';
+$items = array_values($items);
+
+$reporttabledata = [
+    'groupselector' => groups_print_activity_menu($cm, $PAGE->url, true),
+    'totalxp' => $totalxp,
+    'items' => array_map(function ($item) {
+        return [
+            'id' => $item->id,
+            'type' => $item->type,
+            'title' => format_string($item->title),
+            'icon' => $item->icon,
+            'typetitle' => $item->typetitle,
+        ];
+    }, $items),
+];
+
+echo $OUTPUT->render_from_template('mod_interactivevideo/reporttable', $reporttabledata);
 
 if ($moduleinstance->source == 'url') {
     $url = $moduleinstance->videourl;
@@ -263,8 +251,8 @@ $PAGE->requires->js_call_amd('mod_interactivevideo/report', "init", [
     $moduleinstance->type,
     $cm->id,
     $course->id,
-    $moduleinstance->start,
-    $moduleinstance->end,
+    $moduleinstance->starttime,
+    $moduleinstance->endtime,
 ]);
 
 echo $OUTPUT->footer();

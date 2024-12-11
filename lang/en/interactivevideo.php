@@ -179,6 +179,7 @@ $string['nocontentfound'] = 'No contents found.';
 $string['nofound'] = 'Not found';
 $string['nonzero'] = 'Cannot be zero';
 $string['nopermissiontoaddinteractions'] = "You don't have permissions to add interactions.";
+$string['nopermissiontoview'] = 'You don\'t have permissions to view the interactive video';
 $string['noposterimage'] = 'No poster image';
 $string['notaccessreport'] = 'You cannot access the report page.';
 $string['notstarted'] = 'Not started';

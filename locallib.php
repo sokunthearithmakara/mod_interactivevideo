@@ -310,7 +310,12 @@ class interactivevideo_util {
              ac.completionpercentage, ac.completeditems, ac.xp, ac.completiondetails, ac.id as completionid
                     FROM {user} u
                     LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
-                    WHERE u.id IN (SELECT userid FROM {role_assignments} WHERE contextid = :contextid AND roleid = 5)
+                    WHERE u.id IN (
+                        SELECT ra.userid
+                        FROM {role_assignments} ra
+                        JOIN {role} r ON ra.roleid = r.id
+                        WHERE ra.contextid = :contextid AND r.archetype = 'student'
+                    )
                     ORDER BY u.lastname, u.firstname";
             $records = $DB->get_records_sql($sql, ['cmid' => $interactivevideo, 'contextid' => $contextid]);
         } else {

@@ -57,6 +57,17 @@ if ($iframe && !isloggedin()) {
 
 require_login($course, true, $cm);
 
+// Require capability to view interactive video.
+if (!has_capability('mod/interactivevideo:view', $modulecontext)) {
+    // Redirect to course view.
+    redirect(
+        new moodle_url('/course/view.php', ['id' => $course->id]),
+        get_string('nopermissiontoview', 'mod_interactivevideo'),
+        5,
+        \core\output\notification::NOTIFY_ERROR
+    );
+}
+
 if ($moduleinstance->displayoptions) {
     $moduleinstance->displayoptions = json_decode($moduleinstance->displayoptions, true);
 } else {
@@ -344,14 +355,14 @@ $PAGE->requires->js_call_amd('mod_interactivevideo/viewannotation', 'init', [
     $cm->instance, // Activity id from interactivevideo table.
     $course->id,
     $preview ? 1 : $USER->id, // User id.
-    $moduleinstance->start,
-    $moduleinstance->end,
+    $moduleinstance->starttime,
+    $moduleinstance->endtime,
     $moduleinstance->completionpercentage, // Completion condition percentage.
     $gradeitem ? $gradeitem->iteminstance : 0, // Grade item instance from grade_items table.
     $gradeitem ? $gradeitem->grademax : 0, // Grade item maximum grade, which is set in mod_form.
     $moduleinstance->type, // Interactive video type (e.g. vimeo, wistia, etc.).
     $moduleinstance->displayoptions['preventskipping'] && !has_capability('mod/interactivevideo:edit', $modulecontext)
-        ? true : false, // Prevent skipping, applicable to student only.
+    ? true : false, // Prevent skipping, applicable to student only.
     $moment, // Current time in seconds.
     $moduleinstance->displayoptions, // Display options array set in mod_form.
     $token ?? '', // Token for mobile app.
