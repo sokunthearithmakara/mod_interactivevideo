@@ -283,7 +283,7 @@ class Base {
         listItem.find('.timestamp').text(this.convertSecondsToHMS(item.timestamp, this.totaltime < 3600, true))
             .attr('data-timestamp', item.timestamp);
 
-        listItem.find('.title').text(item.formattedtitle);
+        listItem.find('.title').html(item.formattedtitle);
         if (item.hascompletion == 1) {
             listItem.find('.btn.xp span').text(item.xp);
             listItem.attr('data-xp', item.xp);

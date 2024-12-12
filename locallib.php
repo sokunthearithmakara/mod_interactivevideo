@@ -306,6 +306,9 @@ class interactivevideo_util {
         $fields = 'u.' . implode(', u.', $fields);
         // Graded roles.
         $roles = get_config('core', 'gradebookroles');
+        if (empty($roles)) {
+            return [];
+        }
         if ($group == 0) {
             // Get all enrolled users (student only).
             $sql = "SELECT " . $fields . ", ac.timecompleted, ac.timecreated,
