@@ -141,7 +141,7 @@ const init = (contextid) => {
  * @param {Function} [callback] - Optional callback function to be executed after refreshing the content bank.
  * @returns {Promise<void>} - A promise that resolves when the content bank is refreshed.
  */
-const refreshContentBank = async (id, coursecontextid, edit = true, callback) => {
+const refreshContentBank = async(id, coursecontextid, edit = true, callback) => {
     $('#contentbank-preview').empty();
     let contentbankitems = await Ajax.call([{
         args: {

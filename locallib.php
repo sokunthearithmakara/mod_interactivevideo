@@ -304,18 +304,15 @@ class interactivevideo_util {
         // Get fields for userpicture.
         $fields = \core_user\fields::get_picture_fields();
         $fields = 'u.' . implode(', u.', $fields);
+        // Graded roles.
+        $roles = get_config('core', 'gradebookroles');
         if ($group == 0) {
             // Get all enrolled users (student only).
             $sql = "SELECT " . $fields . ", ac.timecompleted, ac.timecreated,
              ac.completionpercentage, ac.completeditems, ac.xp, ac.completiondetails, ac.id as completionid
                     FROM {user} u
                     LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
-                    WHERE u.id IN (
-                        SELECT ra.userid
-                        FROM {role_assignments} ra
-                        JOIN {role} r ON ra.roleid = r.id
-                        WHERE ra.contextid = :contextid AND r.archetype = 'student'
-                    )
+                    WHERE u.id IN (SELECT userid FROM {role_assignments} WHERE contextid = :contextid AND roleid IN (" . $roles . "))
                     ORDER BY u.lastname, u.firstname";
             $records = $DB->get_records_sql($sql, ['cmid' => $interactivevideo, 'contextid' => $contextid]);
         } else {
@@ -325,8 +322,9 @@ class interactivevideo_util {
                     FROM {user} u
                     LEFT JOIN {interactivevideo_completion} ac ON ac.userid = u.id AND ac.cmid = :cmid
                     WHERE u.id IN (SELECT userid FROM {groups_members} WHERE groupid = :groupid)
+                    AND u.id IN (SELECT userid FROM {role_assignments} WHERE contextid = :contextid AND roleid IN (" . $roles . "))
                     ORDER BY u.lastname, u.firstname";
-            $records = $DB->get_records_sql($sql, ['cmid' => $interactivevideo, 'groupid' => $group]);
+            $records = $DB->get_records_sql($sql, ['cmid' => $interactivevideo, 'groupid' => $group, 'contextid' => $contextid]);
         }
 
         // Render the photo of the user.
@@ -558,7 +556,7 @@ class interactivevideo_util {
      * @param string $field The field associated with the text.
      * @param int $id The ID related to the text processing.
      *
-     * @return void
+     * @return string The processed text.
      */
     public static function process_text($text, $contextid, $field, $id) {
         if (!$text) {
@@ -650,7 +648,7 @@ class interactivevideo_util {
         if (!$userid) {
             $userid = $USER->id;
         }
-        $PAGE->set_context(context_system::instance());
+        $PAGE->set_context(\context_system::instance());
         // Get all courses where the user is a teacher.
         $sql = "SELECT c.id, c.fullname, c.shortname FROM {course} c
                 JOIN {context} ctx ON c.id = ctx.instanceid AND ctx.contextlevel = 50
@@ -677,7 +675,7 @@ class interactivevideo_util {
      * Retrieves the course module by course ID.
      *
      * @param int $courseid The ID of the course.
-     * @return object|null The course module object if found, null otherwise.
+     * @return array The course modules.
      */
     public static function get_cm_by_courseid($courseid) {
         global $DB, $PAGE;
@@ -751,7 +749,7 @@ class interactivevideo_util {
      * @param int $userid The user ID.
      * @param int $courseid The course ID.
      * @param int $contextid The context ID.
-     * @return string The completion information.
+     * @return array The completion information.
      */
     public static function get_cm_completion($cmid, $userid, $courseid, $contextid) {
         global $OUTPUT, $CFG, $PAGE, $USER;

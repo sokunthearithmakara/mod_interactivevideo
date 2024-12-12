@@ -47,18 +47,21 @@ class add_skip extends external_api {
     /**
      * Implementation of web service ivplugin_skipsegment_add_skip
      * @param string $skipdata The data of the skip segment
+     * @param int $contextid The context id of the skip segment
      * @return array
      */
-    public static function execute($skipdata) {
+    public static function execute($skipdata, $contextid) {
         global $DB;
         // Parameter validation.
         $params = self::validate_parameters(self::execute_parameters(), [
             'skipdata' => $skipdata,
+            'contextid' => $contextid,
         ]);
 
         require_login();
-        $data = json_decode($skipdata, true);
+        require_capability('mod/interactivevideo:edit', context_module::instance($contextid));
 
+        $data = json_decode($skipdata, true);
         $data['timecreated'] = time();
         $data['timemodified'] = time();
         $id = $DB->insert_record('interactivevideo_items', (object)$data);

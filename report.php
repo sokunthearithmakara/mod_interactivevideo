@@ -29,7 +29,7 @@ require_once(__DIR__ . '/locallib.php');
 
 $id = required_param('id', PARAM_INT); // Course_module ID.
 
-$cm = get_coursemodule_from_id('interactivevideo', $id,  0,  false,  MUST_EXIST);
+$cm = get_coursemodule_from_id('interactivevideo', $id, 0, false, MUST_EXIST);
 $moduleinstance = $DB->get_record('interactivevideo', ['id' => $cm->instance], '*', MUST_EXIST);
 $group = optional_param('group', 0, PARAM_INT);
 $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
@@ -214,6 +214,8 @@ $reporttabledata = [
 
 echo $OUTPUT->render_from_template('mod_interactivevideo/reporttable', $reporttabledata);
 
+$url = '';
+
 if ($moduleinstance->source == 'url') {
     $url = $moduleinstance->videourl;
 } else {
@@ -226,9 +228,7 @@ if ($moduleinstance->source == 'url') {
         'filesize DESC',
     );
     $file = reset($files);
-    if (!$file) {
-        $url = '';
-    } else {
+    if ($file) {
         $url = moodle_url::make_pluginfile_url(
             $file->get_contextid(),
             $file->get_component(),

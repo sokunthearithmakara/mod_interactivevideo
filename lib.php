@@ -719,7 +719,7 @@ function interactivevideo_displayinline(cm_info $cm) {
         $OUTPUT->get_generated_image_for_id($cm->id) : $interactivevideo->posterimage; // Fallback to default image.
     $duration = $interactivevideo->endtime - $interactivevideo->starttime;
     // Convert to hh:mm:ss format.
-    $duration = gmdate($duration > 3600 * 60 ? 'H:i:s' : 'i:s', (int) $duration);
+    $duration = gmdate($duration > 3600 ? 'H:i:s' : 'i:s', (int) $duration);
 
     // Format the intro: keep text only and truncate it.
     $datafortemplate = [

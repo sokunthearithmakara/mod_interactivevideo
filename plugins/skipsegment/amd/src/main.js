@@ -102,6 +102,7 @@ export default class SkipSegment extends Base {
             methodname: 'ivplugin_skipsegment_add_skip',
             args: {
                 skipdata: JSON.stringify(data),
+                contextid: M.cfg.contextid,
             },
             contextid: M.cfg.contextid,
         }])[0];
@@ -113,7 +114,6 @@ export default class SkipSegment extends Base {
         });
 
         $('#contentmodal').modal('hide');
-
     }
 
     /**

@@ -78,7 +78,7 @@ export default class Chapter extends Base {
             <ul class="annolistinchapter w-100 p-0"></ul></li>`);
         });
 
-        $(document).on('timeupdate', async (e) => {
+        $(document).on('timeupdate', async(e) => {
             const currenttime = e.originalEvent.detail.time;
             const currentchapter = chapters.find((chapter) => currenttime >= chapter.start && currenttime < chapter.end);
             if (currentchapter) {

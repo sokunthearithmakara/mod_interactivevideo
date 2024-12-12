@@ -303,7 +303,7 @@ html:has(.path-mod-interactivevideo) {
     z-index: 1032;
     height: 100dvh;
     width: 0;
-    margin-right: 0px;
+    margin-right: 0;
     bottom: 0;
     top: 0;
     align-content: center;
