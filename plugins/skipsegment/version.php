@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component    = 'ivplugin_skipsegment';
 $plugin->release      = '1.0';
-$plugin->version      = 2024071501;
+$plugin->version      = 2024071502;
 $plugin->requires     = 2022112800;
 $plugin->supported    = [401, 405];
 $plugin->maturity     = MATURITY_STABLE;

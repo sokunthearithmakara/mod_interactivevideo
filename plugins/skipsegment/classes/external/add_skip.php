@@ -41,6 +41,7 @@ class add_skip extends external_api {
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'skipdata' => new external_value(PARAM_TEXT, 'The data of the skip segment'),
+            'contextid' => new external_value(PARAM_INT, 'The context id of the skip segment'),
         ]);
     }
 
@@ -59,7 +60,9 @@ class add_skip extends external_api {
         ]);
 
         require_login();
-        require_capability('mod/interactivevideo:edit', context_module::instance($contextid));
+        $context = \context::instance_by_id($contextid);
+        self::validate_context($context);
+        require_capability('mod/interactivevideo:edit', $context);
 
         $data = json_decode($skipdata, true);
         $data['timecreated'] = time();
