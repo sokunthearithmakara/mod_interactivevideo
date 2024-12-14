@@ -109,8 +109,8 @@ $PAGE->requires->strings_for_js(array_keys($strings), 'mod_interactivevideo');
 $PAGE->requires->jquery_plugin('ui-css');
 
 if ($cm->completion != COMPLETION_TRACKING_NONE) {
-    $completionview = new completion_info($course);
-    $completionstate = $completionview->internal_get_state($cm, $USER->id, true);
+    $cmcompletion = new completion_info($course);
+    $completionstate = $cmcompletion->internal_get_state($cm, $USER->id, true);
 }
 
 // Log view.
@@ -125,7 +125,8 @@ if (!$preview) {
 
     // Set view completion.
     if ($cm->completionview == COMPLETION_VIEW_REQUIRED) {
-        $completionview->set_module_viewed($cm);
+        $cmcompletion = new completion_info($course);
+        $cmcompletion->set_module_viewed($cm);
     }
 } else {
     $getcompletion = false;

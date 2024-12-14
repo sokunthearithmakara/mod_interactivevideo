@@ -767,7 +767,7 @@ class interactivevideo_util {
         $cm = $cminfo->get_cm($cmid);
         $completiondetails = \core_completion\cm_completion_details::get_instance($cm, $userid);
         $response = [
-            'overallcompletion' => $completiondetails->is_overall_complete(),
+            'overallcompletion' => $completiondetails->get_overall_completion() == COMPLETION_COMPLETE ? 1 : 0,
         ];
 
         // If moodle version is 4.4 or below, use new completion information.

@@ -58,13 +58,13 @@ Example context (json):
 </div>
 </div>
 {{/showposterimage}}
-<div class="description-container d-flex justify-content-between flex-column">
+<div class="description-container d-flex justify-content-between flex-column{{^showname}} mt-0{{/showname}}">
     <div class="top-section small">
         <div class="w-100 d-flex align-items-start">
             {{#showname}}
             {{#cm.uservisible}}
             <a href="{{baseurl}}/mod/interactivevideo/view.php?i={{cm.instance}}"
-               class="clamp-2 text-dark h5 text-decoration-none mb-0">{{{formattedname}}}</a>
+               class="clamp-2 text-dark h5 text-decoration-none mb-1">{{{formattedname}}}</a>
             {{#hascompletion}}
             {{#overallcomplete}}<i class="bi bi-check-circle-fill text-success ml-2"></i>{{/overallcomplete}}
             {{^overallcomplete}}<i class="bi bi-circle ml-2"></i>{{/overallcomplete}}
@@ -82,7 +82,7 @@ Example context (json):
 </div>
 {{#showdescription}}
 {{#formattedintro}}
-<div class="description {{#showname}}mt-3{{/showname}}" {{^usecustomdesc}}style="display:none"{{/usecustomdesc}}>
+<div class="description {{^showname}}mt-0{{/showname}} {{#showname}}mt-3{{/showname}}" {{^usecustomdesc}}style="display:none"{{/usecustomdesc}}>
     {{{formattedintro}}}
 </div>
 {{/formattedintro}}
@@ -188,11 +188,11 @@ Example context (json):
 <div class="description-container w-auto">
     {{#cm.uservisible}}
     <a href="{{baseurl}}/mod/interactivevideo/view.php?i={{cm.instance}}"
-       class="clamp-2 text-dark h5 text-decoration-none mb-0">{{{formattedname}}}</a>
+       class="clamp-2 text-dark h5 text-decoration-none mb-1">{{{formattedname}}}</a>
 {{/cm.uservisible}}
 {{^cm.uservisible}}
 <a href="javascript:void()"
-   class="clamp-2 text-dark h5 text-decoration-none mb-0">{{{formattedname}}}</a>
+   class="clamp-2 text-dark h5 text-decoration-none mb-1">{{{formattedname}}}</a>
 {{/cm.uservisible}}
 </div>
 {{/showname}}

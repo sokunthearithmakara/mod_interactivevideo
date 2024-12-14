@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/interactivevideo/db" VERSION="20241010" COMMENT="XMLDB file for Moodle mod/interactivevideo"
+<XMLDB PATH="mod/interactivevideo/db" VERSION="20241214" COMMENT="XMLDB file for Moodle mod/interactivevideo"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -66,6 +66,9 @@
         <KEY NAME="cmid" TYPE="foreign" FIELDS="cmid" REFTABLE="course_modules" REFFIELDS="id"/>
         <KEY NAME="annotationid" TYPE="foreign" FIELDS="annotationid" REFTABLE="interactivevideo" REFFIELDS="id"/>
       </KEYS>
+      <INDEXES>
+        <INDEX NAME="contextid" UNIQUE="false" FIELDS="contextid"/>
+      </INDEXES>
     </TABLE>
     <TABLE NAME="interactivevideo_completion" COMMENT="Store user progress per cmid">
       <FIELDS>
